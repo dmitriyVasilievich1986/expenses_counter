@@ -1,5 +1,5 @@
+*/migrations/*[^_].py
 __pycache__
-migrations
 *.pyc
 venv*
 .env
