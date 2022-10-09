@@ -1,6 +1,7 @@
 */migrations/*[^_].py
 postgres_data
 __pycache__
+.vscode
 *.pyc
 venv*
 .env
