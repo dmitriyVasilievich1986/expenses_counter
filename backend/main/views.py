@@ -25,6 +25,10 @@ from .serializers import (
 )
 
 
+def index_view(request, pk=None, *args, **kwargs):
+    return render(request=request, template_name="index.html", context=dict())
+
+
 class ProductViewSet(ModelViewSet):
     serializer_class = ProductSerializer
     queryset = Product.objects.all()
