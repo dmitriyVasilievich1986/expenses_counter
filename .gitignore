@@ -1,5 +1,7 @@
 */migrations/*[^_].py
+*/static/js/*js
 postgres_data
+node_modules
 __pycache__
 .vscode
 *.pyc
