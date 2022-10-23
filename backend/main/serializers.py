@@ -5,7 +5,6 @@ from .models import (
     SubCategory,
     Category,
     Product,
-    Price,
     Shop,
 )
 
@@ -37,12 +36,6 @@ class SubCategorySerializer(ModelSerializer):
 class ShopSerializer(ModelSerializer):
     class Meta:
         model = Shop
-        fields = "__all__"
-
-
-class PriceSerializer(ModelSerializer):
-    class Meta:
-        model = Price
         fields = "__all__"
 
 
