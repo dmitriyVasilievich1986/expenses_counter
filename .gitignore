@@ -6,4 +6,5 @@ __pycache__
 .vscode
 *.pyc
 venv*
+dist
 .env
