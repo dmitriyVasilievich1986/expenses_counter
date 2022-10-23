@@ -1,17 +1,38 @@
-from .models import Category, SubCategory, Shop, Price, Product
+from django.shortcuts import get_object_or_404, render
 from rest_framework.viewsets import ModelViewSet
-from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework import status
 from datetime import date
 
+from .models import (
+    ShopAddress,
+    Transaction,
+    SubCategory,
+    Category,
+    Product,
+    Price,
+    Shop,
+)
+
 from .serializers import (
-    SUBCategorySerializer,
+    ShopAddressSerializer,
+    TransactionSerializer,
+    SubCategorySerializer,
     CategorySerializer,
     ProductSerializer,
     PriceSerializer,
     ShopSerializer,
 )
+
+
+class ProductViewSet(ModelViewSet):
+    serializer_class = ProductSerializer
+    queryset = Product.objects.all()
+
+
+class ShopAddressViewSet(ModelViewSet):
+    serializer_class = ShopAddressSerializer
+    queryset = ShopAddress.objects.all()
 
 
 class CategoryViewSet(ModelViewSet):
@@ -20,7 +41,7 @@ class CategoryViewSet(ModelViewSet):
 
 
 class SubCategoryViewSet(ModelViewSet):
-    serializer_class = SUBCategorySerializer
+    serializer_class = SubCategorySerializer
     queryset = SubCategory.objects.all()
 
 
@@ -34,43 +55,46 @@ class PriceViewSet(ModelViewSet):
     queryset = Price.objects.all()
 
 
-class ProductViewSet(ModelViewSet):
-    serializer_class = ProductSerializer
-    queryset = Product.objects.all()
+class TransactionViewSet(ModelViewSet):
+    serializer_class = TransactionSerializer
+    queryset = Transaction.objects.all()
 
-    def _get_class_object(self, data, class_object, serializer_object, name):
-        if f"{name}_id" in data:
-            obj = get_object_or_404(class_object, pk=data[f"{name}_id"])
-            return obj.id
-        d = {k.lstrip(f"{name}_"): v for k, v in data.items() if k.startswith(name)}
-        obj = class_object.objects.filter(**d).first()
+    def _get_class_object(self, data, ObjectClass, SerializerClass):
+        if "id" in data:
+            obj = get_object_or_404(ObjectClass, id=data["id"])
+        elif "name" in data:
+            obj = get_object_or_404(ObjectClass, name=data["name"])
+        else:
+            obj = ObjectClass.objects.filter(**data).first()
         if obj is not None:
             return obj.id
-        obj = serializer_object(data=d)
+        obj = SerializerClass(data=data)
         obj.is_valid(raise_exception=True)
         obj.save()
         return obj.data["id"]
 
     def create(self, request, *args, **kwargs):
         data = request.data.copy()
-        data["price_date"] = data.get("price_date", str(date.today()))
+        data["date"] = data.get("date", str(date.today()))
         data["price_full_price"] = data.get(
             "price_full_price", data.get("price_actual_price")
         )
-        product = ProductSerializer(
+        transaction = TransactionSerializer(
             data={
-                "description": data.get("description"),
-                "name": data.get("name"),
-                "price": self._get_class_object(data, Price, PriceSerializer, "price"),
-                "shop": self._get_class_object(data, Shop, ShopSerializer, "shop"),
+                "date": data.get("date", str(date.today())),
+                "shop": self._get_class_object(data["shop"], Shop, ShopSerializer),
+                "price": self._get_class_object(data["price"], Price, PriceSerializer),
+                "product": self._get_class_object(
+                    data["product"], Product, ProductSerializer
+                ),
                 "sub_category": self._get_class_object(
-                    data, SubCategory, SUBCategorySerializer, "sub_category"
+                    data["sub_category"], SubCategory, SubCategorySerializer
                 ),
             }
         )
-        product.is_valid(raise_exception=True)
-        self.perform_create(product)
-        headers = self.get_success_headers(product.data)
+        transaction.is_valid(raise_exception=True)
+        self.perform_create(transaction)
+        headers = self.get_success_headers(transaction.data)
         return Response(
-            product.instance.json, status=status.HTTP_201_CREATED, headers=headers
+            transaction.instance.json, status=status.HTTP_201_CREATED, headers=headers
         )

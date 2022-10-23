@@ -48,7 +48,6 @@ class Price(models.Model):
         default=0,
         null=True,
     )
-    date = models.DateField(auto_now=False, auto_now_add=False, null=False)
 
     @property
     def price(self):
@@ -58,14 +57,12 @@ class Price(models.Model):
     def json(self):
         payload = {
             "id": self.id,
-            "date": str(self.date),
             "price": str(self.price),
         }
         return payload
 
 
 class Shop(models.Model):
-    address = models.CharField(max_length=150, blank=True, null=True)
     name = models.CharField(max_length=150, blank=False, null=False)
     description = models.TextField(blank=True, null=True)
 
@@ -74,8 +71,55 @@ class Shop(models.Model):
         payload = {
             "id": self.id,
             "name": self.name,
-            "address": self.address,
             "description": self.description,
+            "addresses": [x.address for x in self.addresses.all()],
+        }
+        return payload
+
+
+class ShopAddress(models.Model):
+    address = models.CharField(max_length=150, blank=False, null=False)
+
+    shop = models.ForeignKey(
+        on_delete=models.CASCADE,
+        related_name="addresses",
+        to="Shop",
+    )
+
+
+class Transaction(models.Model):
+    date = models.DateField(auto_now=False, auto_now_add=False, null=False)
+
+    product = models.ForeignKey(
+        related_name="transanctions",
+        on_delete=models.CASCADE,
+        to="Product",
+    )
+    sub_category = models.ForeignKey(
+        related_name="transanctions",
+        on_delete=models.CASCADE,
+        to="SubCategory",
+    )
+    price = models.ForeignKey(
+        related_name="transanctions",
+        on_delete=models.CASCADE,
+        to="Price",
+    )
+    shop = models.ForeignKey(
+        related_name="transanctions",
+        on_delete=models.CASCADE,
+        to="Shop",
+    )
+
+    @property
+    def json(self):
+        payload = {
+            "id": self.id,
+            "date": self.date,
+            "shop": self.shop.json,
+            "price": self.price.json,
+            "product": self.product.json,
+            "sub_category": self.sub_category.json,
         }
         return payload
 
@@ -84,30 +128,11 @@ class Product(models.Model):
     name = models.CharField(max_length=150, blank=False, null=False)
     description = models.TextField(blank=True, null=True)
 
-    sub_category = models.ForeignKey(
-        on_delete=models.CASCADE,
-        related_name="products",
-        to="SubCategory",
-    )
-    price = models.ForeignKey(
-        on_delete=models.CASCADE,
-        related_name="products",
-        to="Price",
-    )
-    shop = models.ForeignKey(
-        on_delete=models.CASCADE,
-        related_name="products",
-        to="Shop",
-    )
-
     @property
     def json(self):
         payload = {
             "id": self.id,
             "name": self.name,
             "description": self.description,
-            "shop": self.shop.json,
-            "price": self.price.json,
-            "sub_category": self.sub_category.json,
         }
         return payload

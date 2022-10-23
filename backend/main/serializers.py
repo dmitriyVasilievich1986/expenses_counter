@@ -1,5 +1,25 @@
-from .models import Category, SubCategory, Shop, Price, Product
 from rest_framework.serializers import ModelSerializer
+from .models import (
+    ShopAddress,
+    Transaction,
+    SubCategory,
+    Category,
+    Product,
+    Price,
+    Shop,
+)
+
+
+class ShopAddressSerializer(ModelSerializer):
+    class Meta:
+        model = ShopAddress
+        fields = "__all__"
+
+
+class TransactionSerializer(ModelSerializer):
+    class Meta:
+        model = Transaction
+        fields = "__all__"
 
 
 class CategorySerializer(ModelSerializer):
@@ -8,7 +28,7 @@ class CategorySerializer(ModelSerializer):
         fields = "__all__"
 
 
-class SUBCategorySerializer(ModelSerializer):
+class SubCategorySerializer(ModelSerializer):
     class Meta:
         model = SubCategory
         fields = "__all__"
