@@ -1,3 +1,4 @@
+import Select from "./Select/Select";
 import React from "react";
 import axios from "axios";
 
@@ -39,7 +40,8 @@ function App() {
       .catch((e) => console.log(e));
   }, []);
 
-  const sendHandler = (_) => {
+  const sendHandler = (e) => {
+    e.preventDefault();
     const newData = {
       price: price,
       shop: shop.id,
@@ -53,56 +55,42 @@ function App() {
         console.log(data.data);
       })
       .catch((e) => console.log(e));
-    console.log(newData);
+    // console.log(newData);
   };
 
   return (
     <div>
-      <input
-        type="date"
-        value={date}
-        onChange={(e) => setDate(e.target.value)}
-      />
-      <select
-        value={shop.id}
-        onChange={(e) => setShop(shops.find((s) => s.id == e.target.value))}
-      >
-        {shops.map((s) => (
-          <option key={s.id} value={s.id}>
-            {s.name}
-          </option>
-        ))}
-      </select>
-      <select
-        value={product.id}
-        onChange={(e) =>
-          setProduct(products.find((s) => s.id == e.target.value))
-        }
-      >
-        {products.map((s) => (
-          <option key={s.id} value={s.id}>
-            {s.name}
-          </option>
-        ))}
-      </select>
-      <select
-        value={subCategory.id}
-        onChange={(e) =>
-          setSubCategory(subCategories.find((s) => s.id == e.target.value))
-        }
-      >
-        {subCategories.map((s) => (
-          <option key={s.id} value={s.id}>
-            {s.name}
-          </option>
-        ))}
-      </select>
-      <input
-        type="number"
-        value={price}
-        onChange={(e) => setPrice(e.target.value)}
-      />
-      <button onClick={sendHandler}>send</button>
+      <form onSubmit={sendHandler}>
+        <input
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+        />
+        <div style={{ width: "300px" }}>
+          <Select
+            changeHandler={(e) => setShop(e)}
+            items={shops}
+            value={shop}
+          />
+          <Select
+            changeHandler={(e) => setSubCategory(e)}
+            items={subCategories}
+            value={subCategory}
+          />
+          <Select
+            changeHandler={(e) => setProduct(e)}
+            items={products}
+            value={product}
+          />
+        </div>
+        <input
+          onChange={(e) => setPrice(e.target.value)}
+          value={price}
+          type="number"
+          step="any"
+        />
+        <button onClick={sendHandler}>send</button>
+      </form>
     </div>
   );
 }
