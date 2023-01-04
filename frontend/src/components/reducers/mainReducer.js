@@ -1,7 +1,10 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
+  date: new Date().toISOString().split("T")[0],
+  deleteConfirm: null,
   isLoading: true,
+  modal: null,
   subCategories: [],
   transactions: [],
   products: [],
@@ -16,6 +19,12 @@ export const mainSlice = createSlice({
   name: "main",
   initialState: initialState,
   reducers: {
+    setDate: (state, action) => {
+      state.date = action.payload;
+    },
+    setModal: (state, action) => {
+      state.modal = action.payload;
+    },
     updateState: (state, action) => {
       return {
         ...state,
@@ -25,6 +34,6 @@ export const mainSlice = createSlice({
   },
 });
 
-export const { updateState } = mainSlice.actions;
+export const { updateState, setDate, setModal } = mainSlice.actions;
 
 export default mainSlice.reducer;
