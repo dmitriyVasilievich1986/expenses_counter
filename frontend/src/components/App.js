@@ -1,4 +1,4 @@
-import { TransactionsList, ModalPage } from "./components";
+import { ModalPage, TransactionsPage } from "./components";
 import { updateState } from "Reducers/mainReducer";
 import { useDispatch } from "react-redux";
 import { API_URLS } from "Constants";
@@ -35,7 +35,7 @@ function App() {
   return (
     <div>
       <ModalPage />
-      <TransactionsList />
+      <TransactionsPage />
     </div>
   );
 }

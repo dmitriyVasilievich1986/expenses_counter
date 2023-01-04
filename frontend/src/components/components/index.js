@@ -1,4 +1,4 @@
-import TransactionsList from "./transactions/TransactionsList";
+import TransactionsPage from "./transactions/TransactionsPage";
 import ModalPage from "./modal/ModalPage";
 
-export { ModalPage, TransactionsList };
+export { ModalPage, TransactionsPage };
