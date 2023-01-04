@@ -46,11 +46,6 @@ class Transaction(models.Model):
         on_delete=models.CASCADE,
         to="Product",
     )
-    sub_category = models.ForeignKey(
-        related_name="transanctions",
-        on_delete=models.CASCADE,
-        to="SubCategory",
-    )
     shop = models.ForeignKey(
         related_name="transanctions",
         on_delete=models.CASCADE,
@@ -61,3 +56,10 @@ class Transaction(models.Model):
 class Product(models.Model):
     name = models.CharField(max_length=150, blank=False, null=False)
     description = models.TextField(blank=True, null=True)
+
+    sub_category = models.ForeignKey(
+        on_delete=models.CASCADE,
+        related_name="products",
+        to="SubCategory",
+        null=True,
+    )
