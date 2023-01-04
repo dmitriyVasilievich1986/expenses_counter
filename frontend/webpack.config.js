@@ -1,9 +1,15 @@
 const webpack = require("webpack");
+const path = require("path");
 
 module.exports = {
   entry: "./src/index.js",
   output: {
     filename: "main.js",
+  },
+  resolve: {
+    alias: {
+      Reducers: path.resolve(__dirname, "src/components/reducers/"),
+    },
   },
   module: {
     rules: [
