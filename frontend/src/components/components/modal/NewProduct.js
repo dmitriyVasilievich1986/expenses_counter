@@ -37,18 +37,24 @@ function NewProduct() {
 
   if (product === null) return null;
   return (
-    <div>
-      <Select
-        changeHandler={(newItem) => dispatch(updateState({ shop: newItem }))}
-        items={shops}
-        value={shop}
-      />
-      <Select
-        changeHandler={(newItem) => dispatch(updateState({ product: newItem }))}
-        items={products}
-        value={product}
-      />
-      <div>
+    <div style={{ width: "500px", height: "200px", padding: "4rem" }}>
+      <div style={{ marginTop: "1rem" }}>
+        <Select
+          changeHandler={(newItem) => dispatch(updateState({ shop: newItem }))}
+          items={shops}
+          value={shop}
+        />
+      </div>
+      <div style={{ marginTop: "1rem" }}>
+        <Select
+          changeHandler={(newItem) =>
+            dispatch(updateState({ product: newItem }))
+          }
+          items={products}
+          value={product}
+        />
+      </div>
+      <div style={{ marginTop: "1rem" }}>
         Price:{" "}
         <input
           onChange={(e) => setPrice(e.target.value)}
@@ -56,7 +62,14 @@ function NewProduct() {
           type="number"
         />
       </div>
-      <button onClick={clickHandler}>Save</button>
+      <div style={{ display: "flex", justifyContent: "center" }}>
+        <button
+          style={{ width: "150px", height: "35px", marginTop: "3rem" }}
+          onClick={clickHandler}
+        >
+          Save
+        </button>
+      </div>
     </div>
   );
 }

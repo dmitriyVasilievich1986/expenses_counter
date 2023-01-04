@@ -29,16 +29,26 @@ function DeletePage() {
   };
 
   return (
-    <div>
+    <div style={{ width: "500px", height: "150px", padding: "4rem" }}>
       <div>Write "{DELETE}" to delete transaction.</div>
       <div>
         <input
           onChange={(e) => setDeleteValue(e.target.value)}
+          style={{ margin: "1rem 0" }}
+          placeholder={DELETE}
           value={deleteValue}
           type="text"
         />
       </div>
-      <button onClick={clickHandler}>Delete</button>
+      <div style={{ display: "flex", justifyContent: "center" }}>
+        <button
+          style={{ width: "150px", height: "35px", marginTop: "3rem" }}
+          disabled={deleteValue !== DELETE}
+          onClick={clickHandler}
+        >
+          Delete
+        </button>
+      </div>
     </div>
   );
 }

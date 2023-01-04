@@ -38,7 +38,7 @@ function ModalPage() {
     <div
       style={{
         justifyContent: "center",
-        alignItems: "center",
+        backgroundColor: "gray",
         position: "absolute",
         display: "flex",
         height: "100vh",
@@ -51,8 +51,8 @@ function ModalPage() {
         ref={modalRef}
         style={{
           backgroundColor: "white",
-          maxHeight: "500px",
-          maxWidth: "500px",
+          height: "max-content",
+          marginTop: "5rem",
         }}
       >
         <ModalChoice />
