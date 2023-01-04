@@ -1,3 +1,4 @@
+import { TransactionsList, ModalPage } from "./components";
 import { updateState } from "Reducers/mainReducer";
 import { useDispatch } from "react-redux";
 import React from "react";
@@ -19,6 +20,9 @@ function App() {
         const [subCategories, transactions, products, shops] = data;
         dispatch(
           updateState({
+            subCategory: subCategories?.data[0] || null,
+            product: products.data?.[0] || null,
+            shop: shops.data?.[0] || null,
             subCategories: subCategories.data,
             transactions: transactions.data,
             products: products.data,
@@ -29,7 +33,12 @@ function App() {
       .catch((e) => console.log(e));
   }, []);
 
-  return <h1>App</h1>;
+  return (
+    <div>
+      <ModalPage />
+      <TransactionsList />
+    </div>
+  );
 }
 
 export default App;
