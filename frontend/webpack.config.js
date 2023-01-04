@@ -9,6 +9,7 @@ module.exports = {
   resolve: {
     alias: {
       Reducers: path.resolve(__dirname, "src/components/reducers/"),
+      Constants: path.resolve(__dirname, "src/components/Constants.js"),
     },
   },
   module: {

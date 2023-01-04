@@ -1,9 +1,8 @@
 import { useSelector, useDispatch } from "react-redux";
 import { updateState } from "Reducers/mainReducer";
+import { API_URLS, DELETE } from "Constants";
 import axios from "axios";
 import React from "react";
-
-const DELETE = "DELETE";
 
 function DeletePage() {
   const [deleteValue, setDeleteValue] = React.useState("");
@@ -15,7 +14,7 @@ function DeletePage() {
   const clickHandler = (_) => {
     if (deleteValue === DELETE) {
       axios
-        .delete(`/expenses/transaction/${deleteConfirm}/`)
+        .delete(`${API_URLS.transaction}${deleteConfirm}/`)
         .then((_) => {
           dispatch(
             updateState({

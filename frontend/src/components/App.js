@@ -1,20 +1,19 @@
 import { TransactionsList, ModalPage } from "./components";
 import { updateState } from "Reducers/mainReducer";
 import { useDispatch } from "react-redux";
+import { API_URLS } from "Constants";
 import React from "react";
 import axios from "axios";
-
-const apiAddress = "/expenses/";
 
 function App() {
   const dispatch = useDispatch();
 
   React.useEffect((_) => {
     Promise.all([
-      axios.get(`${apiAddress}sub_category/`),
-      axios.get(`${apiAddress}transaction/`),
-      axios.get(`${apiAddress}product/`),
-      axios.get(`${apiAddress}shop/`),
+      axios.get(`${API_URLS.sub_category}`),
+      axios.get(`${API_URLS.transaction}`),
+      axios.get(`${API_URLS.product}`),
+      axios.get(`${API_URLS.shop}`),
     ])
       .then((data) => {
         const [subCategories, transactions, products, shops] = data;

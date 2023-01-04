@@ -1,6 +1,7 @@
 import { setModal, setDate } from "Reducers/mainReducer";
 import { useSelector, useDispatch } from "react-redux";
 import Transaction from "./Transaction";
+import { MODAL_PAGES } from "Constants";
 import React from "react";
 
 function TransactionsList() {
@@ -41,7 +42,9 @@ function TransactionsList() {
           />
         ))}
       </div>
-      <button onClick={(_) => dispatch(setModal("newProduct"))}>New</button>
+      <button onClick={(_) => dispatch(setModal(MODAL_PAGES.newProductPage))}>
+        New
+      </button>
     </div>
   );
 }

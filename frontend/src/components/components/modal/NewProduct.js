@@ -1,6 +1,7 @@
 import { useSelector, useDispatch } from "react-redux";
 import { updateState } from "Reducers/mainReducer";
 import Select from "../../Select/Select";
+import { API_URLS } from "Constants";
 import axios from "axios";
 import React from "react";
 
@@ -25,7 +26,7 @@ function NewProduct() {
       price: price,
     };
     axios
-      .post("/expenses/transaction/", newItem)
+      .post(`${API_URLS.transaction}`, newItem)
       .then((data) => {
         dispatch(
           updateState({

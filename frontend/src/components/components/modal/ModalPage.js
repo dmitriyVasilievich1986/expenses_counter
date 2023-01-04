@@ -1,5 +1,6 @@
 import { useSelector, useDispatch } from "react-redux";
 import { setModal } from "Reducers/mainReducer";
+import { MODAL_PAGES } from "Constants";
 import NewProduct from "./NewProduct";
 import DeletePage from "./DeletePage";
 import React from "react";
@@ -23,11 +24,12 @@ function ModalPage() {
 
   const ModalChoice = (_) => {
     switch (modal) {
-      case "Delete":
+      case MODAL_PAGES.deletePage:
         return <DeletePage />;
-      case "newProduct":
-      default:
+      case MODAL_PAGES.newProductPage:
         return <NewProduct />;
+      default:
+        return null;
     }
   };
 
