@@ -10,19 +10,16 @@ function App() {
 
   React.useEffect((_) => {
     Promise.all([
-      axios.get(`${API_URLS.sub_category}`),
       axios.get(`${API_URLS.transaction}`),
       axios.get(`${API_URLS.product}`),
       axios.get(`${API_URLS.shop}`),
     ])
       .then((data) => {
-        const [subCategories, transactions, products, shops] = data;
+        const [transactions, products, shops] = data;
         dispatch(
           updateState({
-            subCategory: subCategories?.data[0] || null,
             product: products.data?.[0] || null,
             shop: shops.data?.[0] || null,
-            subCategories: subCategories.data,
             transactions: transactions.data,
             products: products.data,
             shops: shops.data,
