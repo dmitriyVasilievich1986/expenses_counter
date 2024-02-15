@@ -1,7 +1,8 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-  date: new Date().toISOString().split("T")[0],
+  date: localStorage.getItem("date") || new Date().toISOString().split("T")[0],
+  price: localStorage.getItem("price") || 0,
   deleteConfirm: null,
   isLoading: true,
   modal: null,
@@ -18,10 +19,23 @@ export const mainSlice = createSlice({
   initialState: initialState,
   reducers: {
     setDate: (state, action) => {
+      localStorage.setItem("date", action.payload);
       state.date = action.payload;
     },
     setModal: (state, action) => {
       state.modal = action.payload;
+    },
+    setPrice: (state, action) => {
+      localStorage.setItem("price", action.payload);
+      state.price = action.payload;
+    },
+    setShop: (state, action) => {
+      localStorage.setItem("shop", action.payload.id);
+      state.shop = action.payload;
+    },
+    setProduct: (state, action) => {
+      localStorage.setItem("product", action.payload.id);
+      state.product = action.payload;
     },
     updateState: (state, action) => {
       return {
@@ -32,6 +46,7 @@ export const mainSlice = createSlice({
   },
 });
 
-export const { updateState, setDate, setModal } = mainSlice.actions;
+export const { updateState, setDate, setModal, setShop, setProduct, setPrice } =
+  mainSlice.actions;
 
 export default mainSlice.reducer;

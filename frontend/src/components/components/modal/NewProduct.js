@@ -1,18 +1,24 @@
 import { useSelector, useDispatch } from "react-redux";
-import { updateState } from "Reducers/mainReducer";
 import Select from "../../Select/Select";
 import { API_URLS } from "Constants";
 import axios from "axios";
 import React from "react";
+
+import {
+  updateState,
+  setProduct,
+  setPrice,
+  setShop,
+} from "Reducers/mainReducer";
 
 function NewProduct() {
   const transactions = useSelector((state) => state.main.transactions);
   const products = useSelector((state) => state.main.products);
   const product = useSelector((state) => state.main.product);
   const shops = useSelector((state) => state.main.shops);
+  const price = useSelector((state) => state.main.price);
   const shop = useSelector((state) => state.main.shop);
   const date = useSelector((state) => state.main.date);
-  const [price, setPrice] = React.useState(100.99);
   const dispatch = useDispatch();
 
   const clickHandler = (_) => {
@@ -40,16 +46,14 @@ function NewProduct() {
     <div style={{ width: "500px", height: "200px", padding: "4rem" }}>
       <div style={{ marginTop: "1rem" }}>
         <Select
-          changeHandler={(newItem) => dispatch(updateState({ shop: newItem }))}
+          changeHandler={(newItem) => dispatch(setShop(newItem))}
           items={shops}
           value={shop}
         />
       </div>
       <div style={{ marginTop: "1rem" }}>
         <Select
-          changeHandler={(newItem) =>
-            dispatch(updateState({ product: newItem }))
-          }
+          changeHandler={(newItem) => dispatch(setProduct(newItem))}
           items={products}
           value={product}
         />
@@ -57,7 +61,7 @@ function NewProduct() {
       <div style={{ marginTop: "1rem" }}>
         Price:{" "}
         <input
-          onChange={(e) => setPrice(e.target.value)}
+          onChange={(e) => dispatch(setPrice(e.target.value))}
           value={price}
           type="number"
         />

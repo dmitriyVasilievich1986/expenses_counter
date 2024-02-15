@@ -16,13 +16,21 @@ function App() {
     ])
       .then((data) => {
         const [transactions, products, shops] = data;
+        const product =
+          products.data.find((p) => p.id == localStorage.getItem("product")) ||
+          products.data?.[0] ||
+          null;
+        const shop =
+          shops.data.find((s) => s.id == localStorage.getItem("shop")) ||
+          shops.data?.[0] ||
+          null;
         dispatch(
           updateState({
-            product: products.data?.[0] || null,
-            shop: shops.data?.[0] || null,
             transactions: transactions.data,
             products: products.data,
             shops: shops.data,
+            product,
+            shop,
           })
         );
       })
