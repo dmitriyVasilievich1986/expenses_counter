@@ -37,6 +37,12 @@ class ShopAddress(models.Model):
 
 class Transaction(models.Model):
     date = models.DateField(auto_now=False, auto_now_add=False, null=False)
+    count = models.DecimalField(
+        decimal_places=3,
+        max_digits=10,
+        null=False,
+        default=0,
+    )
     price = models.DecimalField(
         decimal_places=2,
         max_digits=10,
