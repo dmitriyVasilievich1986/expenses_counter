@@ -22,6 +22,13 @@ class Shop(models.Model):
     icon = models.CharField(max_length=150, blank=False, null=False)
     description = models.TextField(blank=True, null=True)
 
+    sub_category = models.ForeignKey(
+        on_delete=models.CASCADE,
+        related_name="shops",
+        to="SubCategory",
+        null=True,
+    )
+
 
 class ShopAddress(models.Model):
     local_name = models.CharField(max_length=150, blank=False, null=False)
