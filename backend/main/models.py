@@ -34,7 +34,6 @@ class ShopAddress(models.Model):
     local_name = models.CharField(max_length=150, blank=False, null=False)
     address = models.CharField(max_length=150, blank=False, null=False)
 
-
     shop = models.ForeignKey(
         on_delete=models.CASCADE,
         related_name="addresses",
@@ -62,10 +61,10 @@ class Transaction(models.Model):
         on_delete=models.CASCADE,
         to="Product",
     )
-    shop = models.ForeignKey(
+    address = models.ForeignKey(
         related_name="transanctions",
         on_delete=models.CASCADE,
-        to="Shop",
+        to="ShopAddress",
     )
 
 
