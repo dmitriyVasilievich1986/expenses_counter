@@ -8,33 +8,24 @@ const cx = classnames.bind(localStyle);
 
 function CategorySelect(props) {
   const [show, setShow] = React.useState(null);
-  const cat = {
-    cat1: {
-      subCat1: [
-        { id: 1, name: "subCat1" },
-        { id: 2, name: "subCat2" },
-        { id: 3, name: "subCat3" },
-      ],
-    },
-    cat2: [
-      { id: 1, name: "obj2.1" },
-      { id: 2, name: "obj2.2" },
-      { id: 3, name: "obj2.3" },
-    ],
+
+  const clickHandler = (e) => {
+    setShow(false);
+    props?.onClick && props.onClick(e);
   };
 
   return (
     <div
-      className={cx("select-wrapper")}
       onMouseLeave={() => setShow(false)}
       onMouseEnter={() => setShow(true)}
+      className={cx("select-wrapper")}
     >
-      <div>asdasdasd</div>
+      <div className={cx("selected-value")}>{props.value}</div>
       {show && (
         <SelectContainer
-          objects={cat}
           className={classNames("down")}
-          onClick={(e) => console.log("click", e)}
+          objects={props.objects}
+          onClick={clickHandler}
         />
       )}
     </div>

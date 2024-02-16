@@ -19,7 +19,8 @@ function SelectValue(props) {
       onMouseEnter={onMouseEnterHandler}
       onClick={clickHandler}
     >
-      {props.name}
+      {props.iconURL && <img src={props.iconURL} />}
+      {props.label}
     </div>
   );
 }

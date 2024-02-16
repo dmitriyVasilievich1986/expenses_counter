@@ -23,7 +23,7 @@ function SelectContainer(props) {
             <SelectValue
               className={classNames({ isSelected: o === selected })}
               onMouseEnter={() => setSelected(o)}
-              name={o}
+              label={o}
               key={o}
             />
           )
