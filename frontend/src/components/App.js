@@ -28,8 +28,8 @@ function App() {
         dispatch(
           updateState({
             transactions: transactions.data,
+            addresses: addresses.data,
             products: products.data,
-            addresses: addresses,
             shops: shops.data,
             product,
             shop,
