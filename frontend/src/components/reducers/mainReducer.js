@@ -7,6 +7,7 @@ const initialState = {
   isLoading: true,
   modal: null,
   transactions: [],
+  addresses: [],
   products: [],
   shops: [],
   transaction: null,
