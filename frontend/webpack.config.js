@@ -1,4 +1,3 @@
-const webpack = require("webpack");
 const path = require("path");
 
 module.exports = {
@@ -8,8 +7,9 @@ module.exports = {
   },
   resolve: {
     alias: {
-      Reducers: path.resolve(__dirname, "src/components/reducers/"),
-      Constants: path.resolve(__dirname, "src/components/Constants.js"),
+      Assets: path.resolve(__dirname, "./src/components/assets"),
+      Reducers: path.resolve(__dirname, "./src/components/reducers/"),
+      Constants: path.resolve(__dirname, "./src/components/Constants.js"),
     },
   },
   module: {
