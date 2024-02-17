@@ -1,4 +1,5 @@
 */migrations/*[^_].py
+package-lock.json
 */static/js/*txt
 */static/js/*js
 postgres_data
