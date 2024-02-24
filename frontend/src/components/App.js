@@ -1,4 +1,5 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import CreateCategoryPage from "./components/createCategoryPage";
 import { updateState } from "Reducers/mainReducer";
 import { TransactionsPage } from "./components";
 import { useDispatch } from "react-redux";
@@ -10,6 +11,10 @@ const router = createBrowserRouter([
   {
     path: "/",
     element: <TransactionsPage />,
+  },
+  {
+    path: "/create/category",
+    element: <CreateCategoryPage />,
   },
 ]);
 
