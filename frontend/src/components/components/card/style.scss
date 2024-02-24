@@ -33,6 +33,28 @@
         }
     }
 
+    &.subCategories>.head {
+        background-color: #ff7d00;
+        color: #001524;
+    }
+    &.addresses>.head {
+        background-color: #a3b18a;
+        color: #001524;
+    }
+    &.shops>.head {
+        background-color: #78290f;
+        color: #ffecd1;
+    }
+    &.products>.head {
+        background-color: #15616d;
+        color: #ffecd1;
+    }
+    
+    &.main>.head {
+        font-weight: bolder;
+        font-size: large;
+    }
+
     &>.inner {
         padding: 0 10px;
 

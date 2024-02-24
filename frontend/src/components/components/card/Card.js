@@ -19,7 +19,7 @@ function Card(props) {
   );
 
   return (
-    <div className={cx("card", props?.className)}>
+    <div className={cx("card", ...(props?.className?.split(" ") || []))}>
       <div className={cx("head", { hide })}>
         <div className={cx("open")} onClick={() => setHide((h) => !h)}>
           {props?.children && (
