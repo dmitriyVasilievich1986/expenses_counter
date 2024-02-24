@@ -18,13 +18,22 @@ function App() {
 
   React.useEffect((_) => {
     Promise.all([
+      axios.get(`${API_URLS.sub_category}`),
       axios.get(`${API_URLS.transaction}`),
+      axios.get(`${API_URLS.category}`),
       axios.get(`${API_URLS.product}`),
       axios.get(`${API_URLS.address}`),
       axios.get(`${API_URLS.shop}`),
     ])
       .then((data) => {
-        const [transactions, products, addresses, shops] = data;
+        const [
+          subCategories,
+          transactions,
+          categories,
+          products,
+          addresses,
+          shops,
+        ] = data;
         const product =
           products.data.find((p) => p.id == localStorage.getItem("product")) ||
           products.data?.[0] ||
@@ -35,7 +44,9 @@ function App() {
           null;
         dispatch(
           updateState({
+            subCategories: subCategories.data,
             transactions: transactions.data,
+            categories: categories.data,
             addresses: addresses.data,
             products: products.data,
             shops: shops.data,
