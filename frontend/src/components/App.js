@@ -1,9 +1,17 @@
-import { ModalPage, TransactionsPage } from "./components";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { updateState } from "Reducers/mainReducer";
+import { TransactionsPage } from "./components";
 import { useDispatch } from "react-redux";
 import { API_URLS } from "Constants";
 import React from "react";
 import axios from "axios";
+
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <TransactionsPage />,
+  },
+]);
 
 function App() {
   const dispatch = useDispatch();
@@ -40,10 +48,9 @@ function App() {
   }, []);
 
   return (
-    <div>
-      <ModalPage />
-      <TransactionsPage />
-    </div>
+    <React.Fragment>
+      <RouterProvider router={router} />
+    </React.Fragment>
   );
 }
 
