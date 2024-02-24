@@ -14,7 +14,7 @@ function SelectContainer(props) {
   const objects = isLastContainer ? props.objects : Object.keys(props.objects);
 
   return (
-    <div className={cx("container-wrapper", props.className)}>
+    <React.Fragment>
       <div className={cx("container")}>
         {objects.map((o) =>
           isLastContainer ? (
@@ -32,11 +32,10 @@ function SelectContainer(props) {
       {selected !== null && (
         <SelectContainer
           objects={props.objects[selected]}
-          className={classNames("right")}
           onClick={props.onClick}
         />
       )}
-    </div>
+    </React.Fragment>
   );
 }
 

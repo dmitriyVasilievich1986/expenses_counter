@@ -1,7 +1,6 @@
 import SelectContainer from "./SelectContainer";
 import classnames from "classnames/bind";
 import localStyle from "./style.scss";
-import classNames from "classnames";
 import React from "react";
 
 const cx = classnames.bind(localStyle);
@@ -22,11 +21,9 @@ function CategorySelect(props) {
     >
       <div className={cx("selected-value")}>{props.value}</div>
       {show && (
-        <SelectContainer
-          className={classNames("down")}
-          objects={props.objects}
-          onClick={clickHandler}
-        />
+        <div className={cx("container-wrapper", props.className)}>
+          <SelectContainer objects={props.objects} onClick={clickHandler} />
+        </div>
       )}
     </div>
   );

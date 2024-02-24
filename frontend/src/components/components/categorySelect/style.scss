@@ -25,17 +25,12 @@
 }
 
 .container-wrapper {
+    flex-direction: row;
     position: absolute;
-
-    &.down {
-        top: 100%;
-        left: 0;
-    }
-
-    &.right {
-        left: 100%;
-        top: 0;
-    }
+    flex-wrap: wrap;
+    display: flex;
+    top: 100%;
+    left: 0;
 
     &>.container {
         box-shadow: 0 3px 10px 1px rgba(0, 0, 0, .1);
