@@ -19,7 +19,7 @@ class SubCategory(models.Model):
 
 class Shop(models.Model):
     name = models.CharField(max_length=150, blank=False, null=False)
-    icon = models.CharField(max_length=150, blank=False, null=False)
+    icon = models.CharField(max_length=150, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
 
     sub_category = models.ForeignKey(
