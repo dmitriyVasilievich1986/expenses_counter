@@ -13,7 +13,6 @@ class ShopAddressSerializer(ModelSerializer):
     class Meta:
         model = ShopAddress
         fields = "__all__"
-        depth = 1
 
 
 class TransactionSerializer(ModelSerializer):
