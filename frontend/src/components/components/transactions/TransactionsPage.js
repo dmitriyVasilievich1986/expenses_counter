@@ -1,15 +1,18 @@
 import { setModal, setDate } from "Reducers/mainReducer";
 import { useSelector, useDispatch } from "react-redux";
 import TransactionsList from "./TransactionsList";
+import { useNavigate } from "react-router-dom";
 import { MODAL_PAGES } from "Constants";
 import pageIcon from "./page.png";
 import React from "react";
 
 function TransactionsPage() {
   const transactions = useSelector((state) => state.main.transactions);
+  const addresses = useSelector((state) => state.main.addresses);
   const shops = useSelector((state) => state.main.shops);
   const date = useSelector((state) => state.main.date);
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const monthly = transactions.filter(
     (t) => t.date.replace(/\d+$/, "01") === date.replace(/\d+$/, "01")
@@ -17,10 +20,10 @@ function TransactionsPage() {
   const dailyByShops = {};
   monthly.map((t) => {
     if (t.date === date) {
-      if (t.shop in dailyByShops) {
-        dailyByShops[t.shop].push(t);
+      if (t.address in dailyByShops) {
+        dailyByShops[t.address].push(t);
       } else {
-        dailyByShops[t.shop] = [t];
+        dailyByShops[t.address] = [t];
       }
     }
   });
@@ -59,7 +62,7 @@ function TransactionsPage() {
           {Object.keys(dailyByShops).map((d) => (
             <React.Fragment key={d}>
               <h2 style={{ textAlign: "center" }}>
-                {shops.find((s) => s.id == d).name}
+                {addresses.find((a) => a.id == d).local_name}
               </h2>
               <TransactionsList list={dailyByShops[d]} />
             </React.Fragment>
@@ -74,7 +77,7 @@ function TransactionsPage() {
             <div />
             <img
               style={{ width: "30px", height: "30px", cursor: "pointer" }}
-              onClick={(_) => dispatch(setModal(MODAL_PAGES.newProductPage))}
+              onClick={(_) => navigate("/create/transaction")}
               src={pageIcon}
             />
           </div>
