@@ -5,6 +5,7 @@ package-lock.json
 */static/js/*js
 postgres_data
 node_modules
+images/*png
 __pycache__
 .vscode
 *.pyc
