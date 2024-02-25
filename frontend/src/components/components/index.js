@@ -1,4 +1,5 @@
+import CreateTransactionPage from "./createTransactionPage/CreateTransactionPage";
+import CreateCategoryPage from "./createCategoryPage/CreateCategoryPage";
 import TransactionsPage from "./transactions/TransactionsPage";
-import ModalPage from "./modal/ModalPage";
 
-export { ModalPage, TransactionsPage };
+export { TransactionsPage, CreateCategoryPage, CreateTransactionPage };

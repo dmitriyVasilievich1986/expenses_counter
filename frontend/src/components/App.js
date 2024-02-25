@@ -1,12 +1,15 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import CreateTransactionPage from "./components/createTransactionPage";
-import CreateCategoryPage from "./components/createCategoryPage";
 import { updateState } from "Reducers/mainReducer";
-import { TransactionsPage } from "./components";
 import { useDispatch } from "react-redux";
 import { API_URLS } from "Constants";
 import React from "react";
 import axios from "axios";
+
+import {
+  CreateTransactionPage,
+  CreateCategoryPage,
+  TransactionsPage,
+} from "./components";
 
 const router = createBrowserRouter([
   {
