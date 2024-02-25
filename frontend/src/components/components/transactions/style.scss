@@ -38,13 +38,13 @@
         margin-top: 5rem;
         width: 100%;
 
+        & h2, h3 {
+            text-align: center;
+        }
+
         &>.list {
             min-height: 300px;
             margin: 2rem 0;
-
-            & h2 {
-                text-align: center;
-            } 
         }
     }
 }
