@@ -9,10 +9,25 @@ import React from "react";
 
 const cx = classnames.bind(style);
 
-function TransactionsPage() {
-  const transactions = useSelector((state) => state.main.transactions);
+function Shop(props) {
   const addresses = useSelector((state) => state.main.addresses);
   const shops = useSelector((state) => state.main.shops);
+
+  const addres = addresses.find((a) => a.id == props.addresId);
+  const shop = shops.find((s) => s.id == addres.shop);
+
+  return (
+    <div className={cx("shop-addres")}>
+      <h2>
+        {shop.icon && <img src={shop.icon} />}"{addres.local_name}" (
+        {addres.address})
+      </h2>
+    </div>
+  );
+}
+
+function TransactionsPage() {
+  const transactions = useSelector((state) => state.main.transactions);
   const date = useSelector((state) => state.main.date);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -56,7 +71,7 @@ function TransactionsPage() {
         <div className={cx("list")}>
           {Object.keys(dailyByShops).map((d) => (
             <React.Fragment key={d}>
-              <h2>{addresses.find((a) => a.id == d).local_name}</h2>
+              <Shop addresId={d} />
               <TransactionsList list={dailyByShops[d]} />
             </React.Fragment>
           ))}

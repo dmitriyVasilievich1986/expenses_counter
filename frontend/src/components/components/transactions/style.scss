@@ -66,3 +66,19 @@
         width: 30px;
     }
 }
+
+.shop-addres {
+    justify-content: center;
+    display: flex;
+
+    &>h2 {
+        align-items: center;
+        display: flex;
+
+        & img {
+            margin-right: 10px;
+            height: 30px;
+            width: 30px;
+        }
+    }
+}
