@@ -1,10 +1,13 @@
-import { setModal, setDate } from "Reducers/mainReducer";
 import { useSelector, useDispatch } from "react-redux";
 import TransactionsList from "./TransactionsList";
+import { setDate } from "Reducers/mainReducer";
 import { useNavigate } from "react-router-dom";
-import { MODAL_PAGES } from "Constants";
+import classnames from "classnames/bind";
 import pageIcon from "Assets/page.png";
+import style from "./style.scss";
 import React from "react";
+
+const cx = classnames.bind(style);
 
 function TransactionsPage() {
   const transactions = useSelector((state) => state.main.transactions);
@@ -40,9 +43,9 @@ function TransactionsPage() {
   };
 
   return (
-    <div style={{ display: "flex", justifyContent: "center" }}>
-      <div style={{ width: "500px", marginTop: "5rem" }}>
-        <div style={{ display: "flex", justifyContent: "center" }}>
+    <div className={cx("transaction-container")}>
+      <div className={cx("wrapper")}>
+        <div className={cx("date")}>
           <input
             onChange={(e) => dispatch(setDate(e.target.value))}
             value={String(date)}
@@ -50,30 +53,15 @@ function TransactionsPage() {
           />
         </div>
         <MontExpenses />
-        <div
-          style={{
-            minHeight: "300px",
-            margin: "2rem 0",
-          }}
-        >
+        <div className={cx("list")}>
           {Object.keys(dailyByShops).map((d) => (
             <React.Fragment key={d}>
-              <h2 style={{ textAlign: "center" }}>
-                {addresses.find((a) => a.id == d).local_name}
-              </h2>
+              <h2>{addresses.find((a) => a.id == d).local_name}</h2>
               <TransactionsList list={dailyByShops[d]} />
             </React.Fragment>
           ))}
-          <div
-            style={{
-              display: "flex",
-              marginTop: "2rem",
-              justifyContent: "space-around",
-            }}
-          >
-            <div />
+          <div className={cx("create-button")}>
             <img
-              style={{ width: "30px", height: "30px", cursor: "pointer" }}
               onClick={(_) => navigate("/create/transaction")}
               src={pageIcon}
             />

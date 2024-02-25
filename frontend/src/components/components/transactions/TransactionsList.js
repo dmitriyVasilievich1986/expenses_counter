@@ -1,41 +1,23 @@
+import classnames from "classnames/bind";
 import Transaction from "./Transaction";
+import style from "./style.scss";
 import React from "react";
+
+const cx = classnames.bind(style);
 
 function TransactionsList(props) {
   return (
     <React.Fragment>
       {props.list.map((t) => (
-        <Transaction
-          transactionID={t.id}
-          product={t.product}
-          price={t.price}
-          count={t.count}
-          key={t.id}
-        />
+        <Transaction {...t} key={t.id} />
       ))}
-      <div
-        style={{
-          display: "flex",
-          width: "100%",
-          alignItems: "center",
-          marginTop: "10px",
-        }}
-      >
-        <div style={{ fontSize: "20px", fontWeight: "bold", flex: "3" }} />
-        <div
-          style={{
-            width: "150px",
-            textAlign: "center",
-            fontWeight: "bold",
-            fontSize: "18px",
-            borderTop: "2px solid black",
-          }}
-        >
+      <div className={cx("transaction")}>
+        <div className={cx("name")} />
+        <div className={cx("price", "bold")}>
           {props.list
             .reduce((sum, trans) => sum + trans.price * trans.count, 0)
             .toFixed(2)}
         </div>
-        <div style={{ width: "15px" }} />
       </div>
     </React.Fragment>
   );

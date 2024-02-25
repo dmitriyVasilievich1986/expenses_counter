@@ -1,0 +1,68 @@
+.transaction {
+    align-items: center;
+    margin-top: 10px;
+    display: flex;
+    width: 100%;
+
+    &>.name {
+        font-weight: bold;
+        font-size: 20px;
+        flex: 3;
+    }
+
+    &>.price {
+        text-align: center;
+        width: 150px;
+
+        &.bold {
+            border-top: 2px solid #000;
+            margin-right: 15px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+    }
+
+    &>img {
+        cursor: pointer;
+        height: 20px;
+        width: 20px;
+    }
+}
+
+.transaction-container {
+    justify-content: center;
+    display: flex;
+
+    &>.wrapper {
+        max-width: 500px;
+        margin-top: 5rem;
+        width: 100%;
+
+        &>.list {
+            min-height: 300px;
+            margin: 2rem 0;
+
+            & h2 {
+                text-align: center;
+            } 
+        }
+    }
+}
+
+.date {
+    justify-content: center;
+    margin: 1rem 0;
+    display: flex;
+}
+
+.create-button {
+    margin: 2rem 3rem 0 0;
+    justify-content: end;
+    display: flex;
+
+    &>img {
+        cursor: pointer;
+        height: 30px;
+        width: 30px;
+    }
+}

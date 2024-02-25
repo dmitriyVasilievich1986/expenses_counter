@@ -1,8 +1,12 @@
 import { useSelector, useDispatch } from "react-redux";
 import { updateState } from "Reducers/mainReducer";
+import classnames from "classnames/bind";
 import { MODAL_PAGES } from "Constants";
 import binIcon from "Assets/bin.png";
+import style from "./style.scss";
 import React from "react";
+
+const cx = classnames.bind(style);
 
 function Transaction(props) {
   const products = useSelector((state) => state.main.products);
@@ -21,25 +25,12 @@ function Transaction(props) {
   };
 
   return (
-    <div
-      style={{
-        display: "flex",
-        width: "100%",
-        alignItems: "center",
-        marginTop: "10px",
-      }}
-    >
-      <div style={{ fontSize: "20px", fontWeight: "bold", flex: "3" }}>
-        {product.name}
-      </div>
-      <div style={{ width: "150px", textAlign: "center" }}>
+    <div className={cx("transaction")}>
+      <div className={cx("name")}>{product.name}</div>
+      <div className={cx("price")}>
         {price} x {count}
       </div>
-      <img
-        style={{ width: "15px", height: "15px", cursor: "pointer" }}
-        onClick={clickHandler}
-        src={binIcon}
-      />
+      <img onClick={clickHandler} src={binIcon} />
     </div>
   );
 }
