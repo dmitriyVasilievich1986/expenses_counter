@@ -9,7 +9,7 @@ function Transaction(props) {
   const dispatch = useDispatch();
 
   const product = products.find((p) => p.id === props.product);
-  const { price, transactionID } = props;
+  const { count, price, transactionID } = props;
 
   const clickHandler = (_) => {
     dispatch(
@@ -32,7 +32,9 @@ function Transaction(props) {
       <div style={{ fontSize: "20px", fontWeight: "bold", flex: "3" }}>
         {product.name}
       </div>
-      <div style={{ width: "80px", textAlign: "center" }}>{price}</div>
+      <div style={{ width: "150px", textAlign: "center" }}>
+        {price} x {count}
+      </div>
       <img
         style={{ width: "15px", height: "15px", cursor: "pointer" }}
         onClick={clickHandler}

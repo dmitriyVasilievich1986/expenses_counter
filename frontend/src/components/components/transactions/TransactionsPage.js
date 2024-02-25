@@ -30,15 +30,12 @@ function TransactionsPage() {
 
   const MontExpenses = () => {
     const monthExpenses = monthly
-      .reduce((sum, trans) => sum + +trans.price, 0)
+      .reduce((sum, trans) => sum + trans.price * trans.count, 0)
       .toFixed(2);
     return monthExpenses == 0 ? (
       <h3 style={{ textAlign: "center" }}>No expenses in this month</h3>
     ) : (
-      <h3 style={{ textAlign: "center" }}>
-        Month expenses:{" "}
-        {monthly.reduce((sum, trans) => sum + +trans.price, 0).toFixed(2)}
-      </h3>
+      <h3 style={{ textAlign: "center" }}>Month expenses: {monthExpenses}</h3>
     );
   };
 

@@ -9,6 +9,7 @@ function TransactionsList(props) {
           transactionID={t.id}
           product={t.product}
           price={t.price}
+          count={t.count}
           key={t.id}
         />
       ))}
@@ -23,14 +24,16 @@ function TransactionsList(props) {
         <div style={{ fontSize: "20px", fontWeight: "bold", flex: "3" }} />
         <div
           style={{
-            width: "80px",
+            width: "150px",
             textAlign: "center",
             fontWeight: "bold",
             fontSize: "18px",
             borderTop: "2px solid black",
           }}
         >
-          {props.list.reduce((sum, trans) => sum + +trans.price, 0).toFixed(2)}
+          {props.list
+            .reduce((sum, trans) => sum + trans.price * trans.count, 0)
+            .toFixed(2)}
         </div>
         <div style={{ width: "15px" }} />
       </div>
