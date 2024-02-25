@@ -7,22 +7,34 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_USER: ${DB_USER}
       POSTGRES_DB: ${DB_NAME}
-    ports:
-      - ${DB_PORT}:${DB_PORT}
     volumes:
       - ./postgres_data:/var/lib/postgresql/data
 
   expenses:
     image: dmitriyvasil1986/expenses:latest
     environment:
-      DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE}
       DB_PASSWORD: ${DB_PASSWORD}
       DB_USER: ${DB_USER}
       DB_NAME: ${DB_NAME}
-      DB_HOST: ${DB_HOST}
-      SECRET: ${SECRET}
-      DEBUG: ${DEBUG}
-    ports:
-      - ${PORT}:${PORT}
+      DEBUG: "False"
+    volumes:
+      - static:/app/static
     depends_on:
       - db
+
+  nginx:
+    image: nginx:latest
+    restart: unless-stopped
+    ports:
+      - 80:80
+    volumes:
+      - static:/static
+      - ./images:/images
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - expenses
+      - db
+
+volumes:
+  static:
+    external: false
