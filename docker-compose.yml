@@ -1,9 +1,5 @@
 version: "3.7"
 
-volumes:
-  main_js:
-    external: false
-
 services:
   db:
     image: postgres:14
@@ -16,9 +12,8 @@ services:
     volumes:
       - ./postgres_data:/var/lib/postgresql/data
 
-  backend:
-    build: ./backend
-    image: expenses
+  expenses:
+    image: dmitriyvasil1986/expenses:latest
     environment:
       DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE}
       DB_PASSWORD: ${DB_PASSWORD}
@@ -29,18 +24,5 @@ services:
       DEBUG: ${DEBUG}
     ports:
       - ${PORT}:${PORT}
-    volumes:
-      - ./backend:/app
-      - main_js:/app/static/js/
     depends_on:
-      - db
-
-  frontend:
-    image: node:16
-    volumes:
-      - main_js:/frontend/dist/
-      - ./frontend:/frontend
-    command: ["/bin/sh", "/frontend/run_script.sh", "build"]
-    depends_on:
-      - backend
       - db

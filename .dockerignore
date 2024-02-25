@@ -1,0 +1,14 @@
+**/__pycache__/
+**/.git
+**/.github
+**/.vscode
+**/*.db
+**/*.env
+**/*.pyc
+**/*.sqllite
+**/node_modules/
+
+frontend/static/assets/
+backend/static/js
+frontend/dist
+venv
