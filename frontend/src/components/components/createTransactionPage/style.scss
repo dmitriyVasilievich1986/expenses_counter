@@ -1,0 +1,80 @@
+.wrapper {
+    flex-wrap: wrap;
+    display: flex;
+
+    &>.left {
+        justify-content: center;
+        display: flex;
+        flex: 3 300px;
+    }
+
+    &>.center {
+        justify-content: center;
+        flex: 1 700px;
+        display: flex;
+        
+        &>form {
+            box-shadow: 0 3px 10px 1px rgba(0, 0, 0, .4);
+            border: 1px solid #000;
+            border-radius: 10px;
+            padding: 1rem 10px;
+            max-width: 700px;
+            margin-top: 2rem;
+            width: 100vw;
+        }
+    }
+}
+
+.date {
+    justify-content: center;
+    margin: 1rem 0;
+    display: flex;
+}
+
+.row {
+    justify-content: start;
+    align-items: center;
+    margin: 10px 0;
+    display: flex;
+
+    &>label {
+        width: 20%;
+    }
+
+    &>input {
+        padding: 2px 10px;
+        border: none;
+        width: 40%;
+
+        border-bottom: 1px solid #000;
+    }
+
+    &>div:not(.summary) {
+        width: 80%;
+    }
+
+    &>.summary {
+        background-color: #d5bdaf;
+        border-radius: 10px;
+        font-weight: bold;
+        padding: 3px 30px;
+        font-size: large;
+    }
+}
+
+.save-button {
+    justify-content: center;
+    margin: 2rem 0 1rem 0;
+    display: flex;
+
+    &>button{
+        background-color: #14213d;
+        border-radius: 5px;
+        padding: 8px 4rem;
+        font-weight: bold;
+        font-size: large;
+        color: #f2e9e4;
+        cursor: pointer;
+        border: none;
+    }
+}

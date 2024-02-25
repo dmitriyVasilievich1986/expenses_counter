@@ -1,4 +1,5 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import CreateTransactionPage from "./components/createTransactionPage";
 import CreateCategoryPage from "./components/createCategoryPage";
 import { updateState } from "Reducers/mainReducer";
 import { TransactionsPage } from "./components";
@@ -15,6 +16,10 @@ const router = createBrowserRouter([
   {
     path: "/create/category",
     element: <CreateCategoryPage />,
+  },
+  {
+    path: "/create/transaction",
+    element: <CreateTransactionPage />,
   },
 ]);
 
