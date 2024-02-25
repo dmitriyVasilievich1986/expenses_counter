@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from "react-redux";
 import TransactionsList from "./TransactionsList";
 import { useNavigate } from "react-router-dom";
 import { MODAL_PAGES } from "Constants";
-import pageIcon from "./page.png";
+import pageIcon from "Assets/page.png";
 import React from "react";
 
 function TransactionsPage() {

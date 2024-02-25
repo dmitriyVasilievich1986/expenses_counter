@@ -1,7 +1,7 @@
 import { useSelector, useDispatch } from "react-redux";
 import { updateState } from "Reducers/mainReducer";
 import { MODAL_PAGES } from "Constants";
-import trashIcon from "./trash.png";
+import binIcon from "Assets/bin.png";
 import React from "react";
 
 function Transaction(props) {
@@ -38,7 +38,7 @@ function Transaction(props) {
       <img
         style={{ width: "15px", height: "15px", cursor: "pointer" }}
         onClick={clickHandler}
-        src={trashIcon}
+        src={binIcon}
       />
     </div>
   );
