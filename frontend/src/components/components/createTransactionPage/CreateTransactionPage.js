@@ -53,17 +53,17 @@ function CreateTransactionPage(props) {
     );
   };
   const getShopsCategories = () => {
-    const allCategories = [...new Set(props.shops.map((s) => s.sub_category))];
+    const allCategories = [...new Set(props.shops.map((s) => s.category))];
 
     return Object.fromEntries(
-      props.subCategories
+      props.categories
         .filter((sc) => allCategories.includes(sc.id))
         .map((sc) => [
           sc.name,
           props.addresses
             .filter((a) =>
               props.shops
-                .filter((s) => s.sub_category === sc.id)
+                .filter((s) => s.category === sc.id)
                 .map((s) => s.id)
                 .includes(a.shop)
             )

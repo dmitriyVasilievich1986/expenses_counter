@@ -32,9 +32,9 @@ function GenericCards(props) {
   }
 
   const additionalData = {};
-  if (props.url === API_URLS.sub_category) {
+  if (props.url === API_URLS.sub_category || props.url === API_URLS.shop) {
     additionalData["category"] = props.parentId;
-  } else if (props.url === API_URLS.shop || props.url === API_URLS.product) {
+  } else if (props.url === API_URLS.product) {
     additionalData["sub_category"] = props.parentId;
   } else if (props.url === API_URLS.address) {
     additionalData["shop"] = props.parentId;

@@ -15,6 +15,33 @@ function CreateCategory(props) {
     >
       <GenericCards
         objects={(parentId = null) =>
+          props.shops.filter(
+            (sh) => parentId === null || sh.category === parentId
+          )
+        }
+        className={className("shops")}
+        url={API_URLS.shop}
+        names="shops"
+        name="Shops"
+      >
+        <GenericCards
+          objects={(parentId = null) =>
+            props.addresses
+              .filter((sa) => parentId === null || sa.shop === parentId)
+              .map((sa) => ({
+                ...sa,
+                name: sa.address,
+                description: sa.local_name,
+              }))
+          }
+          className={className("addresses")}
+          url={API_URLS.address}
+          name="Shop Addresses"
+          names="addresses"
+        />
+      </GenericCards>
+      <GenericCards
+        objects={(parentId = null) =>
           props.subCategories.filter(
             (sc) => parentId === null || sc.category === parentId
           )
@@ -24,33 +51,6 @@ function CreateCategory(props) {
         names="subCategories"
         name="Sub Categories"
       >
-        <GenericCards
-          objects={(parentId = null) =>
-            props.shops.filter(
-              (sh) => parentId === null || sh.sub_category === parentId
-            )
-          }
-          className={className("shops")}
-          url={API_URLS.shop}
-          names="shops"
-          name="Shops"
-        >
-          <GenericCards
-            objects={(parentId = null) =>
-              props.addresses
-                .filter((sa) => parentId === null || sa.shop === parentId)
-                .map((sa) => ({
-                  ...sa,
-                  name: sa.address,
-                  description: sa.local_name,
-                }))
-            }
-            className={className("addresses")}
-            url={API_URLS.address}
-            name="Shop Addresses"
-            names="addresses"
-          />
-        </GenericCards>
         <GenericCards
           objects={(parentId = null) =>
             props.products.filter(
