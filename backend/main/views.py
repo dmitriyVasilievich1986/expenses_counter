@@ -1,4 +1,5 @@
 from rest_framework.viewsets import ModelViewSet
+from django.http.response import HttpResponse
 from django.shortcuts import render
 
 from .models import (
@@ -22,6 +23,9 @@ from .serializers import (
 
 def index_view(request, pk=None, *args, **kwargs):
     return render(request=request, template_name="index.html", context=dict())
+
+def images_view(request, pk=None, *args, **kwargs):
+    return HttpResponse(status=404)
 
 
 class ProductViewSet(ModelViewSet):
