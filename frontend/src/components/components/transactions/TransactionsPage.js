@@ -2,6 +2,7 @@ import { useSelector, useDispatch } from "react-redux";
 import TransactionsList from "./TransactionsList";
 import { setDate } from "Reducers/mainReducer";
 import { useNavigate } from "react-router-dom";
+import noPhotoIcon from "Assets/no-photo.png";
 import classnames from "classnames/bind";
 import pageIcon from "Assets/page.png";
 import style from "./style.scss";
@@ -19,8 +20,14 @@ function Shop(props) {
   return (
     <div className={cx("shop-addres")}>
       <h2>
-        {shop.icon && <img src={shop.icon} />}"{addres.local_name}" (
-        {addres.address})
+        <img
+          src={shop.icon}
+          onError={(t) => {
+            t.target.src = noPhotoIcon;
+            t.target.onError = null;
+          }}
+        />
+        "{addres.local_name}" ({addres.address})
       </h2>
     </div>
   );
