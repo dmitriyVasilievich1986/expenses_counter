@@ -14,9 +14,7 @@ function ActionButton(props) {
 }
 
 function Card(props) {
-  const [hide, setHide] = React.useState(
-    !props?.children && !props?.createHandler
-  );
+  const [hide, setHide] = React.useState(true);
 
   return (
     <div className={cx("card", ...(props?.className?.split(" ") || []))}>
