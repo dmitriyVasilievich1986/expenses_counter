@@ -15,7 +15,7 @@ function CreateTransactionPage(props) {
 
   const [product, setProduct] = React.useState(0);
   const [price, setPrice] = React.useState(0);
-  const [count, setCount] = React.useState(0);
+  const [count, setCount] = React.useState(1);
   const [shop, setShop] = React.useState(0);
 
   const getProductCategories = () => {
