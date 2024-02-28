@@ -14,6 +14,12 @@ function Navbar() {
         </NavLink>
         <NavLink
           className={({ isActive }) => cx("link", { isActive })}
+          to="/create/transaction"
+        >
+          Transactions
+        </NavLink>
+        <NavLink
+          className={({ isActive }) => cx("link", { isActive })}
           to="/create/category"
         >
           Categories
