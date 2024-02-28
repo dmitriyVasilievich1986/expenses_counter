@@ -22,10 +22,10 @@ class Shop(models.Model):
     icon = models.CharField(max_length=150, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
 
-    sub_category = models.ForeignKey(
+    category = models.ForeignKey(
         on_delete=models.CASCADE,
         related_name="shops",
-        to="SubCategory",
+        to="Category",
         null=True,
     )
 
