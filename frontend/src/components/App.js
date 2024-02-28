@@ -1,9 +1,7 @@
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { updateState } from "Reducers/mainReducer";
 import { useDispatch } from "react-redux";
-import classnames from "classnames/bind";
 import { API_URLS } from "Constants";
-import style from "./style.scss";
 import React from "react";
 import axios from "axios";
 
@@ -11,24 +9,8 @@ import {
   CreateTransactionPage,
   CreateCategoryPage,
   TransactionsPage,
+  Navbar,
 } from "./components";
-
-const router = createBrowserRouter([
-  {
-    path: "/",
-    element: <TransactionsPage />,
-  },
-  {
-    path: "/create/category",
-    element: <CreateCategoryPage />,
-  },
-  {
-    path: "/create/transaction",
-    element: <CreateTransactionPage />,
-  },
-]);
-
-const cx = classnames.bind(style);
 
 function App() {
   const dispatch = useDispatch();
@@ -77,7 +59,17 @@ function App() {
 
   return (
     <React.Fragment>
-      <RouterProvider router={router} />
+      <BrowserRouter>
+        <Navbar />
+        <Routes>
+          <Route path="/" element={<TransactionsPage />} />
+          <Route path="/create/category" element={<CreateCategoryPage />} />
+          <Route
+            path="/create/transaction"
+            element={<CreateTransactionPage />}
+          />
+        </Routes>
+      </BrowserRouter>
     </React.Fragment>
   );
 }
