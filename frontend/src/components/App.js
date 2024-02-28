@@ -1,7 +1,9 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { updateState } from "Reducers/mainReducer";
 import { useDispatch } from "react-redux";
+import classnames from "classnames/bind";
 import { API_URLS } from "Constants";
+import style from "./style.scss";
 import React from "react";
 import axios from "axios";
 
@@ -25,6 +27,8 @@ const router = createBrowserRouter([
     element: <CreateTransactionPage />,
   },
 ]);
+
+const cx = classnames.bind(style);
 
 function App() {
   const dispatch = useDispatch();
