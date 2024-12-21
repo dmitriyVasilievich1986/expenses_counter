@@ -1,33 +1,33 @@
 .link {
-    text-decoration: none;
-    font-weight: bolder;
-    font-size:larger;
-    cursor: pointer;
-    color: #000;
+  text-decoration: none;
+  font-weight: bolder;
+  font-size: larger;
+  cursor: pointer;
+  color: #000;
+
+  &:hover {
+    color: #ffb703;
+  }
+
+  &.isActive {
+    text-decoration: underline 4px #000;
 
     &:hover {
-        color: #ffb703;
+      text-decoration: underline 4px #ffb703;
     }
-
-    &.isActive {
-        text-decoration: underline 4px #000;
-        
-        &:hover {
-            text-decoration: underline 4px #ffb703;
-        }
-    }
+  }
 }
 
 .navbar {
-    justify-content: center;
-    align-items: center;
-    display: flex;
-    height: 4rem;
+  justify-content: center;
+  align-items: center;
+  display: flex;
+  height: 4rem;
 
-    &>.wrapper {
-        justify-content: space-evenly;
-        max-width: 500px;
-        display: flex;
-        width: 100vw;
-    }
+  & > .wrapper {
+    justify-content: space-evenly;
+    max-width: 500px;
+    display: flex;
+    width: 100vw;
+  }
 }
