@@ -26,7 +26,7 @@ function SelectContainer(props) {
               label={o}
               key={o}
             />
-          )
+          ),
         )}
       </div>
       {selected !== null && (

@@ -1,12 +1,6 @@
 from rest_framework.serializers import ModelSerializer
-from .models import (
-    ShopAddress,
-    Transaction,
-    SubCategory,
-    Category,
-    Product,
-    Shop,
-)
+
+from .models import Category, Product, Shop, ShopAddress, SubCategory, Transaction
 
 
 class ShopAddressSerializer(ModelSerializer):

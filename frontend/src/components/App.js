@@ -51,7 +51,7 @@ function App() {
             shops: shops.data,
             product,
             shop,
-          })
+          }),
         );
       })
       .catch((e) => console.log(e));
