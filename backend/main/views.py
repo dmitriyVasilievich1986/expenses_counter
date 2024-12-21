@@ -1,30 +1,26 @@
-from rest_framework.viewsets import ModelViewSet
+from __future__ import annotations
+
+from django.http.request import HttpRequest
 from django.http.response import HttpResponse
 from django.shortcuts import render
+from rest_framework.viewsets import ModelViewSet
 
-from .models import (
-    ShopAddress,
-    Transaction,
-    SubCategory,
-    Category,
-    Product,
-    Shop,
-)
-
+from .models import Category, Product, Shop, ShopAddress, SubCategory, Transaction
 from .serializers import (
-    ShopAddressSerializer,
-    TransactionSerializer,
-    SubCategorySerializer,
     CategorySerializer,
     ProductSerializer,
+    ShopAddressSerializer,
     ShopSerializer,
+    SubCategorySerializer,
+    TransactionSerializer,
 )
 
 
-def index_view(request, pk=None, *args, **kwargs):
+def index_view(request: HttpRequest, pk: int | None = None) -> HttpResponse:
     return render(request=request, template_name="index.html", context=dict())
 
-def images_view(request, pk=None, *args, **kwargs):
+
+def images_view(request: HttpRequest, pk: int | None = None) -> HttpResponse:
     return HttpResponse(status=404)
 
 

@@ -1,6 +1,5 @@
-from main.views import index_view, images_view
-from django.urls import path, include
-
+from django.urls import include, path
+from main.views import images_view, index_view
 
 urlpatterns = [
     path("images/<path:resource>", images_view),

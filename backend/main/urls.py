@@ -1,11 +1,12 @@
 from rest_framework import routers
+
 from .views import (
-    ShopAddressViewSet,
-    TransactionViewSet,
-    SubCategoryViewSet,
     CategoryViewSet,
     ProductViewSet,
+    ShopAddressViewSet,
     ShopViewSet,
+    SubCategoryViewSet,
+    TransactionViewSet,
 )
 
 router = routers.SimpleRouter()
