@@ -16,7 +16,7 @@ function CreateCategory(props) {
       <GenericCards
         objects={(parentId = null) =>
           props.shops.filter(
-            (sh) => parentId === null || sh.category === parentId
+            (sh) => parentId === null || sh.category === parentId,
           )
         }
         className={className("shops")}
@@ -43,7 +43,7 @@ function CreateCategory(props) {
       <GenericCards
         objects={(parentId = null) =>
           props.subCategories.filter(
-            (sc) => parentId === null || sc.category === parentId
+            (sc) => parentId === null || sc.category === parentId,
           )
         }
         className={className("subCategories")}
@@ -54,7 +54,7 @@ function CreateCategory(props) {
         <GenericCards
           objects={(parentId = null) =>
             props.products.filter(
-              (p) => parentId === null || p.sub_category === parentId
+              (p) => parentId === null || p.sub_category === parentId,
             )
           }
           className={className("products")}

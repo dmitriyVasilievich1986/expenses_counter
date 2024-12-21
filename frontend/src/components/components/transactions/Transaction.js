@@ -20,7 +20,7 @@ function Transaction(props) {
       updateState({
         modal: MODAL_PAGES.deletePage,
         deleteConfirm: transactionID,
-      })
+      }),
     );
   };
 

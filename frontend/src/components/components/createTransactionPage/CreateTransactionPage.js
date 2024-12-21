@@ -25,7 +25,7 @@ function CreateTransactionPage(props) {
         props.products
           .filter((p) => p.sub_category === sc.id)
           .map((p) => ({ ...p, label: p.name })),
-      ])
+      ]),
     );
   };
   const getProductNames = () => {
@@ -49,7 +49,7 @@ function CreateTransactionPage(props) {
           props.addresses
             .filter((a) => a.shop === s.id)
             .map((a) => ({ ...a, label: a.local_name })),
-        ])
+        ]),
     );
   };
   const getShopsCategories = () => {
@@ -65,10 +65,10 @@ function CreateTransactionPage(props) {
               props.shops
                 .filter((s) => s.category === sc.id)
                 .map((s) => s.id)
-                .includes(a.shop)
+                .includes(a.shop),
             )
             .map((a) => ({ ...a, label: a.local_name })),
-        ])
+        ]),
     );
   };
   const getShopsAddresses = () => {
@@ -103,7 +103,7 @@ function CreateTransactionPage(props) {
   };
 
   const todaysTransactions = props.transactions.filter(
-    (t) => t.date === props.date
+    (t) => t.date === props.date,
   );
 
   return (
@@ -204,5 +204,5 @@ const mapStateToProps = (state) => ({
 });
 
 export default connect(mapStateToProps, { updateState, setDate })(
-  CreateTransactionPage
+  CreateTransactionPage,
 );

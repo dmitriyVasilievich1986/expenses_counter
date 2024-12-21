@@ -12,7 +12,7 @@ function Select(props) {
     (_) => {
       setValue(props.value.name);
     },
-    [props.value]
+    [props.value],
   );
 
   React.useEffect(
@@ -28,7 +28,7 @@ function Select(props) {
         document.removeEventListener("mousedown", clickPoutsideHandler);
       };
     },
-    [listRef]
+    [listRef],
   );
 
   React.useEffect(
@@ -39,7 +39,7 @@ function Select(props) {
         setGroupList(props.items);
       } else {
         const newItem = props.items.filter((g) =>
-          g.name.toLocaleLowerCase().includes(value)
+          g.name.toLocaleLowerCase().includes(value),
         );
         if (newItem.length == 1) {
           newValue = newItem[0];
@@ -50,7 +50,7 @@ function Select(props) {
       }
       setValue(newValue.name);
     },
-    [show]
+    [show],
   );
 
   const onChangeHandler = (e) => {
@@ -59,7 +59,7 @@ function Select(props) {
       setGroupList(props.items);
     } else {
       const newList = props.items.filter((g) =>
-        g.name.toLocaleLowerCase().includes(v)
+        g.name.toLocaleLowerCase().includes(v),
       );
       setGroupList(newList);
     }

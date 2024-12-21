@@ -40,7 +40,7 @@ function TransactionsPage() {
   const navigate = useNavigate();
 
   const monthly = transactions.filter(
-    (t) => t.date.replace(/\d+$/, "01") === date.replace(/\d+$/, "01")
+    (t) => t.date.replace(/\d+$/, "01") === date.replace(/\d+$/, "01"),
   );
   const dailyByShops = {};
   monthly.map((t) => {
