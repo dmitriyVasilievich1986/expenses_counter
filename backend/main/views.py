@@ -16,7 +16,7 @@ from .serializers import (
 )
 
 
-def index_view(request: HttpRequest, pk: int | None = None) -> HttpResponse:
+def index_view(request: HttpRequest, resource: str | int | None = None) -> HttpResponse:
     return render(request=request, template_name="index.html", context=dict())
 
 
