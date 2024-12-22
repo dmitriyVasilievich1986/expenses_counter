@@ -5,14 +5,9 @@ import { API_URLS } from "Constants";
 import React from "react";
 import axios from "axios";
 
-import {
-  CreateTransactionPage,
-  TransactionsPage,
-  Navbar,
-  Alert,
-} from "./components";
+import { Navbar, Alert } from "./components";
 
-import { CategoryPage, ShopsPage } from "./pages";
+import { ProductsPage, CategoryPage, ShopsPage } from "./pages";
 
 function App() {
   const dispatch = useDispatch();
@@ -69,6 +64,11 @@ function App() {
             <Route path="category">
               <Route path="" element={<CategoryPage />} />
               <Route path=":categoryId" element={<CategoryPage />} />
+            </Route>
+
+            <Route path="product">
+              <Route path="" element={<ProductsPage />} />
+              <Route path=":productId" element={<ProductsPage />} />
             </Route>
 
             <Route path="shop">

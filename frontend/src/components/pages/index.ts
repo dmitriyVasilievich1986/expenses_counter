@@ -1,4 +1,5 @@
 import { CategoryPage } from "./categoryPage/CategoryPage";
+import { ProductsPage } from "./productsPage/ProductsPage";
 import { ShopsPage } from "./shopsPage/ShopsPage";
 
-export { CategoryPage, ShopsPage };
+export { ProductsPage, CategoryPage, ShopsPage };

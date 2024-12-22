@@ -19,9 +19,17 @@ export type ShopAddressType = {
   local_name: string;
 };
 
+export type ProductType = {
+  id?: number | null;
+  name: string;
+  description: string;
+  sub_category: number;
+};
+
 export type MainReducerType = {
   main: {
     shops: ShopType[];
+    products: ProductType[];
     categories: CategoryType[];
     addresses: ShopAddressType[];
   };
