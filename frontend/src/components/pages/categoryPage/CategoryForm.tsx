@@ -9,10 +9,13 @@ import TextField from "@mui/material/TextField";
 
 import { FormTextField, FormActions, Form } from "../../components/form";
 import { updateState } from "../../reducers/mainReducer";
+import { MainReducerType } from "../../reducers/types";
 import { API_URLS } from "../../Constants";
 
 export function CategoryForm() {
-  const categories = useSelector((state) => state.main.categories);
+  const categories = useSelector(
+    (state: MainReducerType) => state.main.categories,
+  );
   const { categoryId } = useParams();
   const dispatch = useDispatch();
 
@@ -22,7 +25,8 @@ export function CategoryForm() {
   const [name, setName] = React.useState("");
 
   React.useEffect(() => {
-    const category = categories.find((c) => c.id == categoryId) ?? null;
+    const category =
+      categories.find((c) => c.id == parseInt(categoryId)) ?? null;
     setSelectedCategory(category);
     if (category === null) {
       setDescription("");
@@ -36,7 +40,7 @@ export function CategoryForm() {
     }
   }, [categoryId, categories]);
 
-  const submitHandler = (method, url) => {
+  const submitHandler = (method: "post" | "put", url: string) => {
     const data = {
       name,
       description,
@@ -92,7 +96,7 @@ export function CategoryForm() {
         />
         <Autocomplete
           options={categories
-            .filter((c) => c.id != categoryId)
+            .filter((c) => c.id != parseInt(categoryId))
             .map((c) => ({ ...c, label: c.name }))}
           disabled={categories.length === 0}
           onChange={(_, v) => setParent(v)}
