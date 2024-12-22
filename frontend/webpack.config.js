@@ -11,9 +11,15 @@ module.exports = {
       Reducers: path.resolve(__dirname, "./src/components/reducers/"),
       Constants: path.resolve(__dirname, "./src/components/Constants.js"),
     },
+    extensions: [".ts", ".tsx", ".js", "jsx"],
   },
   module: {
     rules: [
+      {
+        test: /\.tsx?$/,
+        exclude: /node_modules/,
+        use: ["ts-loader"],
+      },
       {
         test: /\.jsx?$/,
         exclude: /node_modules/,
