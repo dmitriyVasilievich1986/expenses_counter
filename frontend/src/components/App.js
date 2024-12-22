@@ -65,22 +65,20 @@ function App() {
       <BrowserRouter>
         <Navbar />
         <Routes>
-          <Route path="/" element={<TransactionsPage />} />
-          <Route path="/create/category" element={<CategoryPage />} />
-          <Route
-            path="/create/category/:categoryId"
-            element={<CategoryPage />}
-          />
-          <Route path="/create/shop" element={<ShopsPage />} />
-          <Route
-            path="/create/shop/:shopId/address/:addressId"
-            element={<ShopsPage />}
-          />
-          <Route path="/create/shop/:shopId" element={<ShopsPage />} />
-          <Route
-            path="/create/transaction"
-            element={<CreateTransactionPage />}
-          />
+          <Route path="/create">
+            <Route path="category">
+              <Route path="" element={<CategoryPage />} />
+              <Route path=":categoryId" element={<CategoryPage />} />
+            </Route>
+
+            <Route path="shop">
+              <Route path="" element={<ShopsPage />} />
+              <Route path=":shopId">
+                <Route path="" element={<ShopsPage />} />
+                <Route path="address/:addressId" element={<ShopsPage />} />
+              </Route>
+            </Route>
+          </Route>
         </Routes>
       </BrowserRouter>
     </React.Fragment>
