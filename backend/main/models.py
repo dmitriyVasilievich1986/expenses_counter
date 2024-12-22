@@ -5,6 +5,13 @@ class Category(models.Model):
     name = models.CharField(max_length=150, blank=False, null=False)
     description = models.TextField(blank=True, null=True)
 
+    parent = models.ForeignKey(
+        on_delete=models.CASCADE,
+        related_name="child",
+        to="Category",
+        null=True,
+    )
+
 
 class SubCategory(models.Model):
     name = models.CharField(max_length=150, blank=False, null=False)
@@ -75,6 +82,6 @@ class Product(models.Model):
     sub_category = models.ForeignKey(
         on_delete=models.CASCADE,
         related_name="products",
-        to="SubCategory",
+        to="Category",
         null=True,
     )
