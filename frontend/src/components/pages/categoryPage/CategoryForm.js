@@ -40,6 +40,10 @@ export function CategoryForm() {
       } else {
         setParent(null);
       }
+    } else {
+      setDescription("");
+      setParent(null);
+      setName("");
     }
   }, [categoryId, categories]);
 
