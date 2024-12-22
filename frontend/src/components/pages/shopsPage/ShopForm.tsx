@@ -4,18 +4,11 @@ import axios from "axios";
 import React from "react";
 
 import Autocomplete from "@mui/material/Autocomplete";
-import Typography from "@mui/material/Typography";
 import Container from "@mui/material/Container";
 import TextField from "@mui/material/TextField";
-import Paper from "@mui/material/Paper";
-import Stack from "@mui/material/Stack";
-import Box from "@mui/material/Box";
-import Fab from "@mui/material/Fab";
-
-import EditIcon from "@mui/icons-material/Edit";
-import AddIcon from "@mui/icons-material/Add";
 
 import { MainReducerType, CategoryType, ShopType } from "../../reducers/types";
+import { FormTextField, FormActions, Form } from "../../components/form";
 import { updateState } from "../../reducers/mainReducer";
 import { API_URLS } from "../../Constants";
 
@@ -45,7 +38,8 @@ export function ShopForm() {
   };
 
   React.useEffect(() => {
-    const shop = shops.find((s) => s.id === parseInt(shopId));
+    const shop = shops.find((s) => s.id === parseInt(shopId)) ?? null;
+    setSelectedShop(shop);
     if (shop) {
       const category = categories.find((c) => c.id === shop.category) ?? null;
       setCategory(
@@ -54,10 +48,8 @@ export function ShopForm() {
           : null,
       );
       setDescription(shop.description);
-      setSelectedShop(shop);
       setName(shop.name);
     } else {
-      setSelectedShop(null);
       setDescription("");
       setCategory(null);
       setName("");
@@ -100,95 +92,53 @@ export function ShopForm() {
 
   return (
     <Container maxWidth="lg">
-      <Paper elevation={4} sx={{ p: 2 }}>
-        <Typography variant="h5" align="center" sx={{ mb: 3 }}>
-          Shop Form
-        </Typography>
-        <Stack spacing={2}>
-          <TextField
-            onChange={(e) => setName(e.target.value)}
-            label="Shop name"
-            value={name}
-            fullWidth
-            color={
-              selectedShop?.name && selectedShop?.name !== name
-                ? "warning"
-                : "primary"
-            }
-            focused={
-              selectedShop?.name && selectedShop?.name !== name
-                ? true
-                : undefined
-            }
-          />
-          <TextField
-            onChange={(e) => setDescription(e.target.value)}
-            label="Shop description"
-            value={description}
-            fullWidth
-            color={
-              selectedShop?.description &&
-              selectedShop?.description !== description
-                ? "warning"
-                : "primary"
-            }
-            focused={
-              selectedShop?.description &&
-              selectedShop?.description !== description
-                ? true
-                : undefined
-            }
-          />
-          <Autocomplete
-            options={categories.map((c) => ({
-              ...c,
-              label: getCategoryWithLabel(c),
-            }))}
-            onChange={(_, v) => setCategory(v)}
-            disabled={categories.length === 0}
-            value={category}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Category"
-                color={
-                  selectedShop?.category &&
-                  selectedShop?.category !== category?.id
-                    ? "warning"
-                    : "primary"
-                }
-                focused={
-                  selectedShop?.category &&
-                  selectedShop?.category !== category?.id
-                    ? true
-                    : undefined
-                }
-              />
-            )}
-          />
-        </Stack>
-        <Box sx={{ display: "flex", justifyContent: "end", mt: 2 }}>
-          <Stack spacing={2} direction="row">
-            <Fab
-              color="secondary"
-              aria-label="EditIcon"
-              onClick={(_) =>
-                submitHandler("put", `${API_URLS.Shop}${shopId}/`)
+      <Form title="Shop form">
+        <FormTextField
+          isChanged={selectedShop !== null && selectedShop.name !== name}
+          onChange={setName}
+          label="Shop name"
+          value={name}
+        />
+        <FormTextField
+          onChange={setDescription}
+          label="Shop description"
+          value={description}
+          isChanged={
+            selectedShop !== null && selectedShop.description !== description
+          }
+        />
+        <Autocomplete
+          options={categories.map((c) => ({
+            ...c,
+            label: getCategoryWithLabel(c),
+          }))}
+          onChange={(_, v) => setCategory(v)}
+          disabled={categories.length === 0}
+          value={category}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="Category"
+              color={
+                selectedShop !== null && selectedShop.category !== category?.id
+                  ? "warning"
+                  : "primary"
               }
-              disabled={selectedShop === null}
-            >
-              <EditIcon />
-            </Fab>
-            <Fab
-              color="primary"
-              aria-label="add"
-              onClick={(_) => submitHandler("post", API_URLS.Shop)}
-            >
-              <AddIcon />
-            </Fab>
-          </Stack>
-        </Box>
-      </Paper>
+              focused={
+                selectedShop !== null && selectedShop.category !== category?.id
+                  ? true
+                  : undefined
+              }
+            />
+          )}
+        />
+        <FormActions
+          disabledEdit={selectedShop === null}
+          submitHandler={submitHandler}
+          url={API_URLS.Shop}
+          objectId={shopId}
+        />
+      </Form>
     </Container>
   );
 }
