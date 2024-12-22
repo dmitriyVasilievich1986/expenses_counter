@@ -15,6 +15,7 @@ const initialState = {
   transaction: null,
   product: null,
   shop: null,
+  message: null,
 };
 
 export const mainSlice = createSlice({
