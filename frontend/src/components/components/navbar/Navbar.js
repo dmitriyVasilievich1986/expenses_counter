@@ -24,6 +24,12 @@ function Navbar() {
         >
           Categories
         </NavLink>
+        <NavLink
+          className={({ isActive }) => cx("link", { isActive })}
+          to="/create/shop"
+        >
+          Shops
+        </NavLink>
       </div>
     </div>
   );

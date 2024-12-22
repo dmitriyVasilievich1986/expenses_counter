@@ -14,6 +14,7 @@ export function Alert() {
     <Snackbar
       anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
       onClose={(_) => dispatch(updateState({ message: null }))}
+      ClickAwayListenerProps={{ onClickAway: () => null }}
       open={message !== null}
       autoHideDuration={3000}
       message="Note archived"
