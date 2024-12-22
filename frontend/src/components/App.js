@@ -7,11 +7,12 @@ import axios from "axios";
 
 import {
   CreateTransactionPage,
-  CreateCategoryPage,
   TransactionsPage,
   Navbar,
   Alert,
 } from "./components";
+
+import { CategoryPage } from "./pages";
 
 function App() {
   const dispatch = useDispatch();
@@ -65,7 +66,11 @@ function App() {
         <Navbar />
         <Routes>
           <Route path="/" element={<TransactionsPage />} />
-          <Route path="/create/category" element={<CreateCategoryPage />} />
+          <Route path="/create/category" element={<CategoryPage />} />
+          <Route
+            path="/create/category/:categoryId"
+            element={<CategoryPage />}
+          />
           <Route
             path="/create/transaction"
             element={<CreateTransactionPage />}
