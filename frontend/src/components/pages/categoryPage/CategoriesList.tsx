@@ -7,12 +7,18 @@ import ListItemText from "@mui/material/ListItemText";
 import List from "@mui/material/List";
 import Box from "@mui/material/Box";
 
-function CategoriesList(props) {
-  const categories = useSelector((state) => state.main.categories);
+import { MainReducerType } from "../../reducers/types";
+
+function CategoriesList(props: { parent: number | null }) {
+  const categories = useSelector(
+    (state: MainReducerType) => state.main.categories,
+  );
   const { categoryId } = useParams();
   let navigate = useNavigate();
 
-  const filteredCategories = categories.filter((c) => c.parent == props.parent);
+  const filteredCategories = categories.filter(
+    (c) => c.parent === props.parent,
+  );
 
   if (filteredCategories.length == 0) {
     return null;
@@ -23,7 +29,11 @@ function CategoriesList(props) {
         <Box key={c.id}>
           <ListItemButton
             onClick={(_) => navigate(`/create/category/${c.id}`)}
-            sx={categoryId == c.id ? { backgroundColor: "#bbdefb" } : {}}
+            sx={
+              c.id === parseInt(categoryId)
+                ? { backgroundColor: "#bbdefb" }
+                : {}
+            }
           >
             <ListItemText primary={c.name} />
           </ListItemButton>
