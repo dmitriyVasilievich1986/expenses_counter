@@ -10,6 +10,7 @@ import {
   CreateCategoryPage,
   TransactionsPage,
   Navbar,
+  Alert,
 } from "./components";
 
 function App() {
@@ -59,6 +60,7 @@ function App() {
 
   return (
     <React.Fragment>
+      <Alert />
       <BrowserRouter>
         <Navbar />
         <Routes>
