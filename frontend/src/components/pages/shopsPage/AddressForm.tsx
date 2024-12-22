@@ -3,17 +3,9 @@ import { useParams } from "react-router";
 import axios from "axios";
 import React from "react";
 
-import Typography from "@mui/material/Typography";
 import Container from "@mui/material/Container";
-import TextField from "@mui/material/TextField";
-import Paper from "@mui/material/Paper";
-import Stack from "@mui/material/Stack";
-import Box from "@mui/material/Box";
-import Fab from "@mui/material/Fab";
 
-import EditIcon from "@mui/icons-material/Edit";
-import AddIcon from "@mui/icons-material/Add";
-
+import { FormTextField, FormActions, Form } from "../../components/form";
 import { MainReducerType, ShopAddressType } from "../../reducers/types";
 import { updateState } from "../../reducers/mainReducer";
 import { API_URLS } from "../../Constants";
@@ -88,68 +80,30 @@ export function AddressForm() {
   if (selectedShop === null) return null;
   return (
     <Container maxWidth="lg">
-      <Paper elevation={4} sx={{ p: 2 }}>
-        <Typography variant="h5" align="center" sx={{ mb: 3 }}>
-          Shop Branch Form
-        </Typography>
-        <Stack spacing={2}>
-          <TextField
-            onChange={(e) => setLocalName(e.target.value)}
-            label="Shop local name"
-            value={localName}
-            fullWidth
-            color={
-              selectedAddress?.local_name &&
-              selectedAddress?.local_name !== localName
-                ? "warning"
-                : "primary"
-            }
-            focused={
-              selectedAddress?.local_name &&
-              selectedAddress?.local_name !== localName
-                ? true
-                : undefined
-            }
-          />
-          <TextField
-            onChange={(e) => setAddress(e.target.value)}
-            label="Shop address"
-            value={address}
-            fullWidth
-            color={
-              selectedAddress?.address && selectedAddress?.address !== address
-                ? "warning"
-                : "primary"
-            }
-            focused={
-              selectedAddress?.address && selectedAddress?.address !== address
-                ? true
-                : undefined
-            }
-          />
-        </Stack>
-        <Box sx={{ display: "flex", justifyContent: "end", mt: 2 }}>
-          <Stack spacing={2} direction="row">
-            <Fab
-              color="secondary"
-              aria-label="EditIcon"
-              onClick={(_) =>
-                submitHandler("put", `${API_URLS.Address}${addressId}/`)
-              }
-              disabled={selectedAddress === null}
-            >
-              <EditIcon />
-            </Fab>
-            <Fab
-              color="primary"
-              aria-label="add"
-              onClick={(_) => submitHandler("post", API_URLS.Address)}
-            >
-              <AddIcon />
-            </Fab>
-          </Stack>
-        </Box>
-      </Paper>
+      <Form title="Shop Branch Form">
+        <FormTextField
+          isChanged={
+            selectedAddress !== null && selectedAddress.local_name !== localName
+          }
+          onChange={setLocalName}
+          label="Shop local name"
+          value={localName}
+        />
+        <FormTextField
+          isChanged={
+            selectedAddress !== null && selectedAddress.address !== address
+          }
+          onChange={setAddress}
+          label="Shop address"
+          value={address}
+        />
+        <FormActions
+          disabledEdit={selectedAddress === null}
+          submitHandler={submitHandler}
+          url={API_URLS.Address}
+          objectId={addressId}
+        />
+      </Form>
     </Container>
   );
 }
