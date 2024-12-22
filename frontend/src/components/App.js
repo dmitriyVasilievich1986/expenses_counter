@@ -12,7 +12,7 @@ import {
   Alert,
 } from "./components";
 
-import { CategoryPage } from "./pages";
+import { CategoryPage, ShopsPage } from "./pages";
 
 function App() {
   const dispatch = useDispatch();
@@ -71,6 +71,12 @@ function App() {
             path="/create/category/:categoryId"
             element={<CategoryPage />}
           />
+          <Route path="/create/shop" element={<ShopsPage />} />
+          <Route
+            path="/create/shop/:shopId/address/:addressId"
+            element={<ShopsPage />}
+          />
+          <Route path="/create/shop/:shopId" element={<ShopsPage />} />
           <Route
             path="/create/transaction"
             element={<CreateTransactionPage />}
