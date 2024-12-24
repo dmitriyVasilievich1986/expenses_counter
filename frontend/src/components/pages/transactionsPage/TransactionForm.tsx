@@ -1,5 +1,6 @@
 import { useSearchParams, useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import dayjs from "dayjs";
 import axios from "axios";
 import React from "react";
 
@@ -8,12 +9,14 @@ import Autocomplete from "@mui/material/Autocomplete";
 import Container from "@mui/material/Container";
 import TextField from "@mui/material/TextField";
 
+import {
+  MainReducerType,
+  TransactionTypeDetailed,
+  TransactionType,
+} from "../../reducers/types";
 import { FormTextField, FormActions, Form } from "../../components/form";
-import { MainReducerType, TransactionType } from "../../reducers/types";
 import { updateState } from "../../reducers/mainReducer";
 import { API_URLS } from "../../Constants";
-
-import dayjs from "dayjs";
 
 export function TransactionForm() {
   const transactions = useSelector(
@@ -36,24 +39,25 @@ export function TransactionForm() {
   const [count, setCount] = React.useState("1");
 
   React.useEffect(() => {
-    const transaction =
-      transactions.find((t) => t.id === parseInt(transactionId)) ?? null;
-    setSelectedTransaction(transaction);
-    if (transaction === null) {
-      setProduct(null);
-      setAddress(null);
-      setPrice("0");
-      setCount("1");
-    } else {
-      const product =
-        products.find((p) => p.id === transaction.product) ?? null;
-      setProduct(product ? { ...product, label: product.name } : null);
-      const address =
-        addresses.find((a) => a.id === transaction.address) ?? null;
-      setAddress(address ? { ...address, label: address.local_name } : null);
-      setPrice(transaction.price.toString());
-      setCount(transaction.count.toString());
-    }
+    axios
+      .get(`${API_URLS.Transaction}${transactionId}/`)
+      .then((data) => {
+        const transaction = data.data as TransactionTypeDetailed;
+        setProduct({ ...transaction.product, label: transaction.product.name });
+        setAddress({
+          ...transaction.address,
+          label: transaction.address.local_name,
+        });
+        setPrice(transaction.price.toString());
+        setCount(transaction.count.toString());
+      })
+      .catch(() => {
+        setSelectedTransaction(null);
+        setProduct(null);
+        setAddress(null);
+        setPrice("0");
+        setCount("1");
+      });
   }, [transactions, transactionId]);
 
   const submitHandler = (method: "post" | "put", url: string) => {
