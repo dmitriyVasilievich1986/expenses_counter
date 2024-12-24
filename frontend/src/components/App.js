@@ -7,7 +7,12 @@ import axios from "axios";
 
 import { Navbar, Alert } from "./components";
 
-import { ProductsPage, CategoryPage, ShopsPage } from "./pages";
+import {
+  TransactionsPage,
+  ProductsPage,
+  CategoryPage,
+  ShopsPage,
+} from "./pages";
 
 function App() {
   const dispatch = useDispatch();
@@ -69,6 +74,11 @@ function App() {
             <Route path="product">
               <Route path="" element={<ProductsPage />} />
               <Route path=":productId" element={<ProductsPage />} />
+            </Route>
+
+            <Route path="transaction">
+              <Route path="" element={<TransactionsPage />} />
+              <Route path=":transactionId" element={<TransactionsPage />} />
             </Route>
 
             <Route path="shop">

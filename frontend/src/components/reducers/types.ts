@@ -26,11 +26,21 @@ export type ProductType = {
   sub_category: number;
 };
 
+export type TransactionType = {
+  id?: number | null;
+  date: Date;
+  price: number;
+  count: number;
+  product: number;
+  address: number;
+};
+
 export type MainReducerType = {
   main: {
     shops: ShopType[];
     products: ProductType[];
     categories: CategoryType[];
     addresses: ShopAddressType[];
+    transactions: TransactionType[];
   };
 };
