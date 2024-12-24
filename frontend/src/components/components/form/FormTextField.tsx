@@ -4,6 +4,7 @@ import TextField from "@mui/material/TextField";
 
 export function FormTextField(props: {
   onChange?: (value: string) => void;
+  startAdornment?: React.ReactNode;
   isChanged?: boolean;
   value?: string;
   label: string;
@@ -16,6 +17,11 @@ export function FormTextField(props: {
 
   return (
     <TextField
+      slotProps={{
+        input: {
+          startAdornment: props.startAdornment,
+        },
+      }}
       onChange={onChangeHandler}
       label={props.label}
       value={props.value}

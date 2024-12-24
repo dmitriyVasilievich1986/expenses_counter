@@ -5,14 +5,14 @@ import { API_URLS } from "Constants";
 import React from "react";
 import axios from "axios";
 
-import {
-  CreateTransactionPage,
-  TransactionsPage,
-  Navbar,
-  Alert,
-} from "./components";
+import { Navbar, Alert } from "./components";
 
-import { CategoryPage, ShopsPage } from "./pages";
+import {
+  TransactionsPage,
+  ProductsPage,
+  CategoryPage,
+  ShopsPage,
+} from "./pages";
 
 function App() {
   const dispatch = useDispatch();
@@ -65,22 +65,30 @@ function App() {
       <BrowserRouter>
         <Navbar />
         <Routes>
-          <Route path="/" element={<TransactionsPage />} />
-          <Route path="/create/category" element={<CategoryPage />} />
-          <Route
-            path="/create/category/:categoryId"
-            element={<CategoryPage />}
-          />
-          <Route path="/create/shop" element={<ShopsPage />} />
-          <Route
-            path="/create/shop/:shopId/address/:addressId"
-            element={<ShopsPage />}
-          />
-          <Route path="/create/shop/:shopId" element={<ShopsPage />} />
-          <Route
-            path="/create/transaction"
-            element={<CreateTransactionPage />}
-          />
+          <Route path="/create">
+            <Route path="category">
+              <Route path="" element={<CategoryPage />} />
+              <Route path=":categoryId" element={<CategoryPage />} />
+            </Route>
+
+            <Route path="product">
+              <Route path="" element={<ProductsPage />} />
+              <Route path=":productId" element={<ProductsPage />} />
+            </Route>
+
+            <Route path="transaction">
+              <Route path="" element={<TransactionsPage />} />
+              <Route path=":transactionId" element={<TransactionsPage />} />
+            </Route>
+
+            <Route path="shop">
+              <Route path="" element={<ShopsPage />} />
+              <Route path=":shopId">
+                <Route path="" element={<ShopsPage />} />
+                <Route path="address/:addressId" element={<ShopsPage />} />
+              </Route>
+            </Route>
+          </Route>
         </Routes>
       </BrowserRouter>
     </React.Fragment>
