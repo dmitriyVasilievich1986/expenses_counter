@@ -15,6 +15,13 @@ class TransactionSerializer(ModelSerializer):
         fields = "__all__"
 
 
+class TransactionDetailedSerializer(ModelSerializer):
+    class Meta:
+        model = Transaction
+        fields = "__all__"
+        depth = 1
+
+
 class CategorySerializer(ModelSerializer):
     class Meta:
         model = Category

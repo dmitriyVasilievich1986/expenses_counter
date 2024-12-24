@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+from typing import Any
+
 from django.http.request import HttpRequest
 from django.http.response import HttpResponse
 from django.shortcuts import render
+from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from .models import Category, Product, Shop, ShopAddress, SubCategory, Transaction
@@ -12,6 +15,7 @@ from .serializers import (
     ShopAddressSerializer,
     ShopSerializer,
     SubCategorySerializer,
+    TransactionDetailedSerializer,
     TransactionSerializer,
 )
 
@@ -52,3 +56,10 @@ class ShopViewSet(ModelViewSet):
 class TransactionViewSet(ModelViewSet):
     serializer_class = TransactionSerializer
     queryset = Transaction.objects.all()
+
+    def retrieve(
+        self, request: HttpRequest, *args: tuple[Any], **kwargs: dict[str, Any]
+    ) -> HttpResponse:
+        instance = self.get_object()
+        serializer = TransactionDetailedSerializer(instance)
+        return Response(serializer.data)
