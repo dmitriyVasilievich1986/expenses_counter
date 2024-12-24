@@ -65,6 +65,17 @@ export function TransactionForm() {
       });
   }, [transactions, transactionId]);
 
+  React.useEffect(() => {
+    if (!product) return;
+
+    const data = {
+      product_id: product.id,
+    };
+    axios.post(`${API_URLS.Product}price/`, data).then((data) => {
+      setPrice(String((data.data as TransactionTypeDetailed).price));
+    });
+  }, [product]);
+
   const submitHandler = (method: "post" | "put", url: string) => {
     const data = {
       date: dayjs(searchParams.get("currentDate"), "YYYY-MM-DD").format(

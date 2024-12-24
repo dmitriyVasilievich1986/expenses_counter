@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, TypedDict
 
 from django.http.request import HttpRequest
 from django.http.response import HttpResponse
 from django.shortcuts import render
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
@@ -20,6 +21,10 @@ from .serializers import (
 )
 
 
+class ProductPrice(TypedDict):
+    product_id: int
+
+
 def index_view(request: HttpRequest, resource: str | int | None = None) -> HttpResponse:
     return render(request=request, template_name="index.html", context=dict())
 
@@ -31,6 +36,17 @@ def images_view(request: HttpRequest, pk: int | None = None) -> HttpResponse:
 class ProductViewSet(ModelViewSet):
     serializer_class = ProductSerializer
     queryset = Product.objects.all()
+
+    @action(detail=False, methods=["post"])
+    def price(self, request: HttpRequest) -> HttpResponse:
+        data: ProductPrice = request.data
+        transaction = (
+            Transaction.objects.filter(product_id=data["product_id"])
+            .order_by("-date")
+            .first()
+        )
+        serializer = TransactionDetailedSerializer(transaction)
+        return Response(serializer.data)
 
 
 class ShopAddressViewSet(ModelViewSet):
