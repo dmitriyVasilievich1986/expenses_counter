@@ -72,7 +72,7 @@ export function TransactionForm() {
       product_id: product.id,
     };
     axios.post(`${API_URLS.Product}price/`, data).then((data) => {
-      setPrice(String((data.data as TransactionTypeDetailed).price));
+      setPrice(String((data.data as TransactionTypeDetailed).price ?? 0));
     });
   }, [product]);
 
