@@ -43,6 +43,11 @@ export function TransactionForm() {
       .get(`${API_URLS.Transaction}${transactionId}/`)
       .then((data) => {
         const transaction = data.data as TransactionTypeDetailed;
+        setSelectedTransaction({
+          ...transaction,
+          product: transaction.product.id,
+          address: transaction.address.id,
+        });
         setProduct({ ...transaction.product, label: transaction.product.name });
         setAddress({
           ...transaction.address,
