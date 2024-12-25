@@ -1,30 +1,28 @@
 import { useNavigate } from "react-router";
-import { useSelector } from "react-redux";
 import React from "react";
 
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
 import List from "@mui/material/List";
 
-import {
-  MainReducerType,
-  TransactionType,
-  ProductType,
-} from "../../reducers/types";
+import { ShopAddressType } from "../shopsPage/types";
+import { ProductType } from "../productsPage/types";
+import { PagesURLs } from "../../Constants";
+import { TransactionType } from "./types";
 
-function Transaction(props: { transaction: TransactionType }) {
-  const products = useSelector((state: MainReducerType) => state.main.products);
+function Transaction(props: {
+  transaction: TransactionType<ProductType<number>, ShopAddressType<number>>;
+}) {
   let navigate = useNavigate();
-  const product = products.find(
-    (p) => p.id === props.transaction.product,
-  ) as ProductType;
 
   return (
     <ListItemButton
-      onClick={() => navigate(`/create/transaction/${props.transaction.id}`)}
+      onClick={() =>
+        navigate(`${PagesURLs.Transaction}/${props.transaction.id}`)
+      }
     >
       <ListItemText
-        primary={`${product.name}: ${
+        primary={`${props.transaction.product.name}: ${
           props.transaction.price * props.transaction.count
         }`}
       />
@@ -32,15 +30,13 @@ function Transaction(props: { transaction: TransactionType }) {
   );
 }
 
-export function TransactionList() {
-  const transactions = useSelector(
-    (state: MainReducerType) => state.main.transactions,
-  );
-
-  if (transactions.length === 0) return null;
+export function TransactionList(props: {
+  transactions: TransactionType<ProductType<number>, ShopAddressType<number>>[];
+}) {
+  if (props.transactions.length === 0) return null;
   return (
     <List sx={{ pl: 2 }}>
-      {transactions.map((t) => (
+      {props.transactions.map((t) => (
         <Transaction transaction={t} key={t.id} />
       ))}
     </List>

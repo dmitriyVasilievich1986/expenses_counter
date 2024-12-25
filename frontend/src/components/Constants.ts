@@ -1,6 +1,7 @@
 const API_URL = "/expenses/";
 
 export enum PagesURLs {
+  Transaction = "/create/transaction",
   Category = "/create/category",
   Product = "/create/product",
   Shop = "/create/shop",
@@ -8,6 +9,7 @@ export enum PagesURLs {
 }
 
 export enum API_URLS {
+  ProductPrice = `${API_URL}product/price/`,
   SubCategory = `${API_URL}sub_category/`,
   Transaction = `${API_URL}transaction/`,
   Address = `${API_URL}shop_address/`,
