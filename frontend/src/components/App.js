@@ -66,25 +66,20 @@ function App() {
         <Navbar />
         <Routes>
           <Route path="/create">
-            <Route path="category">
-              <Route path="" element={<CategoryPage />} />
+            <Route path="category" element={<CategoryPage />}>
               <Route path=":categoryId" element={<CategoryPage />} />
             </Route>
 
-            <Route path="product">
-              <Route path="" element={<ProductsPage />} />
+            <Route path="product" element={<ProductsPage />}>
               <Route path=":productId" element={<ProductsPage />} />
             </Route>
 
-            <Route path="transaction">
-              <Route path="" element={<TransactionsPage />} />
+            <Route path="transaction" element={<TransactionsPage />}>
               <Route path=":transactionId" element={<TransactionsPage />} />
             </Route>
 
-            <Route path="shop">
-              <Route path="" element={<ShopsPage />} />
-              <Route path=":shopId">
-                <Route path="" element={<ShopsPage />} />
+            <Route path="shop" element={<ShopsPage />}>
+              <Route path=":shopId" element={<ShopsPage />}>
                 <Route path="address/:addressId" element={<ShopsPage />} />
               </Route>
             </Route>
