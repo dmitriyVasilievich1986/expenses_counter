@@ -26,22 +26,32 @@ export function ProductsForm() {
   const [description, setDescription] = React.useState("");
   const [name, setName] = React.useState("");
 
-  React.useEffect(() => {
-    const product = products.find((p) => p.id == parseInt(productId)) ?? null;
-    setSelectedProduct(product);
+  const resetState = () => {
+    setSelectedProduct(null);
+    setSubCategory(null);
+    setDescription("");
+    setName("");
+  };
 
-    if (product === null) {
-      setSubCategory(null);
-      setDescription("");
-      setName("");
-    } else {
-      const category =
-        categories.find((c) => c.id == product.sub_category) ?? null;
-      setSubCategory(category ? { ...category, label: category.name } : null);
-      setDescription(product.description);
-      setName(product.name);
+  React.useEffect(() => {
+    if (productId === undefined) {
+      resetState();
+      return;
     }
-  }, [productId, categories, products]);
+    axios
+      .get(`${API_URLS.Product}${productId}/`)
+      .then((data: APIResponseType<ProductType<CategoryType<number>>>) => {
+        setSubCategory(
+          data.data.sub_category === null
+            ? null
+            : { ...data.data.sub_category, label: data.data.sub_category.name },
+        );
+        setDescription(data.data.description);
+        setSelectedProduct(data.data);
+        setName(data.data.name);
+      })
+      .catch(() => resetState());
+  }, [productId, props.products]);
 
   const submitHandler = (method: "post" | "put", url: string) => {
     const data = {
