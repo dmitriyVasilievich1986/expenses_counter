@@ -48,7 +48,7 @@ export function ShopForm(props: {
     label?: string,
   ) => {
     const newLabel = label ?? category.name;
-    if (category.parent === null) {
+    if (category.parent === null || categories.length === 0) {
       return newLabel;
     }
     const parentCategory = categories.find((c) => c.id === category.parent);
@@ -60,7 +60,6 @@ export function ShopForm(props: {
 
   const resetState = () => {
     props.setSelectedShop(null);
-    console.log("null");
     setDescription("");
     setCategory(null);
     setIconURL("");
@@ -68,7 +67,7 @@ export function ShopForm(props: {
   };
 
   React.useEffect(() => {
-    if (shopId === undefined) {
+    if (shopId === undefined || categories.length === 0) {
       resetState();
       return;
     }
@@ -89,7 +88,7 @@ export function ShopForm(props: {
         setName(data.data.name);
       })
       .catch(() => resetState());
-  }, [shopId]);
+  }, [categories, shopId]);
 
   const submitHandler = (method: "post" | "put", url: string) => {
     const data = {
