@@ -8,3 +8,7 @@ export enum API_URLS {
   Product = `${API_URL}product/`,
   Shop = `${API_URL}shop/`,
 }
+
+export type APIResponseType<R> = {
+  data: R;
+};
