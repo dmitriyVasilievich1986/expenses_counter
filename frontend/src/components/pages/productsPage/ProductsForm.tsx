@@ -1,5 +1,5 @@
-import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router";
+import { useDispatch } from "react-redux";
 import axios from "axios";
 import React from "react";
 
@@ -8,20 +8,24 @@ import Container from "@mui/material/Container";
 import TextField from "@mui/material/TextField";
 
 import { FormTextField, FormActions, Form } from "../../components/form";
-import { updateState } from "../../reducers/mainReducer";
-import { MainReducerType } from "../../reducers/types";
-import { API_URLS } from "../../Constants";
+import { APIResponseType, PagesURLs, API_URLS } from "../../Constants";
+import { setMessage } from "../../reducers/mainReducer";
+import { CategoryType } from "../categoryPage/types";
+import { ProductType } from "./types";
 
-export function ProductsForm() {
-  const categories = useSelector(
-    (state: MainReducerType) => state.main.categories,
-  );
-  const products = useSelector((state: MainReducerType) => state.main.products);
+export function ProductsForm(props: {
+  products: ProductType<number>[];
+  setProducts: React.Dispatch<React.SetStateAction<ProductType<number>[]>>;
+}) {
   const { productId } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const [selectedProduct, setSelectedProduct] = React.useState(null);
+  const [selectedProduct, setSelectedProduct] =
+    React.useState<ProductType<CategoryType<number>>>(null);
+  const [categories, setCategories] = React.useState<CategoryType<number>[]>(
+    [],
+  );
   const [subCategory, setSubCategory] = React.useState(null);
   const [description, setDescription] = React.useState("");
   const [name, setName] = React.useState("");
@@ -53,6 +57,14 @@ export function ProductsForm() {
       .catch(() => resetState());
   }, [productId, props.products]);
 
+  React.useEffect(() => {
+    axios
+      .get(API_URLS.Category)
+      .then((data: APIResponseType<CategoryType<number>[]>) => {
+        setCategories(data.data);
+      });
+  }, []);
+
   const submitHandler = (method: "post" | "put", url: string) => {
     const data = {
       name,
@@ -60,31 +72,25 @@ export function ProductsForm() {
       sub_category: subCategory!.id,
     };
     axios({ method, url, data })
-      .then((data) => {
+      .then((data: APIResponseType<ProductType<number>>) => {
         if (method === "post") {
           dispatch(
-            updateState({
-              products: [...products, data.data],
-              message: { message: "Product created", severity: "success" },
-            }),
+            setMessage({ message: "Product created", severity: "success" }),
           );
-          navigate(`/create/product/${data.data.id}`);
+          props.setProducts([...props.products, data.data]);
+          navigate(`${PagesURLs.Product}/${data.data.id}`);
         } else if (method === "put") {
-          const newProduct = products.map((p) =>
+          const newProducts = props.products.map((p) =>
             p.id === data.data.id ? data.data : p,
           );
           dispatch(
-            updateState({
-              products: newProduct,
-              message: { message: "Product updated", severity: "success" },
-            }),
+            setMessage({ message: "Product updated", severity: "success" }),
           );
+          props.setProducts(newProducts);
         }
       })
       .catch((e) => {
-        updateState({
-          message: { message: e.respose.data, severity: "error" },
-        });
+        dispatch(setMessage({ message: e.respose.data, severity: "error" }));
       });
   };
 
@@ -108,8 +114,8 @@ export function ProductsForm() {
         />
         <Autocomplete
           options={categories.map((c) => ({ ...c, label: c.name }))}
-          disabled={categories.length === 0}
           onChange={(_, v) => setSubCategory(v)}
+          disabled={categories.length === 0}
           value={subCategory}
           renderInput={(params) => (
             <TextField
@@ -117,13 +123,13 @@ export function ProductsForm() {
               label="Product category"
               color={
                 selectedProduct !== null &&
-                selectedProduct.sub_category !== subCategory?.id
+                selectedProduct.sub_category?.id !== subCategory?.id
                   ? "warning"
                   : "primary"
               }
               focused={
                 selectedProduct !== null &&
-                selectedProduct.sub_category !== subCategory?.id
+                selectedProduct.sub_category?.id !== subCategory?.id
                   ? true
                   : undefined
               }

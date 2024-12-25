@@ -2,6 +2,7 @@ const API_URL = "/expenses/";
 
 export enum PagesURLs {
   Category = "/create/category",
+  Product = "/create/product",
 }
 
 export enum API_URLS {

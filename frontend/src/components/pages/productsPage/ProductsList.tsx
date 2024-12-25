@@ -1,23 +1,22 @@
-import { useNavigate } from "react-router";
-import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import React from "react";
 
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
 import List from "@mui/material/List";
 
-import { MainReducerType } from "../../reducers/types";
+import { PagesURLs } from "../../Constants";
+import { ProductType } from "./types";
 
-export function ProductsList() {
-  const products = useSelector((state: MainReducerType) => state.main.products);
+export function ProductsList(props: { products: ProductType<number>[] }) {
   const navigate = useNavigate();
 
   return (
     <List>
-      {products.map((p) => (
+      {props.products.map((p) => (
         <ListItemButton
           key={p.id}
-          onClick={(_) => navigate(`/create/product/${p!.id}`)}
+          onClick={(_) => navigate(`${PagesURLs.Product}/${p!.id}`)}
         >
           <ListItemText primary={p.name} />
         </ListItemButton>
