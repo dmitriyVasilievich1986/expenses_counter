@@ -24,21 +24,31 @@ export function CategoryForm() {
   const [parent, setParent] = React.useState(null);
   const [name, setName] = React.useState("");
 
+  const resetState = () => {
+    setDescription("");
+    setParent(null);
+    setName("");
+  };
+
   React.useEffect(() => {
-    const category =
-      categories.find((c) => c.id == parseInt(categoryId)) ?? null;
-    setSelectedCategory(category);
-    if (category === null) {
-      setDescription("");
-      setParent(null);
-      setName("");
-    } else {
-      const parent_ = categories.find((c) => c.id == category.parent) ?? null;
-      setParent(parent_ ? { ...parent_, label: parent_.name } : null);
-      setDescription(category.description);
-      setName(category.name);
+    if (categoryId === undefined) {
+      resetState();
+      return;
     }
-  }, [categoryId, categories]);
+    axios
+      .get(`${API_URLS.Category}${categoryId}/`)
+      .then((data: APIResponseType<CategoryTypeDetailed>) => {
+        setParent(
+          data.data.parent === null
+            ? null
+            : { ...data.data.parent, label: data.data.parent.name },
+        );
+        setDescription(data.data.description);
+        setSelectedCategory(data.data);
+        setName(data.data.name);
+      })
+      .catch(() => resetState());
+  }, [categoryId, props.categories]);
 
   const submitHandler = (method: "post" | "put", url: string) => {
     const data = {
