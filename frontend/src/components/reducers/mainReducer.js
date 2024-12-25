@@ -41,6 +41,9 @@ export const mainSlice = createSlice({
       localStorage.setItem("product", action.payload.id);
       state.product = action.payload;
     },
+    setMessage: (state, action) => {
+      state.message = action.payload;
+    },
     updateState: (state, action) => {
       return {
         ...state,
@@ -50,7 +53,14 @@ export const mainSlice = createSlice({
   },
 });
 
-export const { updateState, setDate, setModal, setShop, setProduct, setPrice } =
-  mainSlice.actions;
+export const {
+  updateState,
+  setMessage,
+  setDate,
+  setModal,
+  setShop,
+  setProduct,
+  setPrice,
+} = mainSlice.actions;
 
 export default mainSlice.reducer;
