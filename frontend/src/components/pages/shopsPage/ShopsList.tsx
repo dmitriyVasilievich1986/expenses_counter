@@ -1,5 +1,4 @@
 import { useNavigate } from "react-router";
-import { useSelector } from "react-redux";
 import React from "react";
 
 import ListItemButton from "@mui/material/ListItemButton";
@@ -7,13 +6,10 @@ import ListItemText from "@mui/material/ListItemText";
 import List from "@mui/material/List";
 import Box from "@mui/material/Box";
 
-import {
-  MainReducerType,
-  ShopAddressType,
-  ShopType,
-} from "../../reducers/types";
+import { ShopAddressType, ShopType, ShopProps } from "./types";
+import { PagesURLs } from "../../Constants";
 
-function Addresses(props: { addresses: ShopAddressType[] }) {
+function Addresses(props: { addresses: ShopAddressType<number>[] }) {
   let navigate = useNavigate();
 
   if (props.addresses.length === 0) return null;
@@ -21,7 +17,9 @@ function Addresses(props: { addresses: ShopAddressType[] }) {
     <List sx={{ ml: 4 }}>
       {props.addresses.map((a) => (
         <ListItemButton
-          onClick={() => navigate(`/create/shop/${a.shop}/address/${a.id}`)}
+          onClick={() =>
+            navigate(`${PagesURLs.Shop}/${a.shop}/${PagesURLs.Address}/${a.id}`)
+          }
           key={a.id}
         >
           <ListItemText primary={a.address} />
@@ -31,16 +29,17 @@ function Addresses(props: { addresses: ShopAddressType[] }) {
   );
 }
 
-function Shop(props: { shop: ShopType }) {
+function Shop(props: ShopProps & { shop: ShopType<number> }) {
   let navigate = useNavigate();
-  const addresses = useSelector(
-    (state: MainReducerType) => state.main.addresses,
+  const filteredAddresses = props.addresses.filter(
+    (a) => a.shop === props.shop.id,
   );
-  const filteredAddresses = addresses.filter((a) => a.shop === props.shop.id);
 
   return (
     <Box>
-      <ListItemButton onClick={() => navigate(`/create/shop/${props.shop.id}`)}>
+      <ListItemButton
+        onClick={() => navigate(`${PagesURLs.Shop}/${props.shop.id}`)}
+      >
         <ListItemText primary={props.shop.name} />
       </ListItemButton>
       <Addresses addresses={filteredAddresses} />
@@ -48,14 +47,12 @@ function Shop(props: { shop: ShopType }) {
   );
 }
 
-export function ShopsList() {
-  const shops = useSelector((state: MainReducerType) => state.main.shops);
-
-  if (shops.length === 0) return null;
+export function ShopsList(props: ShopProps) {
+  if (props.shops.length === 0) return null;
   return (
     <List sx={{ pl: 2 }}>
-      {shops.map((shop) => (
-        <Shop shop={shop} key={shop.id} />
+      {props.shops.map((shop) => (
+        <Shop shop={shop} {...props} key={shop.id} />
       ))}
     </List>
   );

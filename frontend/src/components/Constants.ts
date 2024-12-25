@@ -3,6 +3,8 @@ const API_URL = "/expenses/";
 export enum PagesURLs {
   Category = "/create/category",
   Product = "/create/product",
+  Shop = "/create/shop",
+  Address = "address",
 }
 
 export enum API_URLS {
