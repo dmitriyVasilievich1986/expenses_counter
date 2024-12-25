@@ -14,8 +14,10 @@ import { CategoryType } from "../categoryPage/types";
 import { ProductType } from "./types";
 
 export function ProductsForm(props: {
-  products: ProductType<number>[];
-  setProducts: React.Dispatch<React.SetStateAction<ProductType<number>[]>>;
+  products: ProductType<CategoryType<number>>[];
+  setProducts: React.Dispatch<
+    React.SetStateAction<ProductType<CategoryType<number>>[]>
+  >;
 }) {
   const { productId } = useParams();
   const navigate = useNavigate();
@@ -72,7 +74,7 @@ export function ProductsForm(props: {
       sub_category: subCategory!.id,
     };
     axios({ method, url, data })
-      .then((data: APIResponseType<ProductType<number>>) => {
+      .then((data: APIResponseType<ProductType<CategoryType<number>>>) => {
         if (method === "post") {
           dispatch(
             setMessage({ message: "Product created", severity: "success" }),

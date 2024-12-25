@@ -14,7 +14,6 @@ from .serializers import (
     CategoryDetailedSerializer,
     CategorySerializer,
     ProductDetailedSerializer,
-    ProductSerializer,
     ShopAddressSerializer,
     ShopDetailedSerializer,
     ShopSerializer,
@@ -37,15 +36,8 @@ def images_view(request: HttpRequest, pk: int | None = None) -> HttpResponse:
 
 
 class ProductViewSet(ModelViewSet):
-    serializer_class = ProductSerializer
+    serializer_class = ProductDetailedSerializer
     queryset = Product.objects.all()
-
-    def retrieve(
-        self, request: HttpRequest, *args: tuple[Any], **kwargs: dict[str, Any]
-    ) -> HttpResponse:
-        instance = self.get_object()
-        serializer = ProductDetailedSerializer(instance)
-        return Response(serializer.data)
 
     @action(detail=False, methods=["post"])
     def price(self, request: HttpRequest) -> HttpResponse:

@@ -1,6 +1,6 @@
-export type ProductType<P> = {
+export type ProductType<C> = {
   id?: number | null;
   name: string;
   description: string;
-  sub_category: P | null;
+  sub_category: C | null;
 };
