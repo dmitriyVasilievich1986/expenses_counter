@@ -1,5 +1,9 @@
 const API_URL = "/expenses/";
 
+export enum PagesURLs {
+  Category = "/create/category",
+}
+
 export enum API_URLS {
   SubCategory = `${API_URL}sub_category/`,
   Transaction = `${API_URL}transaction/`,

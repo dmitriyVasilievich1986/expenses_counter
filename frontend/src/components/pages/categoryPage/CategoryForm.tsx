@@ -1,5 +1,5 @@
-import { useDispatch, useSelector } from "react-redux";
-import { useParams } from "react-router";
+import { useParams, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import axios from "axios";
 import React from "react";
 
@@ -8,20 +8,24 @@ import Container from "@mui/material/Container";
 import TextField from "@mui/material/TextField";
 
 import { FormTextField, FormActions, Form } from "../../components/form";
-import { updateState } from "../../reducers/mainReducer";
-import { MainReducerType } from "../../reducers/types";
-import { API_URLS } from "../../Constants";
+import { PagesURLs, APIResponseType, API_URLS } from "../../Constants";
+import { CategoryTypeDetailed, CategoryType } from "./types";
+import { setMessage } from "../../reducers/mainReducer";
 
-export function CategoryForm() {
-  const categories = useSelector(
-    (state: MainReducerType) => state.main.categories,
-  );
+export function CategoryForm(props: {
+  setCategories: (categories: CategoryType[]) => void;
+  categories: CategoryType[];
+}) {
   const { categoryId } = useParams();
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
-  const [selectedCategory, setSelectedCategory] = React.useState(null);
-  const [description, setDescription] = React.useState("");
-  const [parent, setParent] = React.useState(null);
+  const [selectedCategory, setSelectedCategory] =
+    React.useState<CategoryTypeDetailed | null>(null);
+  const [parent, setParent] = React.useState<
+    (CategoryType & { label: string }) | null
+  >(null);
+  const [description, setDescription] = React.useState<string>("");
   const [name, setName] = React.useState("");
 
   const resetState = () => {
@@ -54,33 +58,28 @@ export function CategoryForm() {
     const data = {
       name,
       description,
-      parent: parent?.id || null,
+      parent: parent === null ? null : parent.id,
     };
     axios({ method, url, data })
-      .then((data) => {
+      .then((data: APIResponseType<CategoryType>) => {
         if (method === "post") {
+          props.setCategories([...props.categories, data.data]);
           dispatch(
-            updateState({
-              categories: [...categories, data.data],
-              message: { message: "Category created", severity: "success" },
-            }),
+            setMessage({ message: "Category created", severity: "success" }),
           );
+          navigate(`${PagesURLs.Category}${data.data.id}`);
         } else if (method === "put") {
-          const newCategories = categories.map((c) =>
+          const newCategories = props.categories.map((c) =>
             c.id === data.data.id ? data.data : c,
           );
           dispatch(
-            updateState({
-              categories: newCategories,
-              message: { message: "Category updated", severity: "success" },
-            }),
+            setMessage({ message: "Category updated", severity: "success" }),
           );
+          props.setCategories(newCategories);
         }
       })
       .catch((e) => {
-        updateState({
-          message: { message: e.respose.data, severity: "error" },
-        });
+        dispatch(setMessage({ message: e.respose.data, severity: "error" }));
       });
   };
 
@@ -105,10 +104,10 @@ export function CategoryForm() {
           value={description}
         />
         <Autocomplete
-          options={categories
+          options={props.categories
             .filter((c) => c.id != parseInt(categoryId))
             .map((c) => ({ ...c, label: c.name }))}
-          disabled={categories.length === 0}
+          disabled={props.categories.length === 0}
           onChange={(_, v) => setParent(v)}
           value={parent}
           renderInput={(params) => (
@@ -117,13 +116,13 @@ export function CategoryForm() {
               label="Parent category"
               color={
                 selectedCategory !== null &&
-                selectedCategory.parent !== parent?.id
+                selectedCategory.parent?.id !== parent?.id
                   ? "warning"
                   : "primary"
               }
               focused={
                 selectedCategory !== null &&
-                selectedCategory.parent !== parent?.id
+                selectedCategory.parent?.id !== parent?.id
                   ? true
                   : undefined
               }

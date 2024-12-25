@@ -1,5 +1,4 @@
 import { useNavigate, useParams } from "react-router";
-import { useSelector } from "react-redux";
 import React from "react";
 
 import ListItemButton from "@mui/material/ListItemButton";
@@ -7,16 +6,16 @@ import ListItemText from "@mui/material/ListItemText";
 import List from "@mui/material/List";
 import Box from "@mui/material/Box";
 
-import { MainReducerType } from "../../reducers/types";
+import { CategoryType } from "./types";
 
-function CategoriesList(props: { parent: number | null }) {
-  const categories = useSelector(
-    (state: MainReducerType) => state.main.categories,
-  );
+function CategoriesList(props: {
+  categories: CategoryType[];
+  parent: number | null;
+}) {
   const { categoryId } = useParams();
   let navigate = useNavigate();
 
-  const filteredCategories = categories.filter(
+  const filteredCategories = props.categories.filter(
     (c) => c.parent === props.parent,
   );
 
@@ -37,13 +36,13 @@ function CategoriesList(props: { parent: number | null }) {
           >
             <ListItemText primary={c.name} />
           </ListItemButton>
-          <CategoriesList parent={c.id} />
+          <CategoriesList parent={c.id} categories={props.categories} />
         </Box>
       ))}
     </List>
   );
 }
 
-export function CategoriesListContainer() {
-  return <CategoriesList parent={null} />;
+export function CategoriesListContainer(props: { categories: CategoryType[] }) {
+  return <CategoriesList {...props} parent={null} />;
 }
