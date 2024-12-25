@@ -28,6 +28,13 @@ class CategorySerializer(ModelSerializer):
         fields = "__all__"
 
 
+class CategoryDetailedSerializer(ModelSerializer):
+    class Meta:
+        model = Category
+        fields = "__all__"
+        depth = 1
+
+
 class SubCategorySerializer(ModelSerializer):
     class Meta:
         model = SubCategory

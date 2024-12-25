@@ -11,6 +11,7 @@ from rest_framework.viewsets import ModelViewSet
 
 from .models import Category, Product, Shop, ShopAddress, SubCategory, Transaction
 from .serializers import (
+    CategoryDetailedSerializer,
     CategorySerializer,
     ProductSerializer,
     ShopAddressSerializer,
@@ -57,6 +58,13 @@ class ShopAddressViewSet(ModelViewSet):
 class CategoryViewSet(ModelViewSet):
     serializer_class = CategorySerializer
     queryset = Category.objects.all()
+
+    def retrieve(
+        self, request: HttpRequest, *args: tuple[Any], **kwargs: dict[str, Any]
+    ) -> HttpResponse:
+        instance = self.get_object()
+        serializer = CategoryDetailedSerializer(instance)
+        return Response(serializer.data)
 
 
 class SubCategoryViewSet(ModelViewSet):
