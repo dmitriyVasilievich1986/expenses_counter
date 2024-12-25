@@ -1,5 +1,5 @@
 import { useSearchParams, useParams, useNavigate } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import dayjs from "dayjs";
 import axios from "axios";
 import React from "react";
@@ -9,61 +9,74 @@ import Autocomplete from "@mui/material/Autocomplete";
 import Container from "@mui/material/Container";
 import TextField from "@mui/material/TextField";
 
-import {
-  MainReducerType,
-  TransactionTypeDetailed,
-  TransactionType,
-} from "../../reducers/types";
 import { FormTextField, FormActions, Form } from "../../components/form";
-import { updateState } from "../../reducers/mainReducer";
-import { API_URLS } from "../../Constants";
+import { PagesURLs, APIResponseType, API_URLS } from "../../Constants";
+import { setMessage } from "../../reducers/mainReducer";
+import { ShopAddressType } from "../shopsPage/types";
+import { ProductType } from "../productsPage/types";
+import { TransactionType } from "./types";
 
-export function TransactionForm() {
-  const transactions = useSelector(
-    (state: MainReducerType) => state.main.transactions,
-  );
-  const addresses = useSelector(
-    (state: MainReducerType) => state.main.addresses,
-  );
-  const products = useSelector((state: MainReducerType) => state.main.products);
-
+export function TransactionForm(props: {
+  setTransactions: React.Dispatch<
+    React.SetStateAction<
+      TransactionType<ProductType<number>, ShopAddressType<number>>[]
+    >
+  >;
+  transactions: TransactionType<ProductType<number>, ShopAddressType<number>>[];
+  addresses: ShopAddressType<number>[];
+  products: ProductType<number>[];
+}) {
   const [searchParams, _] = useSearchParams();
   const { transactionId } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const [selectedTransaction, setSelectedTransaction] = React.useState(null);
-  const [product, setProduct] = React.useState(null);
-  const [address, setAddress] = React.useState(null);
-  const [price, setPrice] = React.useState("0");
-  const [count, setCount] = React.useState("1");
+  const [selectedTransaction, setSelectedTransaction] =
+    React.useState<
+      TransactionType<ProductType<number>, ShopAddressType<number> | null>
+    >(null);
+  const [address, setAddress] = React.useState<
+    (ShopAddressType<number> & { label: string }) | null
+  >(null);
+  const [product, setProduct] = React.useState<
+    (ProductType<number> & { label: string }) | null
+  >(null);
+  const [price, setPrice] = React.useState<string>("0");
+  const [count, setCount] = React.useState<string>("1");
+
+  const resetState = () => {
+    setSelectedTransaction(null);
+    setProduct(null);
+    setAddress(null);
+    setPrice("0");
+    setCount("1");
+  };
 
   React.useEffect(() => {
+    if (transactionId === undefined) {
+      resetState();
+      return;
+    }
     axios
       .get(`${API_URLS.Transaction}${transactionId}/`)
-      .then((data) => {
-        const transaction = data.data as TransactionTypeDetailed;
-        setSelectedTransaction({
-          ...transaction,
-          product: transaction.product.id,
-          address: transaction.address.id,
-        });
-        setProduct({ ...transaction.product, label: transaction.product.name });
-        setAddress({
-          ...transaction.address,
-          label: transaction.address.local_name,
-        });
-        setPrice(transaction.price.toString());
-        setCount(transaction.count.toString());
-      })
-      .catch(() => {
-        setSelectedTransaction(null);
-        setProduct(null);
-        setAddress(null);
-        setPrice("0");
-        setCount("1");
-      });
-  }, [transactions, transactionId]);
+      .then(
+        (
+          data: APIResponseType<
+            TransactionType<ProductType<number>, ShopAddressType<number>>
+          >,
+        ) => {
+          setSelectedTransaction(data.data);
+          setProduct({ ...data.data.product, label: data.data.product.name });
+          setAddress({
+            ...data.data.address,
+            label: data.data.address.local_name,
+          });
+          setPrice(data.data.price.toString());
+          setCount(data.data.count.toString());
+        },
+      )
+      .catch(() => resetState());
+  }, [props.transactions, transactionId]);
 
   React.useEffect(() => {
     if (!product) return;
@@ -71,9 +84,17 @@ export function TransactionForm() {
     const data = {
       product_id: product.id,
     };
-    axios.post(`${API_URLS.Product}price/`, data).then((data) => {
-      setPrice(String((data.data as TransactionTypeDetailed).price ?? 0));
-    });
+    axios
+      .post(`${API_URLS.Product}price/`, data)
+      .then(
+        (
+          data: APIResponseType<
+            TransactionType<ProductType<number>, ShopAddressType<number>>
+          >,
+        ) => {
+          setPrice(String(data.data.price ?? 0));
+        },
+      );
   }, [product]);
 
   const submitHandler = (method: "post" | "put", url: string) => {
@@ -87,31 +108,37 @@ export function TransactionForm() {
       address: address!.id,
     };
     axios({ method, url, data })
-      .then((data) => {
-        if (method === "post") {
-          dispatch(
-            updateState({
-              transactions: [...transactions, data.data as TransactionType],
-              message: { message: "Transaction created", severity: "success" },
-            }),
-          );
-          navigate(`/create/transaction/${data.data.id}`);
-        } else if (method === "put") {
-          const newTransaction = transactions.map((t) =>
-            t.id === data.data.id ? data.data : t,
-          );
-          dispatch(
-            updateState({
-              transactions: newTransaction,
-              message: { message: "Transaction updated", severity: "success" },
-            }),
-          );
-        }
-      })
+      .then(
+        (
+          data: APIResponseType<
+            TransactionType<ProductType<number>, ShopAddressType<number>>
+          >,
+        ) => {
+          if (method === "post") {
+            props.setTransactions([...props.transactions, data.data]);
+            dispatch(
+              setMessage({
+                message: "Transaction created",
+                severity: "success",
+              }),
+            );
+            navigate(`${PagesURLs.Transaction}/${data.data.id}`);
+          } else if (method === "put") {
+            const newTransactions = props.transactions.map((t) =>
+              t.id === data.data.id ? data.data : t,
+            );
+            props.setTransactions(newTransactions);
+            dispatch(
+              setMessage({
+                message: "Transaction updated",
+                severity: "success",
+              }),
+            );
+          }
+        },
+      )
       .catch((e) => {
-        updateState({
-          message: { message: e.respose.data, severity: "error" },
-        });
+        dispatch(setMessage({ message: e.respose.data, severity: "error" }));
       });
   };
 
@@ -119,9 +146,9 @@ export function TransactionForm() {
     <Container maxWidth="lg">
       <Form title="Transaction form">
         <Autocomplete
-          options={addresses.map((a) => ({ ...a, label: a.local_name }))}
+          options={props.addresses.map((a) => ({ ...a, label: a.local_name }))}
           onChange={(_, v) => setAddress(v)}
-          disabled={addresses.length === 0}
+          disabled={props.addresses.length === 0}
           value={address}
           renderInput={(params) => (
             <TextField
@@ -129,13 +156,13 @@ export function TransactionForm() {
               label="Shop address"
               color={
                 selectedTransaction !== null &&
-                selectedTransaction.address !== address?.id
+                selectedTransaction.address?.id !== address?.id
                   ? "warning"
                   : "primary"
               }
               focused={
                 selectedTransaction !== null &&
-                selectedTransaction.address !== address?.id
+                selectedTransaction.address?.id !== address?.id
                   ? true
                   : undefined
               }
@@ -143,9 +170,9 @@ export function TransactionForm() {
           )}
         />
         <Autocomplete
-          options={products.map((p) => ({ ...p, label: p.name }))}
+          options={props.products.map((p) => ({ ...p, label: p.name }))}
           onChange={(_, v) => setProduct(v)}
-          disabled={products.length === 0}
+          disabled={props.products.length === 0}
           value={product}
           renderInput={(params) => (
             <TextField
@@ -153,13 +180,13 @@ export function TransactionForm() {
               label="Product"
               color={
                 selectedTransaction !== null &&
-                selectedTransaction.product !== product?.id
+                selectedTransaction.product?.id !== product?.id
                   ? "warning"
                   : "primary"
               }
               focused={
                 selectedTransaction !== null &&
-                selectedTransaction.product !== product?.id
+                selectedTransaction.product?.id !== product?.id
                   ? true
                   : undefined
               }
@@ -168,7 +195,8 @@ export function TransactionForm() {
         />
         <FormTextField
           isChanged={
-            selectedTransaction !== null && selectedTransaction.price !== price
+            selectedTransaction !== null &&
+            String(selectedTransaction.price) !== price
           }
           startAdornment={<InputAdornment position="start">$</InputAdornment>}
           label="Product price"
@@ -177,7 +205,8 @@ export function TransactionForm() {
         />
         <FormTextField
           isChanged={
-            selectedTransaction !== null && selectedTransaction.count !== count
+            selectedTransaction !== null &&
+            String(selectedTransaction.count) !== count
           }
           label="Products count"
           onChange={setCount}
