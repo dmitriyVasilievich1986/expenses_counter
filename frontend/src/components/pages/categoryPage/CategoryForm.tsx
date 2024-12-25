@@ -30,6 +30,7 @@ export function CategoryForm(props: {
   const [name, setName] = React.useState("");
 
   const resetState = () => {
+    setSelectedCategory(null);
     setDescription("");
     setParent(null);
     setName("");
