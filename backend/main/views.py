@@ -16,6 +16,7 @@ from .serializers import (
     ProductDetailedSerializer,
     ProductSerializer,
     ShopAddressSerializer,
+    ShopDetailedSerializer,
     ShopSerializer,
     SubCategorySerializer,
     TransactionDetailedSerializer,
@@ -83,6 +84,13 @@ class SubCategoryViewSet(ModelViewSet):
 class ShopViewSet(ModelViewSet):
     serializer_class = ShopSerializer
     queryset = Shop.objects.all()
+
+    def retrieve(
+        self, request: HttpRequest, *args: tuple[Any], **kwargs: dict[str, Any]
+    ) -> HttpResponse:
+        instance = self.get_object()
+        serializer = ShopDetailedSerializer(instance)
+        return Response(serializer.data)
 
 
 class TransactionViewSet(ModelViewSet):

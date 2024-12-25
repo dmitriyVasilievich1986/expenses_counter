@@ -47,6 +47,13 @@ class ShopSerializer(ModelSerializer):
         fields = "__all__"
 
 
+class ShopDetailedSerializer(ModelSerializer):
+    class Meta:
+        model = Shop
+        fields = "__all__"
+        depth = 1
+
+
 class ProductSerializer(ModelSerializer):
     class Meta:
         model = Product
