@@ -10,12 +10,14 @@ import { CategoryForm } from "./CategoryForm";
 import { CategoryType } from "./types";
 
 export function CategoryPage() {
-  const [categories, setCategories] = React.useState<CategoryType[]>([]);
+  const [categories, setCategories] = React.useState<CategoryType<number>[]>(
+    [],
+  );
 
   React.useEffect(() => {
     axios
       .get(API_URLS.Category)
-      .then((data: APIResponseType<CategoryType[]>) =>
+      .then((data: APIResponseType<CategoryType<number>[]>) =>
         setCategories(data.data),
       );
   }, []);

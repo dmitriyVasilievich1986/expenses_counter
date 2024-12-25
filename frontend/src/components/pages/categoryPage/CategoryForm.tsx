@@ -9,21 +9,22 @@ import TextField from "@mui/material/TextField";
 
 import { FormTextField, FormActions, Form } from "../../components/form";
 import { PagesURLs, APIResponseType, API_URLS } from "../../Constants";
-import { CategoryTypeDetailed, CategoryType } from "./types";
 import { setMessage } from "../../reducers/mainReducer";
+import { CategoryType } from "./types";
 
 export function CategoryForm(props: {
-  setCategories: (categories: CategoryType[]) => void;
-  categories: CategoryType[];
+  setCategories: (categories: CategoryType<number>[]) => void;
+  categories: CategoryType<number>[];
 }) {
   const { categoryId } = useParams();
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const [selectedCategory, setSelectedCategory] =
-    React.useState<CategoryTypeDetailed | null>(null);
+  const [selectedCategory, setSelectedCategory] = React.useState<CategoryType<
+    CategoryType<number>
+  > | null>(null);
   const [parent, setParent] = React.useState<
-    (CategoryType & { label: string }) | null
+    (CategoryType<number> & { label: string }) | null
   >(null);
   const [description, setDescription] = React.useState<string>("");
   const [name, setName] = React.useState("");
@@ -41,7 +42,7 @@ export function CategoryForm(props: {
     }
     axios
       .get(`${API_URLS.Category}${categoryId}/`)
-      .then((data: APIResponseType<CategoryTypeDetailed>) => {
+      .then((data: APIResponseType<CategoryType<CategoryType<number>>>) => {
         setParent(
           data.data.parent === null
             ? null
@@ -61,7 +62,7 @@ export function CategoryForm(props: {
       parent: parent === null ? null : parent.id,
     };
     axios({ method, url, data })
-      .then((data: APIResponseType<CategoryType>) => {
+      .then((data: APIResponseType<CategoryType<number>>) => {
         if (method === "post") {
           props.setCategories([...props.categories, data.data]);
           dispatch(

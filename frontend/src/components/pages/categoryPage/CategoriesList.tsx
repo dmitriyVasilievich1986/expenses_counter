@@ -9,7 +9,7 @@ import Box from "@mui/material/Box";
 import { CategoryType } from "./types";
 
 function CategoriesList(props: {
-  categories: CategoryType[];
+  categories: CategoryType<number>[];
   parent: number | null;
 }) {
   const { categoryId } = useParams();
@@ -43,6 +43,8 @@ function CategoriesList(props: {
   );
 }
 
-export function CategoriesListContainer(props: { categories: CategoryType[] }) {
+export function CategoriesListContainer(props: {
+  categories: CategoryType<number>[];
+}) {
   return <CategoriesList {...props} parent={null} />;
 }

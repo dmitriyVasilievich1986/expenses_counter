@@ -1,13 +1,6 @@
-type CategoryTypeBase = {
+export type CategoryType<C> = {
   id?: number | null;
   name: string;
+  parent: C | null;
   description: string;
-};
-
-export type CategoryType = CategoryTypeBase & {
-  parent: number | null;
-};
-
-export type CategoryTypeDetailed = CategoryTypeBase & {
-  parent: CategoryType | null;
 };
