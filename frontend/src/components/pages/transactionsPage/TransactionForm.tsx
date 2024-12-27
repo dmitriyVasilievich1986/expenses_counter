@@ -78,7 +78,11 @@ export function TransactionForm(props: {
       .catch(() => resetState());
   }, [props.transactions, transactionId]);
 
-  React.useEffect(() => {
+  const productChangeHandler = (
+    _: any,
+    v: ProductType<number> & { label: string },
+  ) => {
+    setProduct(v);
     if (!product) return;
 
     const data = {
@@ -95,7 +99,7 @@ export function TransactionForm(props: {
           setPrice(String(data.data.price ?? 0));
         },
       );
-  }, [product]);
+  };
 
   const submitHandler = (method: "post" | "put", url: string) => {
     const data = {
@@ -170,9 +174,13 @@ export function TransactionForm(props: {
           )}
         />
         <Autocomplete
-          options={props.products.map((p) => ({ ...p, label: p.name }))}
-          onChange={(_, v) => setProduct(v)}
+          options={props.products.map((p) => ({
+            ...p,
+            label: p.name,
+            sub_category: p.sub_category.id,
+          }))}
           disabled={props.products.length === 0}
+          onChange={productChangeHandler}
           value={product}
           renderInput={(params) => (
             <TextField
