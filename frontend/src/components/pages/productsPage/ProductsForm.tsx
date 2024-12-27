@@ -48,9 +48,7 @@ export function ProductsForm(props: {
       .get(`${API_URLS.Product}${productId}/`)
       .then((data: APIResponseType<ProductType<CategoryType<number>>>) => {
         setSubCategory(
-          data.data.sub_category === null
-            ? null
-            : { ...data.data.sub_category, label: data.data.sub_category.name },
+          data.data.sub_category === null ? null : data.data.sub_category,
         );
         setDescription(data.data.description);
         setSelectedProduct(data.data);
@@ -115,9 +113,10 @@ export function ProductsForm(props: {
           value={description}
         />
         <Autocomplete
-          options={categories.map((c) => ({ ...c, label: c.name }))}
+          getOptionLabel={(option) => option.name}
           onChange={(_, v) => setSubCategory(v)}
           disabled={categories.length === 0}
+          options={categories}
           value={subCategory}
           renderInput={(params) => (
             <TextField

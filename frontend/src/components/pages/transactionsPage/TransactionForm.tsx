@@ -34,14 +34,17 @@ export function TransactionForm(props: {
 
   const [selectedTransaction, setSelectedTransaction] =
     React.useState<
-      TransactionType<ProductType<number>, ShopAddressType<number> | null>
+      TransactionType<
+        ProductType<CategoryType<number>>,
+        ShopAddressType<number> | null
+      >
     >(null);
-  const [address, setAddress] = React.useState<
-    (ShopAddressType<number> & { label: string }) | null
-  >(null);
-  const [product, setProduct] = React.useState<
-    (ProductType<number> & { label: string }) | null
-  >(null);
+  const [address, setAddress] = React.useState<ShopAddressType<number> | null>(
+    null,
+  );
+  const [product, setProduct] = React.useState<ProductType<
+    CategoryType<number>
+  > | null>(null);
   const [price, setPrice] = React.useState<string>("0");
   const [count, setCount] = React.useState<string>("1");
 
@@ -63,17 +66,17 @@ export function TransactionForm(props: {
       .then(
         (
           data: APIResponseType<
-            TransactionType<ProductType<number>, ShopAddressType<number>>
+            TransactionType<
+              ProductType<CategoryType<number>>,
+              ShopAddressType<number>
+            >
           >,
         ) => {
-          setSelectedTransaction(data.data);
-          setProduct({ ...data.data.product, label: data.data.product.name });
-          setAddress({
-            ...data.data.address,
-            label: data.data.address.local_name,
-          });
           setPrice(data.data.price.toString());
           setCount(data.data.count.toString());
+          setSelectedTransaction(data.data);
+          setProduct(data.data.product);
+          setAddress(data.data.address);
         },
       )
       .catch(() => resetState());
@@ -81,7 +84,7 @@ export function TransactionForm(props: {
 
   const productChangeHandler = (
     _: any,
-    v: ProductType<number> & { label: string },
+    v: ProductType<CategoryType<number>> & { label: string },
   ) => {
     setProduct(v);
     if (!product) return;
@@ -151,9 +154,10 @@ export function TransactionForm(props: {
     <Container maxWidth="lg">
       <Form title="Transaction form">
         <Autocomplete
-          options={props.addresses.map((a) => ({ ...a, label: a.local_name }))}
-          onChange={(_, v) => setAddress(v)}
+          getOptionLabel={(option) => option.local_name}
           disabled={props.addresses.length === 0}
+          onChange={(_, v) => setAddress(v)}
+          options={props.addresses}
           value={address}
           renderInput={(params) => (
             <TextField
@@ -175,13 +179,11 @@ export function TransactionForm(props: {
           )}
         />
         <Autocomplete
-          options={props.products.map((p) => ({
-            ...p,
-            label: p.name,
-            sub_category: p.sub_category.id,
-          }))}
+          groupBy={(option) => option.sub_category.name}
+          getOptionLabel={(option) => option.name}
           disabled={props.products.length === 0}
           onChange={productChangeHandler}
+          options={props.products}
           value={product}
           renderInput={(params) => (
             <TextField

@@ -23,9 +23,7 @@ export function CategoryForm(props: {
   const [selectedCategory, setSelectedCategory] = React.useState<CategoryType<
     CategoryType<number>
   > | null>(null);
-  const [parent, setParent] = React.useState<
-    (CategoryType<number> & { label: string }) | null
-  >(null);
+  const [parent, setParent] = React.useState<CategoryType<number> | null>(null);
   const [description, setDescription] = React.useState<string>("");
   const [name, setName] = React.useState("");
 
@@ -44,11 +42,7 @@ export function CategoryForm(props: {
     axios
       .get(`${API_URLS.Category}${categoryId}/`)
       .then((data: APIResponseType<CategoryType<CategoryType<number>>>) => {
-        setParent(
-          data.data.parent === null
-            ? null
-            : { ...data.data.parent, label: data.data.parent.name },
-        );
+        setParent(data.data.parent === null ? null : data.data.parent);
         setDescription(data.data.description);
         setSelectedCategory(data.data);
         setName(data.data.name);
@@ -106,9 +100,8 @@ export function CategoryForm(props: {
           value={description}
         />
         <Autocomplete
-          options={props.categories
-            .filter((c) => c.id != parseInt(categoryId))
-            .map((c) => ({ ...c, label: c.name }))}
+          options={props.categories.filter((c) => c.id != parseInt(categoryId))}
+          getOptionLabel={(option) => option.name}
           disabled={props.categories.length === 0}
           onChange={(_, v) => setParent(v)}
           value={parent}

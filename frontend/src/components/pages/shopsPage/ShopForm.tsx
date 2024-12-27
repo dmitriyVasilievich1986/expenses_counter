@@ -25,9 +25,9 @@ export function ShopForm(props: {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const [category, setCategory] = React.useState<
-    (CategoryType<number> & { label: string }) | null
-  >(null);
+  const [category, setCategory] = React.useState<CategoryType<number> | null>(
+    null,
+  );
   const [categories, setCategories] = React.useState<CategoryType<number>[]>(
     [],
   );
@@ -46,7 +46,7 @@ export function ShopForm(props: {
   const getCategoryWithLabel = (
     category: CategoryType<number>,
     label?: string,
-  ) => {
+  ): string => {
     const newLabel = label ?? category.name;
     if (category.parent === null || categories.length === 0) {
       return newLabel;
@@ -74,14 +74,7 @@ export function ShopForm(props: {
     axios
       .get(`${API_URLS.Shop}${shopId}/`)
       .then((data: APIResponseType<ShopType<CategoryType<number>>>) => {
-        setCategory(
-          data.data.category === null
-            ? null
-            : {
-                ...data.data.category,
-                label: getCategoryWithLabel(data.data.category),
-              },
-        );
+        setCategory(data.data.category === null ? null : data.data.category);
         setDescription(data.data.description);
         setIconURL(data.data.icon ?? "");
         props.setSelectedShop(data.data);
@@ -150,12 +143,10 @@ export function ShopForm(props: {
           }
         />
         <Autocomplete
-          options={categories.map((c) => ({
-            ...c,
-            label: getCategoryWithLabel(c),
-          }))}
+          getOptionLabel={(option) => getCategoryWithLabel(option)}
           onChange={(_, v) => setCategory(v)}
           disabled={categories.length === 0}
+          options={categories}
           value={category}
           renderInput={(params) => (
             <TextField
