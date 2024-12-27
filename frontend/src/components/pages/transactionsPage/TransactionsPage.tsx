@@ -6,9 +6,10 @@ import Box from "@mui/material/Box";
 
 import { APIResponseType, API_URLS } from "../../Constants";
 import { Calendar } from "../../components/calendar";
+import { ShopAddressType } from "../shopsPage/types";
+import { CategoryType } from "../categoryPage/types";
 import { TransactionForm } from "./TransactionForm";
 import { TransactionList } from "./TransactionList";
-import { ShopAddressType } from "../shopsPage/types";
 import { ProductType } from "../productsPage/types";
 import { TransactionType } from "./types";
 
@@ -19,7 +20,9 @@ export function TransactionsPage() {
   const [addresses, setAddresses] = React.useState<ShopAddressType<number>[]>(
     [],
   );
-  const [products, setProducts] = React.useState<ProductType<number>[]>([]);
+  const [products, setProducts] = React.useState<
+    ProductType<CategoryType<number>>[]
+  >([]);
 
   React.useEffect(() => {
     axios
@@ -46,7 +49,7 @@ export function TransactionsPage() {
       });
     axios
       .get(API_URLS.Product)
-      .then((data: APIResponseType<ProductType<number>[]>) => {
+      .then((data: APIResponseType<ProductType<CategoryType<number>>[]>) => {
         setProducts(data.data);
       })
       .catch(() => {

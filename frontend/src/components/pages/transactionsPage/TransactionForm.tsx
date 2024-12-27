@@ -13,6 +13,7 @@ import { FormTextField, FormActions, Form } from "../../components/form";
 import { PagesURLs, APIResponseType, API_URLS } from "../../Constants";
 import { setMessage } from "../../reducers/mainReducer";
 import { ShopAddressType } from "../shopsPage/types";
+import { CategoryType } from "../categoryPage/types";
 import { ProductType } from "../productsPage/types";
 import { TransactionType } from "./types";
 
@@ -23,8 +24,8 @@ export function TransactionForm(props: {
     >
   >;
   transactions: TransactionType<ProductType<number>, ShopAddressType<number>>[];
+  products: ProductType<CategoryType<number>>[];
   addresses: ShopAddressType<number>[];
-  products: ProductType<number>[];
 }) {
   const [searchParams, _] = useSearchParams();
   const { transactionId } = useParams();
