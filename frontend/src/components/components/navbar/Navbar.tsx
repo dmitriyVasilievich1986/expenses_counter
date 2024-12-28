@@ -1,44 +1,43 @@
-import { NavLink } from "react-router-dom";
+import { PagesURLs } from "../../Constants";
 import classnames from "classnames/bind";
+import { Link } from "../link/Link";
 import style from "./style.scss";
 import React from "react";
 
 const cx = classnames.bind(style);
 
-function Navbar() {
+export function Navbar() {
   return (
     <div className={cx("navbar")}>
       <div className={cx("wrapper")}>
-        <NavLink className={({ isActive }) => cx("link", { isActive })} to="/">
+        <Link className={({ isActive }) => cx("link", { isActive })} to="/">
           Home
-        </NavLink>
-        <NavLink
+        </Link>
+        <Link
           className={({ isActive }) => cx("link", { isActive })}
-          to="/create/transaction"
+          to={PagesURLs.Transaction}
         >
           Transactions
-        </NavLink>
-        <NavLink
+        </Link>
+        <Link
           className={({ isActive }) => cx("link", { isActive })}
-          to="/create/category"
+          to={PagesURLs.Category}
         >
           Categories
-        </NavLink>
-        <NavLink
+        </Link>
+        <Link
           className={({ isActive }) => cx("link", { isActive })}
-          to="/create/shop"
+          to={PagesURLs.Shop}
         >
           Shops
-        </NavLink>
-        <NavLink
+        </Link>
+        <Link
           className={({ isActive }) => cx("link", { isActive })}
-          to="/create/product"
+          to={PagesURLs.Product}
         >
           Products
-        </NavLink>
+        </Link>
       </div>
     </div>
   );
 }
-
-export default Navbar;

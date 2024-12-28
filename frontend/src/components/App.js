@@ -5,7 +5,8 @@ import { API_URLS } from "Constants";
 import React from "react";
 import axios from "axios";
 
-import { Navbar, Alert } from "./components";
+import { Navbar } from "./components/navbar/Navbar";
+import { Alert } from "./components/alert/Alert";
 
 import {
   TransactionsPage,
