@@ -27,7 +27,7 @@ export function TransactionForm(props: {
   products: ProductType<CategoryType<number>>[];
   addresses: ShopAddressType<number>[];
 }) {
-  const [searchParams, _] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { transactionId } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -104,6 +104,14 @@ export function TransactionForm(props: {
         },
       );
   };
+
+  React.useEffect(() => {
+    setSearchParams((prev) => {
+      if (address === null) prev.delete("address");
+      else prev.set("address", address.id.toString());
+      return prev;
+    });
+  }, [address]);
 
   const submitHandler = (method: "post" | "put", url: string) => {
     const data = {
