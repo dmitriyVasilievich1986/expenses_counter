@@ -84,16 +84,16 @@ export function TransactionForm(props: {
 
   const productChangeHandler = (
     _: any,
-    v: ProductType<CategoryType<number>> & { label: string },
+    value: ProductType<CategoryType<number>>,
   ) => {
-    setProduct(v);
-    if (!product) return;
+    setProduct(value);
+    if (!value) return;
 
     const data = {
-      product_id: product.id,
+      product_id: value.id,
     };
     axios
-      .post(`${API_URLS.Product}price/`, data)
+      .post(API_URLS.ProductPrice, data)
       .then(
         (
           data: APIResponseType<
