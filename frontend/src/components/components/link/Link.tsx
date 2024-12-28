@@ -6,12 +6,12 @@ import { UrlParamsType } from "./types";
 
 class Params implements UrlParamsType {
   address?: string | null = undefined;
-  date?: string | null = undefined;
+  currentDate?: string | null = undefined;
 
   constructor(params?: UrlParamsType) {
     const [searchParams] = useSearchParams();
 
-    this.date =
+    this.currentDate =
       params?.currentDate === null
         ? undefined
         : searchParams.get("currentDate");
