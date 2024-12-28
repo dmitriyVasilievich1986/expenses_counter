@@ -1,3 +1,3 @@
-import { Link } from "./Link";
+import { Params, Link } from "./Link";
 
-export { Link };
+export { Params, Link };

@@ -10,31 +10,19 @@ export function Navbar() {
   return (
     <div className={cx("navbar")}>
       <div className={cx("wrapper")}>
-        <Link className={({ isActive }) => cx("link", { isActive })} to="/">
+        <Link to="/" showActive>
           Home
         </Link>
-        <Link
-          className={({ isActive }) => cx("link", { isActive })}
-          to={PagesURLs.Transaction}
-        >
+        <Link to={PagesURLs.Transaction} showActive>
           Transactions
         </Link>
-        <Link
-          className={({ isActive }) => cx("link", { isActive })}
-          to={PagesURLs.Category}
-        >
+        <Link to={PagesURLs.Category} showActive>
           Categories
         </Link>
-        <Link
-          className={({ isActive }) => cx("link", { isActive })}
-          to={PagesURLs.Shop}
-        >
+        <Link to={PagesURLs.Shop} showActive>
           Shops
         </Link>
-        <Link
-          className={({ isActive }) => cx("link", { isActive })}
-          to={PagesURLs.Product}
-        >
+        <Link to={PagesURLs.Product} showActive>
           Products
         </Link>
       </div>

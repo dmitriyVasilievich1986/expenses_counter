@@ -1,0 +1,37 @@
+.prime {
+  text-decoration: none;
+  font-weight: bolder;
+  font-size: larger;
+  cursor: pointer;
+  color: #000;
+
+  &:hover {
+    color: #ffb703;
+  }
+
+  &.isActive {
+    text-decoration: underline 4px #000;
+
+    &:hover {
+      text-decoration: underline 4px #ffb703;
+    }
+  }
+}
+
+.secondary {
+  text-decoration: none;
+  cursor: pointer;
+  color: #000;
+
+  &:hover {
+    color: #ccc;
+  }
+
+  &.isActive {
+    text-decoration: underline 4px #000;
+
+    &:hover {
+      text-decoration: underline 4px #ccc;
+    }
+  }
+}

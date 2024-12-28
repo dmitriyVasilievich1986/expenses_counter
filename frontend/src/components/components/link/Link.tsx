@@ -1,10 +1,14 @@
 import { NavLink, useSearchParams } from "react-router-dom";
+import classnames from "classnames/bind";
 import React from "react";
 
 import { PagesURLs } from "../../Constants";
 import { UrlParamsType } from "./types";
+import style from "./style.scss";
 
-class Params implements UrlParamsType {
+const cx = classnames.bind(style);
+
+export class Params implements UrlParamsType {
   address?: string | null = undefined;
   currentDate?: string | null = undefined;
 
@@ -32,13 +36,16 @@ export function Link(props: {
   to: PagesURLs | string;
   params?: UrlParamsType;
   children: React.ReactNode;
-  className?:
-    | string
-    | (({ isActive }: { isActive: boolean }) => string | undefined);
+  className?: "prime" | "secondary";
+  showActive?: boolean;
 }) {
   return (
     <NavLink
-      className={props.className}
+      className={({ isActive }) =>
+        cx(props.className ?? "prime", {
+          isActive: isActive && props.showActive,
+        })
+      }
       to={{ pathname: props.to, search: new Params(props.params).toString() }}
     >
       {props.children}
