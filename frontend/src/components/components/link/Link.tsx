@@ -32,7 +32,9 @@ export function Link(props: {
   to: PagesURLs | string;
   params?: UrlParamsType;
   children: React.ReactNode;
-  className?: string;
+  className?:
+    | string
+    | (({ isActive }: { isActive: boolean }) => string | undefined);
 }) {
   return (
     <NavLink
