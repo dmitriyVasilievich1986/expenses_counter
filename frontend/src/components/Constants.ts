@@ -9,6 +9,7 @@ export enum PagesURLs {
 }
 
 export enum API_URLS {
+  TransactionDateRange = `${API_URL}transaction/date_range/`,
   ProductPopular = `${API_URL}product/popular/`,
   ProductPrice = `${API_URL}product/price/`,
   SubCategory = `${API_URL}sub_category/`,

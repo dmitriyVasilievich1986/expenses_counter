@@ -174,6 +174,14 @@ class TransactionViewSet(ModelViewSet):
         serializer = TransactionDetailedSerializer(instance)
         return Response(serializer.data)
 
+    @action(detail=False, methods=["post"])
+    def date_range(self, request: HttpRequest) -> HttpResponse:
+        start = request.data["start_date"]
+        end = request.data["end_date"]
+        transactions = Transaction.objects.filter(date__gte=start, date__lte=end)
+        serializer = self.get_serializer(transactions, many=True)
+        return Response(serializer.data)
+
     def update(
         self, request: HttpRequest, *args: tuple[Any], **kwargs: dict[str, Any]
     ) -> HttpResponse:

@@ -33,20 +33,6 @@ export function TransactionsPage() {
 
   React.useEffect(() => {
     axios
-      .get(API_URLS.Transaction)
-      .then(
-        (
-          data: APIResponseType<
-            TransactionType<ProductType<number>, ShopAddressType<number>>[]
-          >,
-        ) => {
-          setTransactions(data.data);
-        },
-      )
-      .catch(() => {
-        setTransactions([]);
-      });
-    axios
       .get(API_URLS.Address)
       .then((data: APIResponseType<ShopAddressType<number>[]>) => {
         setAddresses(data.data);
@@ -65,7 +51,9 @@ export function TransactionsPage() {
   }, []);
 
   React.useEffect(() => {
+    const currentDate: string | undefined = searchParams.get("currentDate");
     const address = searchParams.get("address");
+
     if (!!address) {
       axios
         .post(`${API_URLS.ProductPopular}`, { address })
@@ -81,6 +69,22 @@ export function TransactionsPage() {
         .catch(() => setPopularProducts([]));
     } else {
       setPopularProducts([]);
+    }
+    if (!!currentDate) {
+      axios
+        .post(`${API_URLS.ProductPopular}`, { address })
+        .then(
+          (
+            data: APIResponseType<
+              TransactionType<ProductType<number>, ShopAddressType<number>>[]
+            >,
+          ) => {
+            setTransactions(data.data);
+          },
+        )
+        .catch(() => setTransactions([]));
+    } else {
+      setTransactions([]);
     }
   }, [searchParams]);
 
