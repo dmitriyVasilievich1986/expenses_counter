@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any, TypedDict
 
+from django.db.models import Count
 from django.http.request import HttpRequest
 from django.http.response import HttpResponse
 from django.shortcuts import render
@@ -19,6 +20,7 @@ from .serializers import (
     ShopSerializer,
     SubCategorySerializer,
     TransactionDetailedSerializer,
+    TransactionSerializer,
 )
 
 
@@ -47,6 +49,22 @@ class ProductViewSet(ModelViewSet):
             .first()
         )
         serializer = TransactionDetailedSerializer(transaction)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=["post"])
+    def popular(self, request: HttpRequest) -> HttpResponse:
+        address = ShopAddress.objects.get(pk=request.data["address"])
+        popular_products = (
+            Transaction.objects.filter(address=address)
+            .values("product")
+            .annotate(total=Count("product"))
+            .order_by("-total")[:5]
+        )
+        transactions = [
+            Transaction.objects.filter(product_id=x["product"]).first()
+            for x in popular_products
+        ]
+        serializer = TransactionSerializer(transactions, many=True)
         return Response(serializer.data)
 
 

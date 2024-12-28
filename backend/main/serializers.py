@@ -9,13 +9,6 @@ class ShopAddressSerializer(ModelSerializer):
         fields = "__all__"
 
 
-class TransactionDetailedSerializer(ModelSerializer):
-    class Meta:
-        model = Transaction
-        fields = "__all__"
-        depth = 1
-
-
 class CategorySerializer(ModelSerializer):
     class Meta:
         model = Category
@@ -53,3 +46,19 @@ class ProductDetailedSerializer(ModelSerializer):
         model = Product
         fields = "__all__"
         depth = 1
+
+
+class TransactionSerializer(ModelSerializer):
+    class Meta:
+        model = Transaction
+        fields = "__all__"
+        depth = 1
+
+
+class TransactionDetailedSerializer(ModelSerializer):
+    product = ProductDetailedSerializer()
+    address = ShopAddressSerializer()
+
+    class Meta:
+        model = Transaction
+        fields = "__all__"

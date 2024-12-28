@@ -1,6 +1,8 @@
+import { useSearchParams } from "react-router-dom";
 import * as React from "react";
 import axios from "axios";
 
+import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid2";
 import Box from "@mui/material/Box";
 
@@ -23,6 +25,11 @@ export function TransactionsPage() {
   const [products, setProducts] = React.useState<
     ProductType<CategoryType<number>>[]
   >([]);
+  const [popularProducts, setPopularProducts] = React.useState<
+    TransactionType<ProductType<number>, ShopAddressType<number>>[]
+  >([]);
+
+  const [searchParams, _] = useSearchParams();
 
   React.useEffect(() => {
     axios
@@ -57,6 +64,26 @@ export function TransactionsPage() {
       });
   }, []);
 
+  React.useEffect(() => {
+    const address = searchParams.get("address");
+    if (!!address) {
+      axios
+        .post(`${API_URLS.ProductPopular}`, { address })
+        .then(
+          (
+            data: APIResponseType<
+              TransactionType<ProductType<number>, ShopAddressType<number>>[]
+            >,
+          ) => {
+            setPopularProducts(data.data);
+          },
+        )
+        .catch(() => setPopularProducts([]));
+    } else {
+      setPopularProducts([]);
+    }
+  }, [searchParams]);
+
   return (
     <Box sx={{ flexGrow: 1 }}>
       <Grid container spacing={2}>
@@ -73,6 +100,10 @@ export function TransactionsPage() {
         </Grid>
         <Grid size={{ xs: 12, sm: 12, md: 3 }}>
           <Calendar />
+          <Typography variant="h6" align="center">
+            Popular Products:
+          </Typography>
+          <TransactionList transactions={popularProducts} />
         </Grid>
       </Grid>
     </Box>
