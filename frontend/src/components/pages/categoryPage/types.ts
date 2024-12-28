@@ -4,3 +4,6 @@ export type CategoryType<C> = {
   parent: C | null;
   description: string;
 };
+
+export type CategoryTypeNumber = CategoryType<number>;
+export type CategoryTypeDetailed = CategoryType<CategoryTypeNumber>;

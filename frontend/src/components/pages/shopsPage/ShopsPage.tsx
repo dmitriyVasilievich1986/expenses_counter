@@ -5,31 +5,29 @@ import Stack from "@mui/material/Stack";
 import Grid from "@mui/material/Grid2";
 import Box from "@mui/material/Box";
 
+import {
+  ShopTypeNumber,
+  ShopTypeDetailed,
+  ShopAddressTypeNumber,
+} from "./types";
 import { APIResponseType, API_URLS } from "../../Constants";
-import { ShopAddressType, ShopType } from "./types";
-import { CategoryType } from "../categoryPage/types";
 import { AddressForm } from "./AddressForm";
 import { ShopsList } from "./ShopsList";
 import { ShopForm } from "./ShopForm";
 
 export function ShopsPage() {
-  const [selectedShop, setSelectedShop] = React.useState<ShopType<
-    CategoryType<number>
-  > | null>(null);
-  const [addresses, setAddresses] = React.useState<ShopAddressType<number>[]>(
-    [],
-  );
-  const [shops, setShops] = React.useState<ShopType<number>[]>([]);
+  const [selectedShop, setSelectedShop] =
+    React.useState<ShopTypeDetailed | null>(null);
+  const [addresses, setAddresses] = React.useState<ShopAddressTypeNumber[]>([]);
+  const [shops, setShops] = React.useState<ShopTypeNumber[]>([]);
 
   React.useEffect(() => {
-    axios
-      .get(API_URLS.Shop)
-      .then((data: APIResponseType<ShopType<number>[]>) => {
-        setShops(data.data);
-      });
+    axios.get(API_URLS.Shop).then((data: APIResponseType<ShopTypeNumber[]>) => {
+      setShops(data.data);
+    });
     axios
       .get(API_URLS.Address)
-      .then((data: APIResponseType<ShopAddressType<number>[]>) => {
+      .then((data: APIResponseType<ShopAddressTypeNumber[]>) => {
         setAddresses(data.data);
       });
   }, []);

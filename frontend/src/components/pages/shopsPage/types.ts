@@ -1,3 +1,5 @@
+import { CategoryTypeNumber } from "../categoryPage/types";
+
 export type ShopType<C> = {
   id?: number | null;
   category: C;
@@ -6,6 +8,9 @@ export type ShopType<C> = {
   description: string;
 };
 
+export type ShopTypeNumber = ShopType<number>;
+export type ShopTypeDetailed = ShopType<CategoryTypeNumber>;
+
 export type ShopAddressType<S> = {
   id?: number | null;
   shop: S;
@@ -13,7 +18,10 @@ export type ShopAddressType<S> = {
   local_name: string;
 };
 
+export type ShopAddressTypeNumber = ShopAddressType<number>;
+export type ShopAddressTypeDetailed = ShopAddressType<ShopTypeNumber>;
+
 export type ShopProps = {
-  shops: ShopType<number>[];
-  addresses: ShopAddressType<number>[];
+  shops: ShopTypeNumber[];
+  addresses: ShopAddressTypeNumber[];
 };

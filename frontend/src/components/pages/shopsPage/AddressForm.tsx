@@ -7,21 +7,20 @@ import Container from "@mui/material/Container";
 
 import { FormTextField, FormActions, Form } from "../../components/form";
 import { PagesURLs, APIResponseType, API_URLS } from "../../Constants";
+import { ShopTypeDetailed, ShopAddressTypeNumber } from "./types";
 import { setMessage } from "../../reducers/mainReducer";
-import { CategoryType } from "../categoryPage/types";
-import { ShopAddressType, ShopType } from "./types";
 
 export function AddressForm(props: {
-  selectedShop: ShopType<CategoryType<number>> | null;
-  setAddresses: React.Dispatch<React.SetStateAction<ShopAddressType<number>[]>>;
-  addresses: ShopAddressType<number>[];
+  setAddresses: React.Dispatch<React.SetStateAction<ShopAddressTypeNumber[]>>;
+  selectedShop: ShopTypeDetailed | null;
+  addresses: ShopAddressTypeNumber[];
 }) {
   const { addressId } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
   const [selectedAddress, setSelectedAddress] =
-    React.useState<ShopAddressType<number> | null>(null);
+    React.useState<ShopAddressTypeNumber | null>(null);
   const [localName, setLocalName] = React.useState<string>("");
   const [address, setAddress] = React.useState<string>("");
 
@@ -38,7 +37,7 @@ export function AddressForm(props: {
     }
     axios
       .get(`${API_URLS.Address}${addressId}/`)
-      .then((data: APIResponseType<ShopAddressType<number>>) => {
+      .then((data: APIResponseType<ShopAddressTypeNumber>) => {
         setLocalName(data.data.local_name);
         setAddress(data.data.address);
         setSelectedAddress(data.data);
@@ -53,7 +52,7 @@ export function AddressForm(props: {
       shop: props.selectedShop!.id,
     };
     axios({ method, url, data })
-      .then((data: APIResponseType<ShopAddressType<number>>) => {
+      .then((data: APIResponseType<ShopAddressTypeNumber>) => {
         if (method === "post") {
           props.setAddresses([...props.addresses, data.data]);
           dispatch(

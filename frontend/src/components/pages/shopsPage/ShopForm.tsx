@@ -9,28 +9,26 @@ import TextField from "@mui/material/TextField";
 
 import { FormTextField, FormActions, Form } from "../../components/form";
 import { PagesURLs, APIResponseType, API_URLS } from "../../Constants";
+import { ShopTypeNumber, ShopTypeDetailed } from "./types";
+import { CategoryTypeNumber } from "../categoryPage/types";
 import { setMessage } from "../../reducers/mainReducer";
-import { CategoryType } from "../categoryPage/types";
-import { ShopType } from "./types";
 
 export function ShopForm(props: {
   setSelectedShop: React.Dispatch<
-    React.SetStateAction<ShopType<CategoryType<number>> | null>
+    React.SetStateAction<ShopTypeDetailed | null>
   >;
-  selectedShop: ShopType<CategoryType<number>> | null;
-  setShops: React.Dispatch<React.SetStateAction<ShopType<number>[]>>;
-  shops: ShopType<number>[];
+  setShops: React.Dispatch<React.SetStateAction<ShopTypeNumber[]>>;
+  selectedShop: ShopTypeDetailed | null;
+  shops: ShopTypeNumber[];
 }) {
   const { shopId } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const [category, setCategory] = React.useState<CategoryType<number> | null>(
+  const [category, setCategory] = React.useState<CategoryTypeNumber | null>(
     null,
   );
-  const [categories, setCategories] = React.useState<CategoryType<number>[]>(
-    [],
-  );
+  const [categories, setCategories] = React.useState<CategoryTypeNumber[]>([]);
   const [description, setDescription] = React.useState<string>("");
   const [iconURL, setIconURL] = React.useState<string>("");
   const [name, setName] = React.useState<string>("");
@@ -38,13 +36,13 @@ export function ShopForm(props: {
   React.useEffect(() => {
     axios
       .get(API_URLS.Category)
-      .then((data: APIResponseType<CategoryType<number>[]>) => {
+      .then((data: APIResponseType<CategoryTypeNumber[]>) => {
         setCategories(data.data);
       });
   }, []);
 
   const getCategoryWithLabel = (
-    category: CategoryType<number>,
+    category: CategoryTypeNumber,
     label?: string,
   ): string => {
     const newLabel = label ?? category.name;
@@ -73,7 +71,7 @@ export function ShopForm(props: {
     }
     axios
       .get(`${API_URLS.Shop}${shopId}/`)
-      .then((data: APIResponseType<ShopType<CategoryType<number>>>) => {
+      .then((data: APIResponseType<ShopTypeDetailed>) => {
         setCategory(data.data.category === null ? null : data.data.category);
         setDescription(data.data.description);
         setIconURL(data.data.icon ?? "");
@@ -91,7 +89,7 @@ export function ShopForm(props: {
       category: category?.id || null,
     };
     axios({ method, url, data })
-      .then((data: APIResponseType<ShopType<number>>) => {
+      .then((data: APIResponseType<ShopTypeNumber>) => {
         if (method === "post") {
           props.setShops([...props.shops, data.data]);
           dispatch(

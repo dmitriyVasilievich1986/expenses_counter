@@ -7,26 +7,21 @@ import Grid from "@mui/material/Grid2";
 import Box from "@mui/material/Box";
 
 import { APIResponseType, API_URLS } from "../../Constants";
+import { ProductTypeDetailed } from "../productsPage/types";
+import { ShopAddressTypeNumber } from "../shopsPage/types";
 import { Calendar } from "../../components/calendar";
-import { ShopAddressType } from "../shopsPage/types";
-import { CategoryType } from "../categoryPage/types";
 import { TransactionForm } from "./TransactionForm";
 import { TransactionList } from "./TransactionList";
-import { ProductType } from "../productsPage/types";
-import { TransactionType } from "./types";
+import { TransactionTypeNumber } from "./types";
 
 export function TransactionsPage() {
   const [transactions, setTransactions] = React.useState<
-    TransactionType<ProductType<number>, ShopAddressType<number>>[]
+    TransactionTypeNumber[]
   >([]);
-  const [addresses, setAddresses] = React.useState<ShopAddressType<number>[]>(
-    [],
-  );
-  const [products, setProducts] = React.useState<
-    ProductType<CategoryType<number>>[]
-  >([]);
+  const [addresses, setAddresses] = React.useState<ShopAddressTypeNumber[]>([]);
+  const [products, setProducts] = React.useState<ProductTypeDetailed[]>([]);
   const [popularProducts, setPopularProducts] = React.useState<
-    TransactionType<ProductType<number>, ShopAddressType<number>>[]
+    TransactionTypeNumber[]
   >([]);
 
   const [searchParams, _] = useSearchParams();
@@ -34,7 +29,7 @@ export function TransactionsPage() {
   React.useEffect(() => {
     axios
       .get(API_URLS.Address)
-      .then((data: APIResponseType<ShopAddressType<number>[]>) => {
+      .then((data: APIResponseType<ShopAddressTypeNumber[]>) => {
         setAddresses(data.data);
       })
       .catch(() => {
@@ -42,7 +37,7 @@ export function TransactionsPage() {
       });
     axios
       .get(API_URLS.Product)
-      .then((data: APIResponseType<ProductType<CategoryType<number>>[]>) => {
+      .then((data: APIResponseType<ProductTypeDetailed[]>) => {
         setProducts(data.data);
       })
       .catch(() => {
@@ -57,15 +52,9 @@ export function TransactionsPage() {
     if (!!address) {
       axios
         .post(`${API_URLS.ProductPopular}`, { address })
-        .then(
-          (
-            data: APIResponseType<
-              TransactionType<ProductType<number>, ShopAddressType<number>>[]
-            >,
-          ) => {
-            setPopularProducts(data.data);
-          },
-        )
+        .then((data: APIResponseType<TransactionTypeNumber[]>) => {
+          setPopularProducts(data.data);
+        })
         .catch(() => setPopularProducts([]));
     } else {
       setPopularProducts([]);
@@ -73,15 +62,9 @@ export function TransactionsPage() {
     if (!!currentDate) {
       axios
         .post(`${API_URLS.ProductPopular}`, { address })
-        .then(
-          (
-            data: APIResponseType<
-              TransactionType<ProductType<number>, ShopAddressType<number>>[]
-            >,
-          ) => {
-            setTransactions(data.data);
-          },
-        )
+        .then((data: APIResponseType<TransactionTypeNumber[]>) => {
+          setTransactions(data.data);
+        })
         .catch(() => setTransactions([]));
     } else {
       setTransactions([]);

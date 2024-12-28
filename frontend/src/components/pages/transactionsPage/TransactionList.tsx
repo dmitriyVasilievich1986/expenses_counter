@@ -5,14 +5,10 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
 import List from "@mui/material/List";
 
-import { ShopAddressType } from "../shopsPage/types";
-import { ProductType } from "../productsPage/types";
+import { TransactionTypeNumber } from "./types";
 import { PagesURLs } from "../../Constants";
-import { TransactionType } from "./types";
 
-function Transaction(props: {
-  transaction: TransactionType<ProductType<number>, ShopAddressType<number>>;
-}) {
+function Transaction(props: { transaction: TransactionTypeNumber }) {
   let navigate = useNavigate();
 
   return (
@@ -31,7 +27,7 @@ function Transaction(props: {
 }
 
 export function TransactionList(props: {
-  transactions: TransactionType<ProductType<number>, ShopAddressType<number>>[];
+  transactions: TransactionTypeNumber[];
 }) {
   if (props.transactions.length === 0) return null;
   return (

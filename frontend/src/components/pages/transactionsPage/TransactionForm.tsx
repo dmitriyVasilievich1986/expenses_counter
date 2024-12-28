@@ -10,22 +10,19 @@ import Container from "@mui/material/Container";
 import TextField from "@mui/material/TextField";
 
 import { FormTextField, FormActions, Form } from "../../components/form";
+import { TransactionTypeNumber, TransactionTypeDetailed } from "./types";
 import { PagesURLs, APIResponseType, API_URLS } from "../../Constants";
+import { ProductTypeDetailed } from "../productsPage/types";
 import { setMessage } from "../../reducers/mainReducer";
 import { ShopAddressType } from "../shopsPage/types";
-import { CategoryType } from "../categoryPage/types";
-import { ProductType } from "../productsPage/types";
-import { TransactionType } from "./types";
 
 export function TransactionForm(props: {
   setTransactions: React.Dispatch<
-    React.SetStateAction<
-      TransactionType<ProductType<number>, ShopAddressType<number>>[]
-    >
+    React.SetStateAction<TransactionTypeNumber[]>
   >;
-  transactions: TransactionType<ProductType<number>, ShopAddressType<number>>[];
-  products: ProductType<CategoryType<number>>[];
+  transactions: TransactionTypeNumber[];
   addresses: ShopAddressType<number>[];
+  products: ProductTypeDetailed[];
 }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const { transactionId } = useParams();
@@ -33,18 +30,13 @@ export function TransactionForm(props: {
   const dispatch = useDispatch();
 
   const [selectedTransaction, setSelectedTransaction] =
-    React.useState<
-      TransactionType<
-        ProductType<CategoryType<number>>,
-        ShopAddressType<number> | null
-      >
-    >(null);
+    React.useState<TransactionTypeDetailed | null>(null);
   const [address, setAddress] = React.useState<ShopAddressType<number> | null>(
     null,
   );
-  const [product, setProduct] = React.useState<ProductType<
-    CategoryType<number>
-  > | null>(null);
+  const [product, setProduct] = React.useState<ProductTypeDetailed | null>(
+    null,
+  );
   const [price, setPrice] = React.useState<string>("0");
   const [count, setCount] = React.useState<string>("1");
 
@@ -63,29 +55,17 @@ export function TransactionForm(props: {
     }
     axios
       .get(`${API_URLS.Transaction}${transactionId}/`)
-      .then(
-        (
-          data: APIResponseType<
-            TransactionType<
-              ProductType<CategoryType<number>>,
-              ShopAddressType<number>
-            >
-          >,
-        ) => {
-          setPrice(data.data.price.toString());
-          setCount(data.data.count.toString());
-          setSelectedTransaction(data.data);
-          setProduct(data.data.product);
-          setAddress(data.data.address);
-        },
-      )
+      .then((data: APIResponseType<TransactionTypeDetailed>) => {
+        setPrice(data.data.price.toString());
+        setCount(data.data.count.toString());
+        setSelectedTransaction(data.data);
+        setProduct(data.data.product);
+        setAddress(data.data.address);
+      })
       .catch(() => resetState());
   }, [props.transactions, transactionId]);
 
-  const productChangeHandler = (
-    _: any,
-    value: ProductType<CategoryType<number>>,
-  ) => {
+  const productChangeHandler = (_: any, value: ProductTypeDetailed) => {
     setProduct(value);
     if (!value) return;
 
@@ -94,15 +74,9 @@ export function TransactionForm(props: {
     };
     axios
       .post(API_URLS.ProductPrice, data)
-      .then(
-        (
-          data: APIResponseType<
-            TransactionType<ProductType<number>, ShopAddressType<number>>
-          >,
-        ) => {
-          setPrice(String(data.data.price ?? 0));
-        },
-      );
+      .then((data: APIResponseType<TransactionTypeNumber>) => {
+        setPrice(String(data.data.price ?? 0));
+      });
   };
 
   React.useEffect(() => {
@@ -124,35 +98,29 @@ export function TransactionForm(props: {
       address: address!.id,
     };
     axios({ method, url, data })
-      .then(
-        (
-          data: APIResponseType<
-            TransactionType<ProductType<number>, ShopAddressType<number>>
-          >,
-        ) => {
-          if (method === "post") {
-            props.setTransactions([...props.transactions, data.data]);
-            dispatch(
-              setMessage({
-                message: "Transaction created",
-                severity: "success",
-              }),
-            );
-            navigate(`${PagesURLs.Transaction}/${data.data.id}`);
-          } else if (method === "put") {
-            const newTransactions = props.transactions.map((t) =>
-              t.id === data.data.id ? data.data : t,
-            );
-            props.setTransactions(newTransactions);
-            dispatch(
-              setMessage({
-                message: "Transaction updated",
-                severity: "success",
-              }),
-            );
-          }
-        },
-      )
+      .then((data: APIResponseType<TransactionTypeNumber>) => {
+        if (method === "post") {
+          props.setTransactions([...props.transactions, data.data]);
+          dispatch(
+            setMessage({
+              message: "Transaction created",
+              severity: "success",
+            }),
+          );
+          navigate(`${PagesURLs.Transaction}/${data.data.id}`);
+        } else if (method === "put") {
+          const newTransactions = props.transactions.map((t) =>
+            t.id === data.data.id ? data.data : t,
+          );
+          props.setTransactions(newTransactions);
+          dispatch(
+            setMessage({
+              message: "Transaction updated",
+              severity: "success",
+            }),
+          );
+        }
+      })
       .catch((e) => {
         dispatch(setMessage({ message: e.respose.data, severity: "error" }));
       });

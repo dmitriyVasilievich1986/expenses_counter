@@ -5,20 +5,17 @@ import Grid from "@mui/material/Grid2";
 import Box from "@mui/material/Box";
 
 import { APIResponseType, API_URLS } from "../../Constants";
-import { CategoryType } from "../categoryPage/types";
 import { ProductsForm } from "./ProductsForm";
 import { ProductsList } from "./ProductsList";
-import { ProductType } from "./types";
+import { ProductTypeDetailed } from "./types";
 
 export function ProductsPage() {
-  const [products, setProducts] = React.useState<
-    ProductType<CategoryType<number>>[]
-  >([]);
+  const [products, setProducts] = React.useState<ProductTypeDetailed[]>([]);
 
   React.useEffect(() => {
     axios
       .get(API_URLS.Product)
-      .then((data: APIResponseType<ProductType<CategoryType<number>>[]>) => {
+      .then((data: APIResponseType<ProductTypeDetailed[]>) => {
         setProducts(data.data);
       });
   }, []);

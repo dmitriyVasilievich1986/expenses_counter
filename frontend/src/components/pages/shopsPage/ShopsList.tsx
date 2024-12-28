@@ -6,10 +6,10 @@ import ListItemText from "@mui/material/ListItemText";
 import List from "@mui/material/List";
 import Box from "@mui/material/Box";
 
-import { ShopAddressType, ShopType, ShopProps } from "./types";
+import { ShopProps, ShopTypeNumber, ShopAddressTypeNumber } from "./types";
 import { PagesURLs } from "../../Constants";
 
-function Addresses(props: { addresses: ShopAddressType<number>[] }) {
+function Addresses(props: { addresses: ShopAddressTypeNumber[] }) {
   let navigate = useNavigate();
 
   if (props.addresses.length === 0) return null;
@@ -29,7 +29,7 @@ function Addresses(props: { addresses: ShopAddressType<number>[] }) {
   );
 }
 
-function Shop(props: ShopProps & { shop: ShopType<number> }) {
+function Shop(props: ShopProps & { shop: ShopTypeNumber }) {
   let navigate = useNavigate();
   const filteredAddresses = props.addresses.filter(
     (a) => a.shop === props.shop.id,

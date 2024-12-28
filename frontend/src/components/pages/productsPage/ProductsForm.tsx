@@ -11,20 +11,18 @@ import { FormTextField, FormActions, Form } from "../../components/form";
 import { APIResponseType, PagesURLs, API_URLS } from "../../Constants";
 import { setMessage } from "../../reducers/mainReducer";
 import { CategoryType } from "../categoryPage/types";
-import { ProductType } from "./types";
+import { ProductTypeDetailed } from "./types";
 
 export function ProductsForm(props: {
-  products: ProductType<CategoryType<number>>[];
-  setProducts: React.Dispatch<
-    React.SetStateAction<ProductType<CategoryType<number>>[]>
-  >;
+  products: ProductTypeDetailed[];
+  setProducts: React.Dispatch<React.SetStateAction<ProductTypeDetailed[]>>;
 }) {
   const { productId } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
   const [selectedProduct, setSelectedProduct] =
-    React.useState<ProductType<CategoryType<number>>>(null);
+    React.useState<ProductTypeDetailed>(null);
   const [categories, setCategories] = React.useState<CategoryType<number>[]>(
     [],
   );
@@ -46,7 +44,7 @@ export function ProductsForm(props: {
     }
     axios
       .get(`${API_URLS.Product}${productId}/`)
-      .then((data: APIResponseType<ProductType<CategoryType<number>>>) => {
+      .then((data: APIResponseType<ProductTypeDetailed>) => {
         setSubCategory(
           data.data.sub_category === null ? null : data.data.sub_category,
         );
@@ -72,7 +70,7 @@ export function ProductsForm(props: {
       sub_category: subCategory!.id,
     };
     axios({ method, url, data })
-      .then((data: APIResponseType<ProductType<CategoryType<number>>>) => {
+      .then((data: APIResponseType<ProductTypeDetailed>) => {
         if (method === "post") {
           dispatch(
             setMessage({ message: "Product created", severity: "success" }),

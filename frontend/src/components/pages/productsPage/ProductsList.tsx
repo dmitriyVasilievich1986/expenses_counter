@@ -5,13 +5,10 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
 import List from "@mui/material/List";
 
-import { CategoryType } from "../categoryPage/types";
+import { ProductTypeDetailed } from "./types";
 import { PagesURLs } from "../../Constants";
-import { ProductType } from "./types";
 
-export function ProductsList(props: {
-  products: ProductType<CategoryType<number>>[];
-}) {
+export function ProductsList(props: { products: ProductTypeDetailed[] }) {
   const navigate = useNavigate();
 
   return (

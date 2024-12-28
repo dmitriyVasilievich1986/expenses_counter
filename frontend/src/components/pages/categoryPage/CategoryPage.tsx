@@ -7,17 +7,15 @@ import Box from "@mui/material/Box";
 import { APIResponseType, API_URLS } from "../../Constants";
 import { CategoriesListContainer } from "./CategoriesList";
 import { CategoryForm } from "./CategoryForm";
-import { CategoryType } from "./types";
+import { CategoryTypeNumber } from "./types";
 
 export function CategoryPage() {
-  const [categories, setCategories] = React.useState<CategoryType<number>[]>(
-    [],
-  );
+  const [categories, setCategories] = React.useState<CategoryTypeNumber[]>([]);
 
   React.useEffect(() => {
     axios
       .get(API_URLS.Category)
-      .then((data: APIResponseType<CategoryType<number>[]>) =>
+      .then((data: APIResponseType<CategoryTypeNumber[]>) =>
         setCategories(data.data),
       );
   }, []);
