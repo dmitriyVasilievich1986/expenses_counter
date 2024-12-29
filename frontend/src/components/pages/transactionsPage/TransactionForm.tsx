@@ -1,4 +1,4 @@
-import { useSearchParams, useParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useParams } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import dayjs from "dayjs";
 import axios from "axios";
@@ -9,24 +9,22 @@ import Autocomplete from "@mui/material/Autocomplete";
 import Container from "@mui/material/Container";
 import TextField from "@mui/material/TextField";
 
+import { ShopAddressType, ShopAddressTypeNumber } from "../shopsPage/types";
 import { FormTextField, FormActions, Form } from "../../components/form";
 import { TransactionTypeNumber, TransactionTypeDetailed } from "./types";
 import { PagesURLs, APIResponseType, API_URLS } from "../../Constants";
+import { useNavigateWithParams } from "../../components/link";
+import { UrlParamsType } from "../../components/link/types";
 import { ProductTypeDetailed } from "../productsPage/types";
 import { setMessage } from "../../reducers/mainReducer";
-import { ShopAddressType } from "../shopsPage/types";
 
 export function TransactionForm(props: {
   setTransactions: React.Dispatch<
     React.SetStateAction<TransactionTypeNumber[]>
   >;
-  transactions: TransactionTypeNumber[];
-  addresses: ShopAddressType<number>[];
-  products: ProductTypeDetailed[];
 }) {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const { transactionId } = useParams();
-  const navigate = useNavigate();
   const dispatch = useDispatch();
 
   const [selectedTransaction, setSelectedTransaction] =
@@ -34,11 +32,16 @@ export function TransactionForm(props: {
   const [address, setAddress] = React.useState<ShopAddressType<number> | null>(
     null,
   );
+  const [addresses, setAddresses] = React.useState<ShopAddressTypeNumber[]>([]);
+  const [products, setProducts] = React.useState<ProductTypeDetailed[]>([]);
   const [product, setProduct] = React.useState<ProductTypeDetailed | null>(
     null,
   );
+  const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const [price, setPrice] = React.useState<string>("0");
   const [count, setCount] = React.useState<string>("1");
+
+  const navigate = useNavigateWithParams();
 
   const resetState = () => {
     setSelectedTransaction(null);
@@ -63,9 +66,9 @@ export function TransactionForm(props: {
         setAddress(data.data.address);
       })
       .catch(() => resetState());
-  }, [props.transactions, transactionId]);
+  }, [transactionId]);
 
-  const productChangeHandler = (_: any, value: ProductTypeDetailed) => {
+  const productChangeHandler = (_: any, value: ProductTypeDetailed | null) => {
     setProduct(value);
     if (!value) return;
 
@@ -78,14 +81,6 @@ export function TransactionForm(props: {
         setPrice(String(data.data.price ?? 0));
       });
   };
-
-  React.useEffect(() => {
-    setSearchParams((prev) => {
-      if (address === null) prev.delete("address");
-      else prev.set("address", address.id.toString());
-      return prev;
-    });
-  }, [address]);
 
   const submitHandler = (method: "post" | "put", url: string) => {
     const data = {
@@ -100,19 +95,22 @@ export function TransactionForm(props: {
     axios({ method, url, data })
       .then((data: APIResponseType<TransactionTypeNumber>) => {
         if (method === "post") {
-          props.setTransactions([...props.transactions, data.data]);
+          props.setTransactions((prev) => [...prev, data.data]);
           dispatch(
             setMessage({
               message: "Transaction created",
               severity: "success",
             }),
           );
-          navigate(`${PagesURLs.Transaction}/${data.data.id}`);
+          const newParams: UrlParamsType = {
+            address: String(data.data.address.id),
+            currentDate: dayjs(data.data.date).format("YYYY-MM-DD"),
+          };
+          navigate(`${PagesURLs.Transaction}/${data.data.id}`, newParams);
         } else if (method === "put") {
-          const newTransactions = props.transactions.map((t) =>
-            t.id === data.data.id ? data.data : t,
+          props.setTransactions((prev) =>
+            prev.map((t) => (t.id === data.data.id ? data.data : t)),
           );
-          props.setTransactions(newTransactions);
           dispatch(
             setMessage({
               message: "Transaction updated",
@@ -122,8 +120,31 @@ export function TransactionForm(props: {
         }
       })
       .catch((e) => {
-        dispatch(setMessage({ message: e.respose.data, severity: "error" }));
+        console.log(e);
+        dispatch(setMessage({ message: "Error", severity: "error" }));
       });
+  };
+
+  const loadProducts = () => {
+    if (products.length !== 0 || isLoading) return;
+    setIsLoading(true);
+    axios
+      .get(API_URLS.Product)
+      .then((data: APIResponseType<ProductTypeDetailed[]>) => {
+        setProducts(data.data);
+      })
+      .finally(() => setIsLoading(false));
+  };
+
+  const loadAddresses = () => {
+    if (addresses.length !== 0 || isLoading) return;
+    setIsLoading(true);
+    axios
+      .get(API_URLS.Address)
+      .then((data: APIResponseType<ShopAddressTypeNumber[]>) => {
+        setAddresses(data.data);
+      })
+      .finally(() => setIsLoading(false));
   };
 
   return (
@@ -131,9 +152,11 @@ export function TransactionForm(props: {
       <Form title="Transaction form">
         <Autocomplete
           getOptionLabel={(option) => option.local_name}
-          disabled={props.addresses.length === 0}
+          getOptionKey={(option) => option.id as number}
           onChange={(_, v) => setAddress(v)}
-          options={props.addresses}
+          onOpen={loadAddresses}
+          options={addresses}
+          loading={isLoading}
           value={address}
           renderInput={(params) => (
             <TextField
@@ -156,10 +179,12 @@ export function TransactionForm(props: {
         />
         <Autocomplete
           groupBy={(option) => option.sub_category.name}
+          getOptionKey={(option) => option.id as number}
           getOptionLabel={(option) => option.name}
-          disabled={props.products.length === 0}
           onChange={productChangeHandler}
-          options={props.products}
+          onOpen={loadProducts}
+          loading={isLoading}
+          options={products}
           value={product}
           renderInput={(params) => (
             <TextField
