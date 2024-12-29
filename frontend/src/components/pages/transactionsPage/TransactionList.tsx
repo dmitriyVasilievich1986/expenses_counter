@@ -11,7 +11,10 @@ import { PagesURLs, APIResponseType, API_URLS } from "../../Constants";
 import { Params, Link } from "../../components/link";
 import { TransactionTypeNumber } from "./types";
 
-function Transaction(props: { transaction: TransactionTypeNumber }) {
+function Transaction(props: {
+  transaction: TransactionTypeNumber;
+  changeDate?: boolean;
+}) {
   return (
     <Box sx={{ my: 2 }}>
       <Link
@@ -20,7 +23,9 @@ function Transaction(props: { transaction: TransactionTypeNumber }) {
         params={
           new Params({
             address: String(props.transaction.address.id),
-            currentDate: dayjs(props.transaction.date).format("YYYY-MM-DD"),
+            currentDate: props.changeDate
+              ? dayjs(props.transaction.date).format("YYYY-MM-DD")
+              : undefined,
           })
         }
       >
