@@ -10,10 +10,10 @@ import Container from "@mui/material/Container";
 import TextField from "@mui/material/TextField";
 
 import {
-  setAddresses,
-  setMessage,
+  addAddresses,
   setIsLoading,
-  setProducts,
+  addProducts,
+  setMessage,
 } from "../../reducers/mainReducer";
 import { ShopAddressType, ShopAddressTypeNumber } from "../shopsPage/types";
 import { FormTextField, FormActions, Form } from "../../components/form";
@@ -133,7 +133,7 @@ export function TransactionForm(props: {
     axios
       .get(API_URLS.Product)
       .then((data: APIResponseType<ProductTypeDetailed[]>) => {
-        dispatch(setProducts(data.data));
+        dispatch(addProducts(data.data));
       })
       .finally(() => dispatch(setIsLoading(false)));
   };
@@ -144,7 +144,7 @@ export function TransactionForm(props: {
     axios
       .get(API_URLS.Address)
       .then((data: APIResponseType<ShopAddressTypeNumber[]>) => {
-        dispatch(setAddresses(data.data));
+        dispatch(addAddresses(data.data));
       })
       .finally(() => dispatch(setIsLoading(false)));
   };
