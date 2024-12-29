@@ -1,77 +1,96 @@
 import { useDispatch, useSelector } from "react-redux";
-import { useParams } from "react-router";
-import axios from "axios";
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 
 import Autocomplete from "@mui/material/Autocomplete";
 import Container from "@mui/material/Container";
 import TextField from "@mui/material/TextField";
 
 import { FormTextField, FormActions, Form } from "../../components/form";
-import { updateState } from "../../reducers/mainReducer";
-import { MainReducerType } from "../../reducers/types";
-import { API_URLS } from "../../Constants";
+import { useNavigateWithParams } from "../../components/link";
+import { Methods, APIs, API } from "../../api";
+import { PagesURLs } from "../../Constants";
+import {
+  updateCategoriy,
+  addCategories,
+  setCategories,
+} from "../../reducers/mainReducer";
+
+import { CategoryTypeNumber, CategoryTypeDetailed } from "./types";
+import { mainSelectorType } from "../../reducers/types";
 
 export function CategoryForm() {
-  const categories = useSelector(
-    (state: MainReducerType) => state.main.categories,
+  const isLoading = useSelector(
+    (state: mainSelectorType) => state.main.isLoading,
   );
+  const categories = useSelector(
+    (state: mainSelectorType) => state.main.categories,
+  );
+
+  const navigate = useNavigateWithParams();
   const { categoryId } = useParams();
   const dispatch = useDispatch();
+  const api = new API();
 
-  const [selectedCategory, setSelectedCategory] = React.useState(null);
-  const [description, setDescription] = React.useState("");
-  const [parent, setParent] = React.useState(null);
-  const [name, setName] = React.useState("");
+  const [selectedCategory, setSelectedCategory] =
+    useState<CategoryTypeDetailed | null>(null);
+  const [parent, setParent] = useState<CategoryTypeNumber | null>(null);
+  const [description, setDescription] = useState<string>("");
+  const [name, setName] = useState<string>("");
 
-  React.useEffect(() => {
-    const category =
-      categories.find((c) => c.id == parseInt(categoryId)) ?? null;
-    setSelectedCategory(category);
-    if (category === null) {
-      setDescription("");
-      setParent(null);
-      setName("");
-    } else {
-      const parent_ = categories.find((c) => c.id == category.parent) ?? null;
-      setParent(parent_ ? { ...parent_, label: parent_.name } : null);
-      setDescription(category.description);
-      setName(category.name);
-    }
-  }, [categoryId, categories]);
+  const resetState = (data?: CategoryTypeDetailed) => {
+    setDescription(data?.description ?? "");
+    setSelectedCategory(data ?? null);
+    setParent(data?.parent ?? null);
+    setName(data?.name ?? "");
+  };
 
-  const submitHandler = (method: "post" | "put", url: string) => {
+  const getCurrentData = () => {
+    api.send<CategoryTypeDetailed>({
+      url: `${APIs.Category}${categoryId}/`,
+      onSuccess: resetState,
+      onFail: resetState,
+    });
+  };
+
+  useEffect(() => {
+    if (categoryId === undefined) resetState();
+    else getCurrentData();
+  }, [categoryId]);
+
+  const submitHandler = (method: Methods.post | Methods.put, url: string) => {
     const data = {
       name,
       description,
-      parent: parent?.id || null,
+      parent: parent && parent.id,
     };
-    axios({ method, url, data })
-      .then((data) => {
-        if (method === "post") {
-          dispatch(
-            updateState({
-              categories: [...categories, data.data],
-              message: { message: "Category created", severity: "success" },
-            }),
-          );
-        } else if (method === "put") {
-          const newCategories = categories.map((c) =>
-            c.id === data.data.id ? data.data : c,
-          );
-          dispatch(
-            updateState({
-              categories: newCategories,
-              message: { message: "Category updated", severity: "success" },
-            }),
-          );
+    const messages = {
+      [Methods.post]: "Category created",
+      [Methods.put]: "Category updated",
+    };
+    api.send<CategoryTypeNumber>({
+      method,
+      url,
+      data,
+      successMessage: { message: messages[method] },
+      onSuccess: (data) => {
+        if (method === Methods.post) {
+          dispatch(addCategories([data]));
+          navigate(`${PagesURLs.Category}${data.id}`);
+        } else {
+          dispatch(updateCategoriy(data));
+          getCurrentData();
         }
-      })
-      .catch((e) => {
-        updateState({
-          message: { message: e.respose.data, severity: "error" },
-        });
-      });
+      },
+    });
+  };
+
+  const loadCategories = () => {
+    if (categories.length !== 0 || isLoading) return;
+    api.send<CategoryTypeNumber[]>({
+      url: APIs.Category,
+      onSuccess: (data) => dispatch(setCategories(data)),
+    });
   };
 
   return (
@@ -95,11 +114,13 @@ export function CategoryForm() {
           value={description}
         />
         <Autocomplete
-          options={categories
-            .filter((c) => c.id != parseInt(categoryId))
-            .map((c) => ({ ...c, label: c.name }))}
-          disabled={categories.length === 0}
+          options={categories.filter(
+            (c) => categoryId === undefined || c.id !== parseInt(categoryId),
+          )}
+          getOptionLabel={(option) => option.name}
           onChange={(_, v) => setParent(v)}
+          onOpen={loadCategories}
+          loading={isLoading}
           value={parent}
           renderInput={(params) => (
             <TextField
@@ -107,13 +128,13 @@ export function CategoryForm() {
               label="Parent category"
               color={
                 selectedCategory !== null &&
-                selectedCategory.parent !== parent?.id
+                selectedCategory.parent?.id !== parent?.id
                   ? "warning"
                   : "primary"
               }
               focused={
                 selectedCategory !== null &&
-                selectedCategory.parent !== parent?.id
+                selectedCategory.parent?.id !== parent?.id
                   ? true
                   : undefined
               }
@@ -123,8 +144,8 @@ export function CategoryForm() {
         <FormActions
           disabledEdit={categoryId === undefined}
           submitHandler={submitHandler}
-          url={API_URLS.Category}
           objectId={categoryId}
+          url={APIs.Category}
         />
       </Form>
     </Container>

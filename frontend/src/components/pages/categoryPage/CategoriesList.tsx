@@ -1,43 +1,35 @@
-import { useNavigate, useParams } from "react-router";
-import { useSelector } from "react-redux";
-import React from "react";
+import { useDispatch, useSelector } from "react-redux";
+import React, { useEffect } from "react";
 
-import ListItemButton from "@mui/material/ListItemButton";
-import ListItemText from "@mui/material/ListItemText";
 import List from "@mui/material/List";
 import Box from "@mui/material/Box";
 
-import { MainReducerType } from "../../reducers/types";
+import { setCategories } from "../../reducers/mainReducer";
+import { LinkBox } from "../../components/link";
+import { PagesURLs } from "../../Constants";
+import { APIs, API } from "../../api";
 
-function CategoriesList(props: { parent: number | null }) {
-  const categories = useSelector(
-    (state: MainReducerType) => state.main.categories,
-  );
-  const { categoryId } = useParams();
-  let navigate = useNavigate();
+import { mainStateType } from "../../reducers/types";
+import { CategoryTypeNumber } from "./types";
 
-  const filteredCategories = categories.filter(
+function CategoriesList(props: {
+  categories: CategoryTypeNumber[];
+  parent: number | null;
+}) {
+  const filteredCategories = props.categories.filter(
     (c) => c.parent === props.parent,
   );
 
-  if (filteredCategories.length == 0) {
-    return null;
-  }
+  if (filteredCategories.length == 0) return null;
   return (
     <List sx={{ pl: 2 }}>
       {filteredCategories.map((c) => (
         <Box key={c.id}>
-          <ListItemButton
-            onClick={(_) => navigate(`/create/category/${c.id}`)}
-            sx={
-              c.id === parseInt(categoryId)
-                ? { backgroundColor: "#bbdefb" }
-                : {}
-            }
-          >
-            <ListItemText primary={c.name} />
-          </ListItemButton>
-          <CategoriesList parent={c.id} />
+          <LinkBox to={`${PagesURLs.Category}/${c.id}`}>{c.name}</LinkBox>
+          <CategoriesList
+            parent={c.id as number}
+            categories={props.categories}
+          />
         </Box>
       ))}
     </List>
@@ -45,5 +37,20 @@ function CategoriesList(props: { parent: number | null }) {
 }
 
 export function CategoriesListContainer() {
-  return <CategoriesList parent={null} />;
+  const dispatch = useDispatch();
+  const api = new API();
+
+  const categories = useSelector(
+    (state: { main: mainStateType }) => state.main.categories,
+  );
+
+  useEffect(() => {
+    if (categories.length !== 0) return;
+    api.send<CategoryTypeNumber[]>({
+      url: APIs.Category,
+      onSuccess: (data) => dispatch(setCategories(data)),
+    });
+  }, [categories]);
+
+  return <CategoriesList categories={categories} parent={null} />;
 }

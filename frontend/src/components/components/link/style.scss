@@ -1,0 +1,40 @@
+.prime {
+  text-decoration: none;
+  font-weight: bolder;
+  font-size: larger;
+  cursor: pointer;
+  color: #000;
+
+  &:hover {
+    color: #ffb703;
+  }
+
+  &.isActive {
+    text-decoration: underline 4px #000;
+
+    &:hover {
+      text-decoration: underline 4px #ffb703;
+    }
+  }
+}
+
+.secondary {
+  text-decoration: none;
+  cursor: pointer;
+  color: #000;
+
+  &.isActive {
+    text-decoration: underline 4px #000;
+  }
+}
+
+.link-box {
+  padding: 0.5rem 0 0.5rem 0.5rem;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #e0e1dd;
+    padding-left: 1rem;
+    font-weight: bold;
+  }
+}

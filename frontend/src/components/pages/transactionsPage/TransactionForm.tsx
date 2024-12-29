@@ -1,7 +1,6 @@
-import { useSearchParams, useParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import axios from "axios";
-import React from "react";
+import React, { useState, useEffect } from "react";
 
 import InputAdornment from "@mui/material/InputAdornment";
 import Autocomplete from "@mui/material/Autocomplete";
@@ -9,99 +8,144 @@ import Container from "@mui/material/Container";
 import TextField from "@mui/material/TextField";
 
 import { FormTextField, FormActions, Form } from "../../components/form";
-import { MainReducerType, TransactionType } from "../../reducers/types";
-import { updateState } from "../../reducers/mainReducer";
-import { API_URLS } from "../../Constants";
+import { useNavigateWithParams } from "../../components/link";
+import { Methods, APIs, API } from "../../api";
+import { PagesURLs } from "../../Constants";
+import {
+  updateTransaction,
+  addTransactions,
+  setAddresses,
+  setProducts,
+} from "../../reducers/mainReducer";
 
-import dayjs from "dayjs";
+import { ShopAddressType, ShopAddressTypeNumber } from "../shopsPage/types";
+import { TransactionTypeNumber, TransactionTypeDetailed } from "./types";
+import { ProductTypeDetailed } from "../productsPage/types";
+import { mainStateType } from "../../reducers/types";
 
 export function TransactionForm() {
-  const transactions = useSelector(
-    (state: MainReducerType) => state.main.transactions,
+  const isLoading = useSelector(
+    (state: { main: mainStateType }) => state.main.isLoading,
   );
   const addresses = useSelector(
-    (state: MainReducerType) => state.main.addresses,
+    (state: { main: mainStateType }) => state.main.addresses,
   );
-  const products = useSelector((state: MainReducerType) => state.main.products);
+  const products = useSelector(
+    (state: { main: mainStateType }) => state.main.products,
+  );
 
-  const [searchParams, _] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigateWithParams();
   const { transactionId } = useParams();
-  const navigate = useNavigate();
   const dispatch = useDispatch();
+  const api = new API();
 
-  const [selectedTransaction, setSelectedTransaction] = React.useState(null);
-  const [product, setProduct] = React.useState(null);
-  const [address, setAddress] = React.useState(null);
-  const [price, setPrice] = React.useState("0");
-  const [count, setCount] = React.useState("1");
+  const [selectedTransaction, setSelectedTransaction] =
+    useState<TransactionTypeDetailed | null>(null);
+  const [address, setAddress] = useState<ShopAddressType<number> | null>(null);
+  const [product, setProduct] = useState<ProductTypeDetailed | null>(null);
+  const [price, setPrice] = useState<string>("0");
+  const [count, setCount] = useState<string>("1");
 
-  React.useEffect(() => {
-    const transaction =
-      transactions.find((t) => t.id === parseInt(transactionId)) ?? null;
-    setSelectedTransaction(transaction);
-    if (transaction === null) {
-      setProduct(null);
-      setAddress(null);
-      setPrice("0");
-      setCount("1");
-    } else {
-      const product =
-        products.find((p) => p.id === transaction.product) ?? null;
-      setProduct(product ? { ...product, label: product.name } : null);
-      const address =
-        addresses.find((a) => a.id === transaction.address) ?? null;
-      setAddress(address ? { ...address, label: address.local_name } : null);
-      setPrice(transaction.price.toString());
-      setCount(transaction.count.toString());
-    }
-  }, [transactions, transactionId]);
+  const resetState = (data?: TransactionTypeDetailed) => {
+    setPrice(data?.price ? String(data?.price) : "0");
+    setCount(data?.count ? String(data?.count) : "1");
+    setSelectedTransaction(data ?? null);
+    setProduct(data?.product ?? null);
+    setAddress(data?.address ?? null);
+  };
 
-  const submitHandler = (method: "post" | "put", url: string) => {
+  const getCurrentData = () => {
+    api.send<TransactionTypeDetailed>({
+      url: `${APIs.Transaction}${transactionId}/`,
+      onSuccess: resetState,
+      onFail: resetState,
+    });
+  };
+
+  useEffect(() => {
+    if (transactionId === undefined) resetState();
+    else getCurrentData();
+  }, [transactionId]);
+
+  const productChangeHandler = (_: any, value: ProductTypeDetailed | null) => {
+    setProduct(value);
+    if (!value) return;
+
+    api.send<TransactionTypeNumber>({
+      url: APIs.ProductPrice,
+      method: Methods.post,
+      data: { product_id: value.id },
+      onSuccess: (data) => {
+        setPrice(String(data.price ?? 0));
+      },
+    });
+  };
+
+  const submitHandler = (method: Methods.post | Methods.put, url: string) => {
     const data = {
-      date: dayjs(searchParams.get("currentDate"), "YYYY-MM-DD").format(
-        "YYYY-MM-DD",
-      ),
+      date: searchParams.get("currentDate"),
       price: parseFloat(price),
       count: parseFloat(count),
       product: product!.id,
       address: address!.id,
     };
-    axios({ method, url, data })
-      .then((data) => {
-        if (method === "post") {
-          dispatch(
-            updateState({
-              transactions: [...transactions, data.data as TransactionType],
-              message: { message: "Transaction created", severity: "success" },
-            }),
-          );
-          navigate(`/create/transaction/${data.data.id}`);
-        } else if (method === "put") {
-          const newTransaction = transactions.map((t) =>
-            t.id === data.data.id ? data.data : t,
-          );
-          dispatch(
-            updateState({
-              transactions: newTransaction,
-              message: { message: "Transaction updated", severity: "success" },
-            }),
-          );
+    const messages = {
+      [Methods.post]: "Transaction created",
+      [Methods.put]: "Transaction updated",
+    };
+    api.send<TransactionTypeNumber>({
+      url,
+      method,
+      data,
+      successMessage: { message: messages[method] },
+      onSuccess: (data) => {
+        if (method === Methods.post) {
+          dispatch(addTransactions([data]));
+          navigate(`${PagesURLs.Transaction}/${data.id}`);
+        } else {
+          dispatch(updateTransaction(data));
+          resetState();
         }
-      })
-      .catch((e) => {
-        updateState({
-          message: { message: e.respose.data, severity: "error" },
-        });
-      });
+      },
+    });
+  };
+
+  const loadProducts = () => {
+    if (products.length !== 0 || isLoading) return;
+    api.send<ProductTypeDetailed[]>({
+      url: APIs.Product,
+      onSuccess: (data) => dispatch(setProducts(data)),
+    });
+  };
+
+  const loadAddresses = () => {
+    if (addresses.length !== 0 || isLoading) return;
+    api.send<ShopAddressTypeNumber[]>({
+      url: APIs.Address,
+      onSuccess: (data) => dispatch(setAddresses(data)),
+    });
+  };
+
+  const updateAddress = (_: any, v: ShopAddressTypeNumber | null) => {
+    setAddress(v);
+    setSearchParams((prev) => {
+      if (v === null) prev.delete("address");
+      else prev.set("address", String(v.id));
+      return prev;
+    });
   };
 
   return (
     <Container maxWidth="lg">
       <Form title="Transaction form">
         <Autocomplete
-          options={addresses.map((a) => ({ ...a, label: a.local_name }))}
-          onChange={(_, v) => setAddress(v)}
-          disabled={addresses.length === 0}
+          getOptionLabel={(option) => option.local_name}
+          getOptionKey={(option) => option.id as number}
+          onChange={updateAddress}
+          onOpen={loadAddresses}
+          options={addresses}
+          loading={isLoading}
           value={address}
           renderInput={(params) => (
             <TextField
@@ -109,13 +153,13 @@ export function TransactionForm() {
               label="Shop address"
               color={
                 selectedTransaction !== null &&
-                selectedTransaction.address !== address?.id
+                selectedTransaction.address?.id !== address?.id
                   ? "warning"
                   : "primary"
               }
               focused={
                 selectedTransaction !== null &&
-                selectedTransaction.address !== address?.id
+                selectedTransaction.address?.id !== address?.id
                   ? true
                   : undefined
               }
@@ -123,9 +167,13 @@ export function TransactionForm() {
           )}
         />
         <Autocomplete
-          options={products.map((p) => ({ ...p, label: p.name }))}
-          onChange={(_, v) => setProduct(v)}
-          disabled={products.length === 0}
+          groupBy={(option) => option.sub_category.name}
+          getOptionKey={(option) => option.id as number}
+          getOptionLabel={(option) => option.name}
+          onChange={productChangeHandler}
+          onOpen={loadProducts}
+          loading={isLoading}
+          options={products}
           value={product}
           renderInput={(params) => (
             <TextField
@@ -133,13 +181,13 @@ export function TransactionForm() {
               label="Product"
               color={
                 selectedTransaction !== null &&
-                selectedTransaction.product !== product?.id
+                selectedTransaction.product?.id !== product?.id
                   ? "warning"
                   : "primary"
               }
               focused={
                 selectedTransaction !== null &&
-                selectedTransaction.product !== product?.id
+                selectedTransaction.product?.id !== product?.id
                   ? true
                   : undefined
               }
@@ -148,7 +196,8 @@ export function TransactionForm() {
         />
         <FormTextField
           isChanged={
-            selectedTransaction !== null && selectedTransaction.price !== price
+            selectedTransaction !== null &&
+            String(selectedTransaction.price) !== price
           }
           startAdornment={<InputAdornment position="start">$</InputAdornment>}
           label="Product price"
@@ -157,7 +206,8 @@ export function TransactionForm() {
         />
         <FormTextField
           isChanged={
-            selectedTransaction !== null && selectedTransaction.count !== count
+            selectedTransaction !== null &&
+            String(selectedTransaction.count) !== count
           }
           label="Products count"
           onChange={setCount}
@@ -166,8 +216,8 @@ export function TransactionForm() {
         <FormActions
           disabledEdit={selectedTransaction === null}
           submitHandler={submitHandler}
-          url={API_URLS.Transaction}
           objectId={transactionId}
+          url={APIs.Transaction}
         />
       </Form>
     </Container>

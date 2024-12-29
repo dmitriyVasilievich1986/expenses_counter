@@ -1,26 +1,36 @@
-import { useNavigate } from "react-router";
-import { useSelector } from "react-redux";
-import React from "react";
+import { useDispatch, useSelector } from "react-redux";
+import React, { useEffect } from "react";
 
-import ListItemButton from "@mui/material/ListItemButton";
-import ListItemText from "@mui/material/ListItemText";
 import List from "@mui/material/List";
 
-import { MainReducerType } from "../../reducers/types";
+import { setProducts } from "../../reducers/mainReducer";
+import { mainSelectorType } from "../../reducers/types";
+import { LinkBox } from "../../components/link";
+import { ProductTypeDetailed } from "./types";
+import { PagesURLs } from "../../Constants";
+import { API, APIs } from "../../api";
 
 export function ProductsList() {
-  const products = useSelector((state: MainReducerType) => state.main.products);
-  const navigate = useNavigate();
+  const products = useSelector(
+    (state: mainSelectorType) => state.main.products,
+  );
+  const dispatch = useDispatch();
+  const api = new API();
+
+  useEffect(() => {
+    if (products.length !== 0) return;
+    api.send<ProductTypeDetailed[]>({
+      url: APIs.Product,
+      onSuccess: (data) => dispatch(setProducts(data)),
+    });
+  }, [products]);
 
   return (
-    <List>
+    <List sx={{ pl: 2 }}>
       {products.map((p) => (
-        <ListItemButton
-          key={p.id}
-          onClick={(_) => navigate(`/create/product/${p!.id}`)}
-        >
-          <ListItemText primary={p.name} />
-        </ListItemButton>
+        <LinkBox key={p.id} to={`${PagesURLs.Product}/${p!.id}`}>
+          {p.name}
+        </LinkBox>
       ))}
     </List>
   );

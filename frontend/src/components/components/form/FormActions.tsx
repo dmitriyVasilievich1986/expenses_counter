@@ -7,13 +7,13 @@ import Fab from "@mui/material/Fab";
 import EditIcon from "@mui/icons-material/Edit";
 import AddIcon from "@mui/icons-material/Add";
 
-import { API_URLS } from "../../Constants";
+import { APIs, Methods } from "../../api";
 
 export function FormActions(props: {
-  url: API_URLS;
+  url: APIs;
   disabledEdit?: boolean;
-  objectId: string | number;
-  submitHandler: (method: "post" | "put", url: string) => void;
+  objectId?: string | number;
+  submitHandler: (method: Methods.post | Methods.put, url: string) => void;
 }) {
   return (
     <Box sx={{ display: "flex", justifyContent: "end", mt: 2 }}>
@@ -23,7 +23,7 @@ export function FormActions(props: {
           aria-label="EditIcon"
           disabled={props.disabledEdit}
           onClick={(_) =>
-            props.submitHandler("put", `${props.url}${props.objectId}/`)
+            props.submitHandler(Methods.put, `${props.url}${props!.objectId}/`)
           }
         >
           <EditIcon />
@@ -31,7 +31,7 @@ export function FormActions(props: {
         <Fab
           color="primary"
           aria-label="add"
-          onClick={(_) => props.submitHandler("post", props.url)}
+          onClick={(_) => props.submitHandler(Methods.post, props.url)}
         >
           <AddIcon />
         </Fab>

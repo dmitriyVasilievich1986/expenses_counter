@@ -1,83 +1,78 @@
-import { useDispatch, useSelector } from "react-redux";
-import { useParams } from "react-router";
-import axios from "axios";
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import { useDispatch } from "react-redux";
 
 import Container from "@mui/material/Container";
 
+import { addAddresses, updateAddress } from "../../reducers/mainReducer";
 import { FormTextField, FormActions, Form } from "../../components/form";
-import { MainReducerType, ShopAddressType } from "../../reducers/types";
-import { updateState } from "../../reducers/mainReducer";
-import { API_URLS } from "../../Constants";
+import { useNavigateWithParams } from "../../components/link";
+import { Methods, APIs, API } from "../../api";
+import { PagesURLs } from "../../Constants";
+
+import { ShopAddressTypeNumber } from "./types";
 
 export function AddressForm() {
-  const addresses = useSelector(
-    (state: MainReducerType) => state.main.addresses,
-  );
-  const shops = useSelector((state: MainReducerType) => state.main.shops);
-  const { addressId, shopId } = useParams();
+  const navigate = useNavigateWithParams();
+  const { addressId } = useParams();
+  const { shopId } = useParams();
   const dispatch = useDispatch();
+  const api = new API();
 
-  const [selectedAddress, setSelectedAddress] = React.useState(null);
-  const [selectedShop, setSelectedShop] = React.useState(null);
-  const [localName, setLocalName] = React.useState("");
-  const [address, setAddress] = React.useState("");
+  const [selectedAddress, setSelectedAddress] =
+    useState<ShopAddressTypeNumber | null>(null);
+  const [localName, setLocalName] = useState<string>("");
+  const [address, setAddress] = useState<string>("");
 
-  React.useEffect(() => {
-    const shop = shops.find((s) => s.id === parseInt(shopId)) ?? null;
-    setSelectedShop(shop);
-  }, [shops, shopId]);
+  const resetState = (data?: ShopAddressTypeNumber) => {
+    setLocalName(data?.local_name ?? "");
+    setSelectedAddress(data ?? null);
+    setAddress(data?.address ?? "");
+  };
 
-  React.useEffect(() => {
-    const address = addresses.find((a) => a.id === parseInt(addressId)) ?? null;
-    setSelectedAddress(address);
-    if (address === null) {
-      setLocalName("");
-      setAddress("");
-    } else {
-      setLocalName(address.local_name);
-      setAddress(address.address);
-    }
-  }, [addresses, addressId]);
+  const getCurrentData = () => {
+    api.send<ShopAddressTypeNumber>({
+      url: `${APIs.Address}${addressId}/`,
+      onSuccess: resetState,
+      onFail: resetState,
+    });
+  };
 
-  const submitHandler = (method: "post" | "put", url: string) => {
+  useEffect(() => {
+    if (addressId === undefined) resetState();
+    else getCurrentData();
+  }, [addressId]);
+
+  const submitHandler = (method: Methods.post | Methods.put, url: string) => {
     const data = {
       address,
       local_name: localName,
-      shop: selectedShop!.id,
+      shop: shopId as string,
     };
-    axios({ method, url, data })
-      .then((data) => {
-        if (method === "post") {
-          dispatch(
-            updateState({
-              addresses: [...addresses, data.data as ShopAddressType],
-              message: {
-                message: "New shop branch created",
-                severity: "success",
-              },
-            }),
+    const messages = {
+      [Methods.post]: "New shop branch created",
+      [Methods.put]: "Shop branch updated",
+    };
+    api.send<ShopAddressTypeNumber>({
+      method,
+      url,
+      data,
+      successMessage: { message: messages[method] },
+      onSuccess: (data) => {
+        if (method === Methods.post) {
+          dispatch(addAddresses(data));
+          navigate(
+            `${PagesURLs.Shop}${shopId}/${PagesURLs.Address}/${data.id}`,
           );
-        } else if (method === "put") {
-          const newAddress = addresses.map((a) =>
-            a.id === data.data.id ? data.data : a,
-          );
-          dispatch(
-            updateState({
-              addresses: newAddress,
-              message: { message: "Shop branch updated", severity: "success" },
-            }),
-          );
+        } else {
+          dispatch(updateAddress(data));
+          getCurrentData();
         }
-      })
-      .catch((e) => {
-        updateState({
-          message: { message: e.respose.data, severity: "error" },
-        });
-      });
+      },
+    });
   };
 
-  if (selectedShop === null) return null;
+  if (!shopId) return null;
   return (
     <Container maxWidth="lg">
       <Form title="Shop Branch Form">
@@ -100,8 +95,8 @@ export function AddressForm() {
         <FormActions
           disabledEdit={selectedAddress === null}
           submitHandler={submitHandler}
-          url={API_URLS.Address}
           objectId={addressId}
+          url={APIs.Address}
         />
       </Form>
     </Container>

@@ -1,81 +1,98 @@
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate, useParams } from "react-router";
-import axios from "axios";
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { useParams } from "react-router";
 
 import Autocomplete from "@mui/material/Autocomplete";
 import Container from "@mui/material/Container";
 import TextField from "@mui/material/TextField";
 
 import { FormTextField, FormActions, Form } from "../../components/form";
-import { updateState } from "../../reducers/mainReducer";
-import { MainReducerType } from "../../reducers/types";
-import { API_URLS } from "../../Constants";
+import { useNavigateWithParams } from "../../components/link";
+import { CategoryTypeNumber } from "../categoryPage/types";
+import { mainStateType } from "../../reducers/types";
+import { ProductTypeDetailed } from "./types";
+import { Methods, API, APIs } from "../../api";
+import { PagesURLs } from "../../Constants";
+import {
+  setCategories,
+  updateProduct,
+  addProducts,
+} from "../../reducers/mainReducer";
 
 export function ProductsForm() {
-  const categories = useSelector(
-    (state: MainReducerType) => state.main.categories,
+  const isLoading = useSelector(
+    (state: { main: mainStateType }) => state.main.isLoading,
   );
-  const products = useSelector((state: MainReducerType) => state.main.products);
+  const categories = useSelector(
+    (state: { main: mainStateType }) => state.main.categories,
+  );
+
+  const navigate = useNavigateWithParams();
   const { productId } = useParams();
-  const navigate = useNavigate();
   const dispatch = useDispatch();
+  const api = new API();
 
-  const [selectedProduct, setSelectedProduct] = React.useState(null);
-  const [subCategory, setSubCategory] = React.useState(null);
-  const [description, setDescription] = React.useState("");
-  const [name, setName] = React.useState("");
+  const [selectedProduct, setSelectedProduct] =
+    useState<ProductTypeDetailed | null>(null);
+  const [subCategory, setSubCategory] = useState<CategoryTypeNumber | null>(
+    null,
+  );
+  const [description, setDescription] = useState<string>("");
+  const [name, setName] = useState<string>("");
 
-  React.useEffect(() => {
-    const product = products.find((p) => p.id == parseInt(productId)) ?? null;
-    setSelectedProduct(product);
+  const resetState = (data?: ProductTypeDetailed) => {
+    setSubCategory(data?.sub_category ?? null);
+    setDescription(data?.description ?? "");
+    setSelectedProduct(data ?? null);
+    setName(data?.name ?? "");
+  };
 
-    if (product === null) {
-      setSubCategory(null);
-      setDescription("");
-      setName("");
-    } else {
-      const category =
-        categories.find((c) => c.id == product.sub_category) ?? null;
-      setSubCategory(category ? { ...category, label: category.name } : null);
-      setDescription(product.description);
-      setName(product.name);
-    }
-  }, [productId, categories, products]);
+  const getCurrentData = () => {
+    api.send<ProductTypeDetailed>({
+      url: `${APIs.Product}${productId}/`,
+      onFail: resetState,
+      onSuccess: resetState,
+    });
+  };
 
-  const submitHandler = (method: "post" | "put", url: string) => {
+  useEffect(() => {
+    if (productId === undefined) resetState();
+    else getCurrentData();
+  }, [productId]);
+
+  const submitHandler = (method: Methods.post | Methods.put, url: string) => {
     const data = {
       name,
       description,
       sub_category: subCategory!.id,
     };
-    axios({ method, url, data })
-      .then((data) => {
-        if (method === "post") {
-          dispatch(
-            updateState({
-              products: [...products, data.data],
-              message: { message: "Product created", severity: "success" },
-            }),
-          );
-          navigate(`/create/product/${data.data.id}`);
-        } else if (method === "put") {
-          const newProduct = products.map((p) =>
-            p.id === data.data.id ? data.data : p,
-          );
-          dispatch(
-            updateState({
-              products: newProduct,
-              message: { message: "Product updated", severity: "success" },
-            }),
-          );
+    const messages = {
+      [Methods.post]: "Product created",
+      [Methods.put]: "Product updated",
+    };
+    api.send<ProductTypeDetailed>({
+      url,
+      method,
+      data,
+      successMessage: { message: messages[method] },
+      onSuccess: (data) => {
+        if (method === Methods.post) {
+          dispatch(addProducts([data]));
+          navigate(`${PagesURLs.Product}/${data.id}`);
+        } else {
+          dispatch(updateProduct(data));
+          getCurrentData();
         }
-      })
-      .catch((e) => {
-        updateState({
-          message: { message: e.respose.data, severity: "error" },
-        });
-      });
+      },
+    });
+  };
+
+  const loadCategories = () => {
+    if (categories.length !== 0 || isLoading) return;
+    api.send<CategoryTypeNumber[]>({
+      url: APIs.Category,
+      onSuccess: (data) => dispatch(setCategories(data)),
+    });
   };
 
   return (
@@ -97,9 +114,11 @@ export function ProductsForm() {
           value={description}
         />
         <Autocomplete
-          options={categories.map((c) => ({ ...c, label: c.name }))}
-          disabled={categories.length === 0}
+          getOptionLabel={(option) => option.name}
           onChange={(_, v) => setSubCategory(v)}
+          onOpen={loadCategories}
+          options={categories}
+          loading={isLoading}
           value={subCategory}
           renderInput={(params) => (
             <TextField
@@ -107,13 +126,13 @@ export function ProductsForm() {
               label="Product category"
               color={
                 selectedProduct !== null &&
-                selectedProduct.sub_category !== subCategory?.id
+                selectedProduct.sub_category?.id !== subCategory?.id
                   ? "warning"
                   : "primary"
               }
               focused={
                 selectedProduct !== null &&
-                selectedProduct.sub_category !== subCategory?.id
+                selectedProduct.sub_category?.id !== subCategory?.id
                   ? true
                   : undefined
               }
@@ -123,8 +142,8 @@ export function ProductsForm() {
         <FormActions
           disabledEdit={productId === undefined}
           submitHandler={submitHandler}
-          url={API_URLS.Product}
           objectId={productId}
+          url={APIs.Product}
         />
       </Form>
     </Container>

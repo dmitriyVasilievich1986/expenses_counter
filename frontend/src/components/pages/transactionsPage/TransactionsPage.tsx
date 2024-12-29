@@ -3,9 +3,9 @@ import * as React from "react";
 import Grid from "@mui/material/Grid2";
 import Box from "@mui/material/Box";
 
+import { PopularProductsList, TransactionList } from "./TransactionList";
 import { Calendar } from "../../components/calendar";
 import { TransactionForm } from "./TransactionForm";
-import { TransactionList } from "./TransactionList";
 
 export function TransactionsPage() {
   return (
@@ -19,6 +19,7 @@ export function TransactionsPage() {
         </Grid>
         <Grid size={{ xs: 12, sm: 12, md: 3 }}>
           <Calendar />
+          <PopularProductsList />
         </Grid>
       </Grid>
     </Box>

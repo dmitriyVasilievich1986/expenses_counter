@@ -1,14 +1,6 @@
 const API_URL = "/expenses/";
 
-export enum PagesURLs {
-  Transaction = "/create/transaction",
-  Category = "/create/category",
-  Product = "/create/product",
-  Shop = "/create/shop",
-  Address = "address",
-}
-
-export enum API_URLS {
+export enum APIs {
   TransactionDateRange = `${API_URL}transaction/date_range/`,
   ProductPopular = `${API_URL}product/popular/`,
   ProductPrice = `${API_URL}product/price/`,
@@ -18,6 +10,13 @@ export enum API_URLS {
   Category = `${API_URL}category/`,
   Product = `${API_URL}product/`,
   Shop = `${API_URL}shop/`,
+}
+
+export enum Methods {
+  get = "get",
+  post = "post",
+  put = "put",
+  delete = "delete",
 }
 
 export type APIResponseType<R> = {
