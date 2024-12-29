@@ -15,6 +15,10 @@ import { PagesURLs } from "../../Constants";
 import { mainStateType } from "../../reducers/types";
 import { TransactionTypeNumber } from "./types";
 
+function roundToTwo(num: number) {
+  return Math.round(num * 100) / 100;
+}
+
 function Transaction(props: {
   transaction: TransactionTypeNumber;
   changeDate?: boolean;
@@ -22,6 +26,7 @@ function Transaction(props: {
   return (
     <LinkBox
       to={`${PagesURLs.Transaction}/${props.transaction.id}`}
+      smallPadding
       params={
         new Params({
           address: String(props.transaction.address.id),
@@ -31,8 +36,13 @@ function Transaction(props: {
         })
       }
     >
-      {props.transaction.product.name}:{" "}
-      {props.transaction.price * props.transaction.count}
+      <Typography variant="subtitle1" sx={{ m: 0 }}>
+        {props.transaction.product.name}
+      </Typography>
+      <Typography variant="caption" sx={{ m: 0 }}>
+        {roundToTwo(props.transaction.price)}$ X{" "}
+        {roundToTwo(props.transaction.count)}
+      </Typography>
     </LinkBox>
   );
 }
@@ -65,7 +75,7 @@ export function TransactionList() {
   return (
     <Box>
       <Typography variant="h6" align="center">
-        Todays trnasactions:
+        Todays transactions:
       </Typography>
       <List sx={{ pl: 2 }}>
         {transactions.map((t) => (
@@ -74,9 +84,9 @@ export function TransactionList() {
       </List>
       <Typography variant="h6" align="center" sx={{ mt: 4 }}>
         Summary:{" "}
-        {Math.round(
-          transactions.reduce((acc, t) => acc + t.price * t.count, 0) * 100,
-        ) / 100}
+        {roundToTwo(
+          transactions.reduce((acc, t) => acc + t.price * t.count, 0),
+        )}
       </Typography>
     </Box>
   );
