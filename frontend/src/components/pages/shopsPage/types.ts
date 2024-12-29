@@ -16,6 +16,7 @@ export type ShopAddressType<S> = {
   shop: S;
   address: string;
   local_name: string;
+  icon: string | null;
 };
 
 export type ShopAddressTypeNumber = ShopAddressType<number>;
