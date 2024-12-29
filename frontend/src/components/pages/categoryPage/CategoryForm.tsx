@@ -99,7 +99,9 @@ export function CategoryForm(props: {
           value={description}
         />
         <Autocomplete
-          options={props.categories.filter((c) => c.id != parseInt(categoryId))}
+          options={props.categories.filter(
+            (c) => categoryId !== undefined && c.id !== parseInt(categoryId),
+          )}
           getOptionLabel={(option) => option.name}
           disabled={props.categories.length === 0}
           onChange={(_, v) => setParent(v)}

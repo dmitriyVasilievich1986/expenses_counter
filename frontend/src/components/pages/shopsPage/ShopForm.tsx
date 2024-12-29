@@ -49,7 +49,9 @@ export function ShopForm(props: {
     if (category.parent === null || categories.length === 0) {
       return newLabel;
     }
-    const parentCategory = categories.find((c) => c.id === category.parent);
+    const parentCategory = categories.find(
+      (c) => c.id === category.parent,
+    ) as CategoryTypeNumber;
     return getCategoryWithLabel(
       parentCategory,
       `${parentCategory?.name} > ${newLabel}`,

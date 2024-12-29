@@ -12,7 +12,7 @@ import { API_URLS } from "../../Constants";
 export function FormActions(props: {
   url: API_URLS;
   disabledEdit?: boolean;
-  objectId: string | number;
+  objectId?: string | number;
   submitHandler: (method: "post" | "put", url: string) => void;
 }) {
   return (
@@ -23,7 +23,7 @@ export function FormActions(props: {
           aria-label="EditIcon"
           disabled={props.disabledEdit}
           onClick={(_) =>
-            props.submitHandler("put", `${props.url}${props.objectId}/`)
+            props.submitHandler("put", `${props.url}${props!.objectId}/`)
           }
         >
           <EditIcon />

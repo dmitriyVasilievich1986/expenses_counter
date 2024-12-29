@@ -9,8 +9,8 @@ import TextField from "@mui/material/TextField";
 
 import { FormTextField, FormActions, Form } from "../../components/form";
 import { APIResponseType, PagesURLs, API_URLS } from "../../Constants";
+import { CategoryTypeNumber } from "../categoryPage/types";
 import { setMessage } from "../../reducers/mainReducer";
-import { CategoryType } from "../categoryPage/types";
 import { ProductTypeDetailed } from "./types";
 
 export function ProductsForm(props: {
@@ -22,13 +22,12 @@ export function ProductsForm(props: {
   const dispatch = useDispatch();
 
   const [selectedProduct, setSelectedProduct] =
-    React.useState<ProductTypeDetailed>(null);
-  const [categories, setCategories] = React.useState<CategoryType<number>[]>(
-    [],
-  );
-  const [subCategory, setSubCategory] = React.useState(null);
-  const [description, setDescription] = React.useState("");
-  const [name, setName] = React.useState("");
+    React.useState<ProductTypeDetailed | null>(null);
+  const [categories, setCategories] = React.useState<CategoryTypeNumber[]>([]);
+  const [subCategory, setSubCategory] =
+    React.useState<CategoryTypeNumber | null>(null);
+  const [description, setDescription] = React.useState<string>("");
+  const [name, setName] = React.useState<string>("");
 
   const resetState = () => {
     setSelectedProduct(null);
@@ -45,9 +44,7 @@ export function ProductsForm(props: {
     axios
       .get(`${API_URLS.Product}${productId}/`)
       .then((data: APIResponseType<ProductTypeDetailed>) => {
-        setSubCategory(
-          data.data.sub_category === null ? null : data.data.sub_category,
-        );
+        setSubCategory(data.data.sub_category);
         setDescription(data.data.description);
         setSelectedProduct(data.data);
         setName(data.data.name);
@@ -58,7 +55,7 @@ export function ProductsForm(props: {
   React.useEffect(() => {
     axios
       .get(API_URLS.Category)
-      .then((data: APIResponseType<CategoryType<number>[]>) => {
+      .then((data: APIResponseType<CategoryTypeNumber[]>) => {
         setCategories(data.data);
       });
   }, []);
