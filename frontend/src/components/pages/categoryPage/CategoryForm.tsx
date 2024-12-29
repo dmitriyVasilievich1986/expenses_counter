@@ -1,5 +1,5 @@
-import { useParams, useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { useParams } from "react-router-dom";
 import axios from "axios";
 import React from "react";
 
@@ -7,18 +7,29 @@ import Autocomplete from "@mui/material/Autocomplete";
 import Container from "@mui/material/Container";
 import TextField from "@mui/material/TextField";
 
+import {
+  updateCategoriy,
+  addCategories,
+  setIsLoading,
+  setMessage,
+} from "../../reducers/mainReducer";
 import { FormTextField, FormActions, Form } from "../../components/form";
 import { PagesURLs, APIResponseType, API_URLS } from "../../Constants";
 import { CategoryTypeNumber, CategoryTypeDetailed } from "./types";
-import { setMessage } from "../../reducers/mainReducer";
+import { useNavigateWithParams } from "../../components/link";
+import { mainStateType } from "../../reducers/types";
 
-export function CategoryForm(props: {
-  setCategories: (categories: CategoryTypeNumber[]) => void;
-  categories: CategoryTypeNumber[];
-}) {
+export function CategoryForm() {
+  const isLoading = useSelector(
+    (state: { main: mainStateType }) => state.main.isLoading,
+  );
+  const categories = useSelector(
+    (state: { main: mainStateType }) => state.main.categories,
+  );
+
+  const navigate = useNavigateWithParams();
   const { categoryId } = useParams();
   const dispatch = useDispatch();
-  const navigate = useNavigate();
 
   const [selectedCategory, setSelectedCategory] =
     React.useState<CategoryTypeDetailed | null>(null);
@@ -47,7 +58,7 @@ export function CategoryForm(props: {
         setName(data.data.name);
       })
       .catch(() => resetState());
-  }, [categoryId, props.categories]);
+  }, [categoryId]);
 
   const submitHandler = (method: "post" | "put", url: string) => {
     const data = {
@@ -58,21 +69,29 @@ export function CategoryForm(props: {
     axios({ method, url, data })
       .then((data: APIResponseType<CategoryTypeNumber>) => {
         if (method === "post") {
-          props.setCategories([...props.categories, data.data]);
+          dispatch(addCategories([data.data]));
           dispatch(setMessage({ message: "Category created" }));
           navigate(`${PagesURLs.Category}${data.data.id}`);
         } else if (method === "put") {
-          const newCategories = props.categories.map((c) =>
-            c.id === data.data.id ? data.data : c,
-          );
+          dispatch(updateCategoriy(data.data));
           dispatch(setMessage({ message: "Category updated" }));
-          props.setCategories(newCategories);
         }
       })
       .catch((e) => {
         console.log(e);
         dispatch(setMessage({ message: "error", severity: "error" }));
       });
+  };
+
+  const loadCategories = () => {
+    if (categories.length !== 0 || isLoading) return;
+    dispatch(setIsLoading(true));
+    axios
+      .get(API_URLS.Category)
+      .then((data: APIResponseType<CategoryTypeNumber[]>) => {
+        dispatch(addCategories(data.data));
+      })
+      .finally(() => dispatch(setIsLoading(false)));
   };
 
   return (
@@ -96,12 +115,13 @@ export function CategoryForm(props: {
           value={description}
         />
         <Autocomplete
-          options={props.categories.filter(
-            (c) => categoryId !== undefined && c.id !== parseInt(categoryId),
+          options={categories.filter(
+            (c) => categoryId === undefined || c.id !== parseInt(categoryId),
           )}
           getOptionLabel={(option) => option.name}
-          disabled={props.categories.length === 0}
           onChange={(_, v) => setParent(v)}
+          onOpen={loadCategories}
+          loading={isLoading}
           value={parent}
           renderInput={(params) => (
             <TextField
