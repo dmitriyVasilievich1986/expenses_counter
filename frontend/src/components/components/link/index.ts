@@ -1,3 +1,4 @@
+import { useNavigateWithParams } from "./useNavigateWithParams";
 import { Params, Link } from "./Link";
 
-export { Params, Link };
+export { useNavigateWithParams, Params, Link };
