@@ -1,7 +1,5 @@
 import { useSearchParams, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import dayjs from "dayjs";
-import axios from "axios";
 import React from "react";
 
 import InputAdornment from "@mui/material/InputAdornment";
@@ -9,26 +7,18 @@ import Autocomplete from "@mui/material/Autocomplete";
 import Container from "@mui/material/Container";
 import TextField from "@mui/material/TextField";
 
-import {
-  addAddresses,
-  setIsLoading,
-  addProducts,
-  setMessage,
-} from "../../reducers/mainReducer";
+import { addTransactions, updateTransaction } from "../../reducers/mainReducer";
 import { ShopAddressType, ShopAddressTypeNumber } from "../shopsPage/types";
 import { FormTextField, FormActions, Form } from "../../components/form";
 import { TransactionTypeNumber, TransactionTypeDetailed } from "./types";
-import { PagesURLs, APIResponseType, API_URLS } from "../../Constants";
+import { addAddresses, addProducts } from "../../reducers/mainReducer";
 import { useNavigateWithParams } from "../../components/link";
-import { UrlParamsType } from "../../components/link/types";
 import { ProductTypeDetailed } from "../productsPage/types";
 import { mainStateType } from "../../reducers/types";
+import { Methods, APIs, API } from "../../api";
+import { PagesURLs } from "../../Constants";
 
-export function TransactionForm(props: {
-  setTransactions: React.Dispatch<
-    React.SetStateAction<TransactionTypeNumber[]>
-  >;
-}) {
+export function TransactionForm() {
   const isLoading = useSelector(
     (state: { main: mainStateType }) => state.main.isLoading,
   );
@@ -43,6 +33,7 @@ export function TransactionForm(props: {
   const navigate = useNavigateWithParams();
   const { transactionId } = useParams();
   const dispatch = useDispatch();
+  const api = new API();
 
   const [selectedTransaction, setSelectedTransaction] =
     React.useState<TransactionTypeDetailed | null>(null);
@@ -55,12 +46,12 @@ export function TransactionForm(props: {
   const [price, setPrice] = React.useState<string>("0");
   const [count, setCount] = React.useState<string>("1");
 
-  const resetState = () => {
-    setSelectedTransaction(null);
-    setProduct(null);
-    setAddress(null);
-    setPrice("0");
-    setCount("1");
+  const resetState = (data?: TransactionTypeDetailed) => {
+    setPrice(data?.price ? String(data?.price) : "0");
+    setCount(data?.count ? String(data?.count) : "1");
+    setSelectedTransaction(data ?? null);
+    setProduct(data?.product ?? null);
+    setAddress(data?.address ?? null);
   };
 
   React.useEffect(() => {
@@ -68,85 +59,70 @@ export function TransactionForm(props: {
       resetState();
       return;
     }
-    axios
-      .get(`${API_URLS.Transaction}${transactionId}/`)
-      .then((data: APIResponseType<TransactionTypeDetailed>) => {
-        setPrice(data.data.price.toString());
-        setCount(data.data.count.toString());
-        setSelectedTransaction(data.data);
-        setProduct(data.data.product);
-        setAddress(data.data.address);
-      })
-      .catch(() => resetState());
+    api.send<TransactionTypeDetailed>({
+      url: `${APIs.Transaction}${transactionId}/`,
+      onSuccess: resetState,
+      onFail: resetState,
+    });
   }, [transactionId]);
 
   const productChangeHandler = (_: any, value: ProductTypeDetailed | null) => {
     setProduct(value);
     if (!value) return;
 
-    const data = {
-      product_id: value.id,
-    };
-    axios
-      .post(API_URLS.ProductPrice, data)
-      .then((data: APIResponseType<TransactionTypeNumber>) => {
-        setPrice(String(data.data.price ?? 0));
-      });
+    api.send<TransactionTypeNumber>({
+      url: APIs.ProductPrice,
+      method: Methods.post,
+      data: { product_id: value.id },
+      onSuccess: (data) => {
+        setPrice(String(data.price ?? 0));
+      },
+    });
   };
 
-  const submitHandler = (method: "post" | "put", url: string) => {
+  const submitHandler = (method: Methods.post | Methods.put, url: string) => {
     const data = {
-      date: dayjs(searchParams.get("currentDate"), "YYYY-MM-DD").format(
-        "YYYY-MM-DD",
-      ),
+      date: searchParams.get("currentDate"),
       price: parseFloat(price),
       count: parseFloat(count),
       product: product!.id,
       address: address!.id,
     };
-    axios({ method, url, data })
-      .then((data: APIResponseType<TransactionTypeNumber>) => {
-        if (method === "post") {
-          props.setTransactions((prev) => [...prev, data.data]);
-          dispatch(setMessage({ message: "Transaction created" }));
-          const newParams: UrlParamsType = {
-            address: String(data.data.address.id),
-            currentDate: dayjs(data.data.date).format("YYYY-MM-DD"),
-          };
-          navigate(`${PagesURLs.Transaction}/${data.data.id}`, newParams);
-        } else if (method === "put") {
-          props.setTransactions((prev) =>
-            prev.map((t) => (t.id === data.data.id ? data.data : t)),
-          );
-          dispatch(setMessage({ message: "Transaction updated" }));
+    const messages = {
+      [Methods.post]: "Transaction created",
+      [Methods.put]: "Transaction updated",
+    };
+    api.send<TransactionTypeNumber>({
+      url,
+      method,
+      data,
+      successMessage: { message: messages[method] },
+      onSuccess: (data) => {
+        if (method === Methods.post) {
+          dispatch(addTransactions([data]));
+          navigate(`${PagesURLs.Transaction}/${data.id}`);
+        } else {
+          dispatch(updateTransaction(data));
+          resetState(data);
         }
-      })
-      .catch((e) => {
-        console.log(e);
-        dispatch(setMessage({ message: "Error", severity: "error" }));
-      });
+      },
+    });
   };
 
   const loadProducts = () => {
     if (products.length !== 0 || isLoading) return;
-    dispatch(setIsLoading(true));
-    axios
-      .get(API_URLS.Product)
-      .then((data: APIResponseType<ProductTypeDetailed[]>) => {
-        dispatch(addProducts(data.data));
-      })
-      .finally(() => dispatch(setIsLoading(false)));
+    api.send<ProductTypeDetailed[]>({
+      url: APIs.Product,
+      onSuccess: (data) => dispatch(addProducts(data)),
+    });
   };
 
   const loadAddresses = () => {
     if (addresses.length !== 0 || isLoading) return;
-    dispatch(setIsLoading(true));
-    axios
-      .get(API_URLS.Address)
-      .then((data: APIResponseType<ShopAddressTypeNumber[]>) => {
-        dispatch(addAddresses(data.data));
-      })
-      .finally(() => dispatch(setIsLoading(false)));
+    api.send<ShopAddressTypeNumber[]>({
+      url: APIs.Address,
+      onSuccess: (data) => dispatch(addAddresses(data)),
+    });
   };
 
   const updateAddress = (_: any, v: ShopAddressTypeNumber | null) => {
@@ -238,8 +214,8 @@ export function TransactionForm(props: {
         <FormActions
           disabledEdit={selectedTransaction === null}
           submitHandler={submitHandler}
-          url={API_URLS.Transaction}
           objectId={transactionId}
+          url={APIs.Transaction}
         />
       </Form>
     </Container>
