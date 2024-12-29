@@ -1,10 +1,13 @@
 import { TransactionTypeNumber } from "../pages/transactionsPage/types";
 import { ProductTypeDetailed } from "../pages/productsPage/types";
 import { CategoryTypeNumber } from "../pages/categoryPage/types";
-import { ShopAddressTypeNumber } from "../pages/shopsPage/types";
 import { mainStateOptionalType, mainStateType } from "./types";
 import { messageType } from "../components/alert/types";
 import { createSlice } from "@reduxjs/toolkit";
+import {
+  ShopAddressTypeNumber,
+  ShopTypeNumber,
+} from "../pages/shopsPage/types";
 
 const initialState: mainStateType = {
   isLoading: false,
@@ -12,6 +15,7 @@ const initialState: mainStateType = {
   categories: [],
   addresses: [],
   products: [],
+  shops: [],
   message: null,
 };
 
@@ -24,6 +28,17 @@ export const mainSlice = createSlice({
     },
     setIsLoading: (state, action: { payload: boolean }) => {
       state.isLoading = action.payload;
+    },
+    updateShop: (state, action: { payload: ShopTypeNumber }) => {
+      state.shops = state.shops.map((s) =>
+        s.id === action.payload.id ? action.payload : s,
+      );
+    },
+    setShops: (state, action: { payload: ShopTypeNumber[] }) => {
+      state.shops = action.payload;
+    },
+    addShops: (state, action: { payload: ShopTypeNumber[] }) => {
+      state.shops = [...state.shops, ...action.payload];
     },
     updateProduct: (state, action: { payload: ProductTypeDetailed }) => {
       state.products = state.products.map((p) =>
@@ -38,6 +53,9 @@ export const mainSlice = createSlice({
         a.id === action.payload.id ? action.payload : a,
       );
     },
+    setAddresses: (state, action: { payload: ShopAddressTypeNumber[] }) => {
+      state.addresses = action.payload;
+    },
     addAddresses: (state, action: { payload: ShopAddressTypeNumber[] }) => {
       state.addresses = [...state.addresses, ...action.payload];
     },
@@ -48,6 +66,9 @@ export const mainSlice = createSlice({
     },
     addCategories: (state, action: { payload: CategoryTypeNumber[] }) => {
       state.categories = [...state.categories, ...action.payload];
+    },
+    setCategories: (state, action: { payload: CategoryTypeNumber[] }) => {
+      state.categories = action.payload;
     },
     updateTransaction: (state, action: { payload: TransactionTypeNumber }) => {
       state.transactions = state.transactions.map((t) =>
@@ -75,10 +96,15 @@ export const {
   setTransactions,
   updateCategoriy,
   addCategories,
+  setCategories,
   updateProduct,
   addProducts,
   updateAddress,
   addAddresses,
+  setAddresses,
+  updateShop,
+  setShops,
+  addShops,
   setIsLoading,
   updateState,
   setMessage,
