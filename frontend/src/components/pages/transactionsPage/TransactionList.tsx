@@ -72,7 +72,10 @@ export function TransactionList() {
         ))}
       </List>
       <Typography variant="h6" align="center" sx={{ mt: 4 }}>
-        Summary: {transactions.reduce((acc, t) => acc + t.price * t.count, 0)}
+        Summary:{" "}
+        {Math.round(
+          transactions.reduce((acc, t) => acc + t.price * t.count, 0) * 100,
+        ) / 100}
       </Typography>
     </Box>
   );
