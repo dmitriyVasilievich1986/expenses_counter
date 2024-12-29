@@ -1,45 +1,45 @@
-import { useParams, useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
-import axios from "axios";
-import React from "react";
+import { useDispatch, useSelector } from "react-redux";
+import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 
 import Autocomplete from "@mui/material/Autocomplete";
 import Container from "@mui/material/Container";
 import TextField from "@mui/material/TextField";
 
 import { FormTextField, FormActions, Form } from "../../components/form";
-import { PagesURLs, APIResponseType, API_URLS } from "../../Constants";
+import { useNavigateWithParams } from "../../components/link";
+import { Methods, APIs, API } from "../../api";
+import { PagesURLs } from "../../Constants";
+import {
+  setCategories,
+  updateShop,
+  addShops,
+} from "../../reducers/mainReducer";
+
 import { ShopTypeNumber, ShopTypeDetailed } from "./types";
 import { CategoryTypeNumber } from "../categoryPage/types";
-import { setMessage } from "../../reducers/mainReducer";
+import { mainSelectorType } from "../../reducers/types";
 
-export function ShopForm(props: {
-  setSelectedShop: React.Dispatch<
-    React.SetStateAction<ShopTypeDetailed | null>
-  >;
-  setShops: React.Dispatch<React.SetStateAction<ShopTypeNumber[]>>;
-  selectedShop: ShopTypeDetailed | null;
-  shops: ShopTypeNumber[];
-}) {
+export function ShopForm() {
+  const navigate = useNavigateWithParams();
   const { shopId } = useParams();
-  const navigate = useNavigate();
   const dispatch = useDispatch();
+  const api = new API();
 
-  const [category, setCategory] = React.useState<CategoryTypeNumber | null>(
+  const isLoading = useSelector(
+    (state: mainSelectorType) => state.main.isLoading,
+  );
+  const categories = useSelector(
+    (state: mainSelectorType) => state.main.categories,
+  );
+
+  const [selectedShop, setSelectedShop] = useState<ShopTypeDetailed | null>(
     null,
   );
-  const [categories, setCategories] = React.useState<CategoryTypeNumber[]>([]);
-  const [description, setDescription] = React.useState<string>("");
-  const [iconURL, setIconURL] = React.useState<string>("");
-  const [name, setName] = React.useState<string>("");
-
-  React.useEffect(() => {
-    axios
-      .get(API_URLS.Category)
-      .then((data: APIResponseType<CategoryTypeNumber[]>) => {
-        setCategories(data.data);
-      });
-  }, []);
+  const [category, setCategory] = useState<CategoryTypeNumber | null>(null);
+  const [description, setDescription] = useState<string>("");
+  const [iconURL, setIconURL] = useState<string>("");
+  const [name, setName] = useState<string>("");
 
   const getCategoryWithLabel = (
     category: CategoryTypeNumber,
@@ -58,65 +58,68 @@ export function ShopForm(props: {
     );
   };
 
-  const resetState = () => {
-    props.setSelectedShop(null);
-    setDescription("");
-    setCategory(null);
-    setIconURL("");
-    setName("");
+  const resetState = (data?: ShopTypeDetailed) => {
+    setDescription(data?.description ?? "");
+    setCategory(data?.category ?? null);
+    setSelectedShop(data ?? null);
+    setIconURL(data?.icon ?? "");
+    setName(data?.name ?? "");
   };
 
-  React.useEffect(() => {
-    if (shopId === undefined || categories.length === 0) {
-      resetState();
-      return;
-    }
-    axios
-      .get(`${API_URLS.Shop}${shopId}/`)
-      .then((data: APIResponseType<ShopTypeDetailed>) => {
-        setCategory(data.data.category === null ? null : data.data.category);
-        setDescription(data.data.description);
-        setIconURL(data.data.icon ?? "");
-        props.setSelectedShop(data.data);
-        setName(data.data.name);
-      })
-      .catch(() => resetState());
-  }, [categories, shopId]);
+  const getCurrentData = () => {
+    api.send<ShopTypeNumber>({
+      url: `${APIs.Shop}${shopId}/`,
+      onSuccess: resetState,
+      onFail: resetState,
+    });
+  };
 
-  const submitHandler = (method: "post" | "put", url: string) => {
+  useEffect(() => {
+    if (shopId === undefined) resetState();
+    else getCurrentData();
+  }, [shopId]);
+
+  const submitHandler = (method: Methods.post | Methods.put, url: string) => {
     const data = {
       name,
       description,
       icon: iconURL || null,
       category: category?.id || null,
     };
-    axios({ method, url, data })
-      .then((data: APIResponseType<ShopTypeNumber>) => {
-        if (method === "post") {
-          props.setShops([...props.shops, data.data]);
-          dispatch(setMessage({ message: "Shop created" }));
-          navigate(`${PagesURLs.Shop}${data.data.id}`);
-        } else if (method === "put") {
-          const newShops = props.shops.map((s) =>
-            s.id === data.data.id ? data.data : s,
-          );
-          props.setShops(newShops);
-          dispatch(setMessage({ message: "Shop updated" }));
+    const messages = {
+      [Methods.post]: "Shop created",
+      [Methods.put]: "Shop updated",
+    };
+    api.send<ShopTypeNumber>({
+      method,
+      url,
+      data,
+      successMessage: { message: messages[method] },
+      onSuccess: (data) => {
+        if (method === Methods.post) {
+          dispatch(addShops(data));
+          navigate(`${PagesURLs.Shop}${data.id}`);
+        } else {
+          dispatch(updateShop(data));
+          getCurrentData();
         }
-      })
-      .catch((e) => {
-        console.log(e);
-        dispatch(setMessage({ message: "error", severity: "error" }));
-      });
+      },
+    });
+  };
+
+  const loadCategories = () => {
+    if (categories.length !== 0 || isLoading) return;
+    api.send<CategoryTypeNumber[]>({
+      url: APIs.Category,
+      onSuccess: (data) => dispatch(setCategories(data)),
+    });
   };
 
   return (
     <Container maxWidth="lg">
       <Form title="Shop form">
         <FormTextField
-          isChanged={
-            props.selectedShop !== null && props.selectedShop.name !== name
-          }
+          isChanged={selectedShop !== null && selectedShop.name !== name}
           onChange={setName}
           label="Shop name"
           value={name}
@@ -126,8 +129,7 @@ export function ShopForm(props: {
           onChange={setIconURL}
           value={iconURL}
           isChanged={
-            props.selectedShop !== null &&
-            (props.selectedShop.icon ?? "") !== iconURL
+            selectedShop !== null && (selectedShop.icon ?? "") !== iconURL
           }
         />
         <FormTextField
@@ -135,29 +137,29 @@ export function ShopForm(props: {
           label="Shop description"
           value={description}
           isChanged={
-            props.selectedShop !== null &&
-            props.selectedShop.description !== description
+            selectedShop !== null && selectedShop.description !== description
           }
         />
         <Autocomplete
           getOptionLabel={(option) => getCategoryWithLabel(option)}
           onChange={(_, v) => setCategory(v)}
-          disabled={categories.length === 0}
+          onOpen={loadCategories}
           options={categories}
+          loading={isLoading}
           value={category}
           renderInput={(params) => (
             <TextField
               {...params}
               label="Category"
               color={
-                props.selectedShop !== null &&
-                props.selectedShop.category?.id !== category?.id
+                selectedShop !== null &&
+                selectedShop.category?.id !== category?.id
                   ? "warning"
                   : "primary"
               }
               focused={
-                props.selectedShop !== null &&
-                props.selectedShop.category?.id !== category?.id
+                selectedShop !== null &&
+                selectedShop.category?.id !== category?.id
                   ? true
                   : undefined
               }
@@ -165,10 +167,10 @@ export function ShopForm(props: {
           )}
         />
         <FormActions
-          disabledEdit={props.selectedShop === null}
+          disabledEdit={selectedShop === null}
           submitHandler={submitHandler}
-          url={API_URLS.Shop}
           objectId={shopId}
+          url={APIs.Shop}
         />
       </Form>
     </Container>

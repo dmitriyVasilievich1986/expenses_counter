@@ -1,58 +1,78 @@
-import { useNavigate } from "react-router";
-import React from "react";
+import { useDispatch, useSelector } from "react-redux";
+import React, { useEffect } from "react";
 
-import ListItemButton from "@mui/material/ListItemButton";
-import ListItemText from "@mui/material/ListItemText";
 import List from "@mui/material/List";
 import Box from "@mui/material/Box";
 
-import { ShopProps, ShopTypeNumber, ShopAddressTypeNumber } from "./types";
+import { setAddresses, setShops } from "../../reducers/mainReducer";
+import { LinkBox } from "../../components/link";
 import { PagesURLs } from "../../Constants";
+import { APIs, API } from "../../api";
+
+import { ShopTypeNumber, ShopAddressTypeNumber } from "./types";
+import { mainSelectorType } from "../../reducers/types";
 
 function Addresses(props: { addresses: ShopAddressTypeNumber[] }) {
-  let navigate = useNavigate();
-
   if (props.addresses.length === 0) return null;
   return (
     <List sx={{ ml: 4 }}>
       {props.addresses.map((a) => (
-        <ListItemButton
-          onClick={() =>
-            navigate(`${PagesURLs.Shop}/${a.shop}/${PagesURLs.Address}/${a.id}`)
-          }
+        <LinkBox
+          to={`${PagesURLs.Shop}/${a.shop}/${PagesURLs.Address}/${a.id}`}
           key={a.id}
         >
-          <ListItemText primary={a.address} />
-        </ListItemButton>
+          {a.address}
+        </LinkBox>
       ))}
     </List>
   );
 }
 
-function Shop(props: ShopProps & { shop: ShopTypeNumber }) {
-  let navigate = useNavigate();
-  const filteredAddresses = props.addresses.filter(
-    (a) => a.shop === props.shop.id,
+function Shop(props: { shop: ShopTypeNumber; shops: ShopTypeNumber[] }) {
+  const addresses = useSelector(
+    (state: mainSelectorType) => state.main.addresses,
   );
 
+  const dispatch = useDispatch();
+  const api = new API();
+
+  useEffect(() => {
+    if (addresses.length !== 0) return;
+    api.send<ShopAddressTypeNumber[]>({
+      url: APIs.Address,
+      onSuccess: (data) => dispatch(setAddresses(data)),
+    });
+  }, [addresses]);
+
+  const filteredAddresses = addresses.filter((a) => a.shop === props.shop.id);
   return (
     <Box>
-      <ListItemButton
-        onClick={() => navigate(`${PagesURLs.Shop}/${props.shop.id}`)}
-      >
-        <ListItemText primary={props.shop.name} />
-      </ListItemButton>
+      <LinkBox to={`${PagesURLs.Shop}/${props.shop.id}`}>
+        {props.shop.name}
+      </LinkBox>
       <Addresses addresses={filteredAddresses} />
     </Box>
   );
 }
 
-export function ShopsList(props: ShopProps) {
-  if (props.shops.length === 0) return null;
+export function ShopsList() {
+  const shops = useSelector((state: mainSelectorType) => state.main.shops);
+  const dispatch = useDispatch();
+  const api = new API();
+
+  useEffect(() => {
+    if (shops.length !== 0) return;
+    api.send<ShopTypeNumber[]>({
+      url: APIs.Shop,
+      onSuccess: (data) => dispatch(setShops(data)),
+    });
+  }, [shops]);
+
+  if (shops.length === 0) return null;
   return (
     <List sx={{ pl: 2 }}>
-      {props.shops.map((shop) => (
-        <Shop shop={shop} {...props} key={shop.id} />
+      {shops.map((shop) => (
+        <Shop shop={shop} shops={shops} key={shop.id} />
       ))}
     </List>
   );
