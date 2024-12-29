@@ -1,22 +1,18 @@
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
-import axios from "axios";
 import React from "react";
 
 import Autocomplete from "@mui/material/Autocomplete";
 import Container from "@mui/material/Container";
 import TextField from "@mui/material/TextField";
 
-import {
-  updateCategoriy,
-  addCategories,
-  setIsLoading,
-  setMessage,
-} from "../../reducers/mainReducer";
+import { updateCategoriy, addCategories } from "../../reducers/mainReducer";
 import { FormTextField, FormActions, Form } from "../../components/form";
-import { PagesURLs, APIResponseType, API_URLS } from "../../Constants";
-import { CategoryTypeNumber, CategoryTypeDetailed } from "./types";
 import { useNavigateWithParams } from "../../components/link";
+import { Methods, APIs, API } from "../../api";
+import { PagesURLs } from "../../Constants";
+
+import { CategoryTypeNumber, CategoryTypeDetailed } from "./types";
 import { mainStateType } from "../../reducers/types";
 
 export function CategoryForm() {
@@ -30,6 +26,7 @@ export function CategoryForm() {
   const navigate = useNavigateWithParams();
   const { categoryId } = useParams();
   const dispatch = useDispatch();
+  const api = new API();
 
   const [selectedCategory, setSelectedCategory] =
     React.useState<CategoryTypeDetailed | null>(null);
@@ -37,11 +34,11 @@ export function CategoryForm() {
   const [description, setDescription] = React.useState<string>("");
   const [name, setName] = React.useState<string>("");
 
-  const resetState = () => {
-    setSelectedCategory(null);
-    setDescription("");
-    setParent(null);
-    setName("");
+  const resetState = (data?: CategoryTypeDetailed) => {
+    setDescription(data?.description ?? "");
+    setSelectedCategory(data ?? null);
+    setParent(data?.parent ?? null);
+    setName(data?.name ?? "");
   };
 
   React.useEffect(() => {
@@ -49,49 +46,47 @@ export function CategoryForm() {
       resetState();
       return;
     }
-    axios
-      .get(`${API_URLS.Category}${categoryId}/`)
-      .then((data: APIResponseType<CategoryTypeDetailed>) => {
-        setParent(data.data.parent === null ? null : data.data.parent);
-        setDescription(data.data.description);
-        setSelectedCategory(data.data);
-        setName(data.data.name);
-      })
-      .catch(() => resetState());
+    api.send<CategoryTypeDetailed>({
+      url: `${APIs.Category}${categoryId}/`,
+      onSuccess: resetState,
+      onFail: resetState,
+    });
   }, [categoryId]);
 
-  const submitHandler = (method: "post" | "put", url: string) => {
+  const submitHandler = (method: Methods.post | Methods.put, url: string) => {
     const data = {
       name,
       description,
-      parent: parent === null ? null : parent.id,
+      parent: parent && parent.id,
     };
-    axios({ method, url, data })
-      .then((data: APIResponseType<CategoryTypeNumber>) => {
+    const messages = {
+      [Methods.post]: "Category created",
+      [Methods.put]: "Category updated",
+    };
+    api.send<CategoryTypeNumber>({
+      method,
+      url,
+      data,
+      successMessage: { message: messages[method] },
+      onSuccess: (data) => {
         if (method === "post") {
-          dispatch(addCategories([data.data]));
-          dispatch(setMessage({ message: "Category created" }));
-          navigate(`${PagesURLs.Category}${data.data.id}`);
+          dispatch(addCategories([data]));
+          navigate(`${PagesURLs.Category}${data.id}`);
         } else if (method === "put") {
-          dispatch(updateCategoriy(data.data));
-          dispatch(setMessage({ message: "Category updated" }));
+          dispatch(updateCategoriy(data));
+          const parentCategory = categories.find((p) => p.id === data.parent);
+          resetState({ ...data, parent: parentCategory });
         }
-      })
-      .catch((e) => {
-        console.log(e);
-        dispatch(setMessage({ message: "error", severity: "error" }));
-      });
+      },
+    });
   };
 
   const loadCategories = () => {
     if (categories.length !== 0 || isLoading) return;
-    dispatch(setIsLoading(true));
-    axios
-      .get(API_URLS.Category)
-      .then((data: APIResponseType<CategoryTypeNumber[]>) => {
-        dispatch(addCategories(data.data));
-      })
-      .finally(() => dispatch(setIsLoading(false)));
+    api.send<CategoryTypeNumber[]>({
+      url: APIs.Category,
+      onSuccess: (data) => dispatch(addCategories(data)),
+    });
   };
 
   return (
@@ -145,8 +140,8 @@ export function CategoryForm() {
         <FormActions
           disabledEdit={categoryId === undefined}
           submitHandler={submitHandler}
-          url={API_URLS.Category}
           objectId={categoryId}
+          url={APIs.Category}
         />
       </Form>
     </Container>
