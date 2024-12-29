@@ -1,3 +1,4 @@
+import { TransactionTypeNumber } from "../pages/transactionsPage/types";
 import { ProductTypeDetailed } from "../pages/productsPage/types";
 import { CategoryTypeNumber } from "../pages/categoryPage/types";
 import { ShopAddressTypeNumber } from "../pages/shopsPage/types";
@@ -7,6 +8,7 @@ import { createSlice } from "@reduxjs/toolkit";
 
 const initialState: mainStateType = {
   isLoading: false,
+  transactions: [],
   categories: [],
   addresses: [],
   products: [],
@@ -47,6 +49,17 @@ export const mainSlice = createSlice({
     addCategories: (state, action: { payload: CategoryTypeNumber[] }) => {
       state.categories = [...state.categories, ...action.payload];
     },
+    updateTransaction: (state, action: { payload: TransactionTypeNumber }) => {
+      state.transactions = state.transactions.map((t) =>
+        t.id === action.payload.id ? action.payload : t,
+      );
+    },
+    addTransactions: (state, action: { payload: TransactionTypeNumber[] }) => {
+      state.transactions = [...state.transactions, ...action.payload];
+    },
+    setTransactions: (state, action: { payload: TransactionTypeNumber[] }) => {
+      state.transactions = action.payload;
+    },
     updateState: (state, action: { payload: mainStateOptionalType }) => {
       return {
         ...state,
@@ -57,6 +70,9 @@ export const mainSlice = createSlice({
 });
 
 export const {
+  updateTransaction,
+  addTransactions,
+  setTransactions,
   updateCategoriy,
   addCategories,
   updateProduct,
