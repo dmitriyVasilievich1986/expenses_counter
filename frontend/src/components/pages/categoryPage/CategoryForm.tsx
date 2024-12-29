@@ -1,26 +1,30 @@
 import { useDispatch, useSelector } from "react-redux";
+import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import React from "react";
 
 import Autocomplete from "@mui/material/Autocomplete";
 import Container from "@mui/material/Container";
 import TextField from "@mui/material/TextField";
 
-import { updateCategoriy, addCategories } from "../../reducers/mainReducer";
 import { FormTextField, FormActions, Form } from "../../components/form";
 import { useNavigateWithParams } from "../../components/link";
 import { Methods, APIs, API } from "../../api";
 import { PagesURLs } from "../../Constants";
+import {
+  updateCategoriy,
+  addCategories,
+  setCategories,
+} from "../../reducers/mainReducer";
 
 import { CategoryTypeNumber, CategoryTypeDetailed } from "./types";
-import { mainStateType } from "../../reducers/types";
+import { mainSelectorType } from "../../reducers/types";
 
 export function CategoryForm() {
   const isLoading = useSelector(
-    (state: { main: mainStateType }) => state.main.isLoading,
+    (state: mainSelectorType) => state.main.isLoading,
   );
   const categories = useSelector(
-    (state: { main: mainStateType }) => state.main.categories,
+    (state: mainSelectorType) => state.main.categories,
   );
 
   const navigate = useNavigateWithParams();
@@ -29,10 +33,10 @@ export function CategoryForm() {
   const api = new API();
 
   const [selectedCategory, setSelectedCategory] =
-    React.useState<CategoryTypeDetailed | null>(null);
-  const [parent, setParent] = React.useState<CategoryTypeNumber | null>(null);
-  const [description, setDescription] = React.useState<string>("");
-  const [name, setName] = React.useState<string>("");
+    useState<CategoryTypeDetailed | null>(null);
+  const [parent, setParent] = useState<CategoryTypeNumber | null>(null);
+  const [description, setDescription] = useState<string>("");
+  const [name, setName] = useState<string>("");
 
   const resetState = (data?: CategoryTypeDetailed) => {
     setDescription(data?.description ?? "");
@@ -41,16 +45,17 @@ export function CategoryForm() {
     setName(data?.name ?? "");
   };
 
-  React.useEffect(() => {
-    if (categoryId === undefined) {
-      resetState();
-      return;
-    }
+  const getCurrentData = () => {
     api.send<CategoryTypeDetailed>({
       url: `${APIs.Category}${categoryId}/`,
       onSuccess: resetState,
       onFail: resetState,
     });
+  };
+
+  useEffect(() => {
+    if (categoryId === undefined) resetState();
+    else getCurrentData();
   }, [categoryId]);
 
   const submitHandler = (method: Methods.post | Methods.put, url: string) => {
@@ -69,13 +74,12 @@ export function CategoryForm() {
       data,
       successMessage: { message: messages[method] },
       onSuccess: (data) => {
-        if (method === "post") {
+        if (method === Methods.post) {
           dispatch(addCategories([data]));
           navigate(`${PagesURLs.Category}${data.id}`);
-        } else if (method === "put") {
+        } else {
           dispatch(updateCategoriy(data));
-          const parentCategory = categories.find((p) => p.id === data.parent);
-          resetState({ ...data, parent: parentCategory });
+          getCurrentData();
         }
       },
     });
@@ -85,7 +89,7 @@ export function CategoryForm() {
     if (categories.length !== 0 || isLoading) return;
     api.send<CategoryTypeNumber[]>({
       url: APIs.Category,
-      onSuccess: (data) => dispatch(addCategories(data)),
+      onSuccess: (data) => dispatch(setCategories(data)),
     });
   };
 

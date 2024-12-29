@@ -1,6 +1,6 @@
 import { useDispatch, useSelector } from "react-redux";
+import React, { useState, useEffect } from "react";
 import { useParams } from "react-router";
-import React from "react";
 
 import Autocomplete from "@mui/material/Autocomplete";
 import Container from "@mui/material/Container";
@@ -14,8 +14,8 @@ import { ProductTypeDetailed } from "./types";
 import { Methods, API, APIs } from "../../api";
 import { PagesURLs } from "../../Constants";
 import {
+  setCategories,
   updateProduct,
-  addCategories,
   addProducts,
 } from "../../reducers/mainReducer";
 
@@ -33,11 +33,12 @@ export function ProductsForm() {
   const api = new API();
 
   const [selectedProduct, setSelectedProduct] =
-    React.useState<ProductTypeDetailed | null>(null);
-  const [subCategory, setSubCategory] =
-    React.useState<CategoryTypeNumber | null>(null);
-  const [description, setDescription] = React.useState<string>("");
-  const [name, setName] = React.useState<string>("");
+    useState<ProductTypeDetailed | null>(null);
+  const [subCategory, setSubCategory] = useState<CategoryTypeNumber | null>(
+    null,
+  );
+  const [description, setDescription] = useState<string>("");
+  const [name, setName] = useState<string>("");
 
   const resetState = (data?: ProductTypeDetailed) => {
     setSubCategory(data?.sub_category ?? null);
@@ -46,16 +47,17 @@ export function ProductsForm() {
     setName(data?.name ?? "");
   };
 
-  React.useEffect(() => {
-    if (productId === undefined) {
-      resetState();
-      return;
-    }
+  const getCurrentData = () => {
     api.send<ProductTypeDetailed>({
       url: `${APIs.Product}${productId}/`,
       onFail: resetState,
       onSuccess: resetState,
     });
+  };
+
+  useEffect(() => {
+    if (productId === undefined) resetState();
+    else getCurrentData();
   }, [productId]);
 
   const submitHandler = (method: Methods.post | Methods.put, url: string) => {
@@ -79,7 +81,7 @@ export function ProductsForm() {
           navigate(`${PagesURLs.Product}/${data.id}`);
         } else {
           dispatch(updateProduct(data));
-          resetState(data);
+          getCurrentData();
         }
       },
     });
@@ -89,7 +91,7 @@ export function ProductsForm() {
     if (categories.length !== 0 || isLoading) return;
     api.send<CategoryTypeNumber[]>({
       url: APIs.Category,
-      onSuccess: (data) => dispatch(addCategories(data)),
+      onSuccess: (data) => dispatch(setCategories(data)),
     });
   };
 

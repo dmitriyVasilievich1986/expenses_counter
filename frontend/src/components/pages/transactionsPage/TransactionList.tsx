@@ -9,10 +9,11 @@ import Box from "@mui/material/Box";
 
 import { setTransactions } from "../../reducers/mainReducer";
 import { Params, LinkBox } from "../../components/link";
-import { mainStateType } from "../../reducers/types";
-import { TransactionTypeNumber } from "./types";
 import { Methods, APIs, API } from "../../api";
 import { PagesURLs } from "../../Constants";
+
+import { mainStateType } from "../../reducers/types";
+import { TransactionTypeNumber } from "./types";
 
 function Transaction(props: {
   transaction: TransactionTypeNumber;
@@ -86,7 +87,7 @@ export function PopularProductsList() {
   const [searchParams] = useSearchParams();
   const api = new API();
 
-  React.useEffect(() => {
+  useEffect(() => {
     const address = searchParams.get("address");
     if (!address) {
       setTransactions([]);

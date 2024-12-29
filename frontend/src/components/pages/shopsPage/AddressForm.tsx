@@ -30,16 +30,17 @@ export function AddressForm() {
     setAddress(data?.address ?? "");
   };
 
-  useEffect(() => {
-    if (addressId === undefined) {
-      resetState();
-      return;
-    }
+  const getCurrentData = () => {
     api.send<ShopAddressTypeNumber>({
       url: `${APIs.Address}${addressId}/`,
       onSuccess: resetState,
       onFail: resetState,
     });
+  };
+
+  useEffect(() => {
+    if (addressId === undefined) resetState();
+    else getCurrentData();
   }, [addressId]);
 
   const submitHandler = (method: Methods.post | Methods.put, url: string) => {
@@ -65,7 +66,7 @@ export function AddressForm() {
           );
         } else {
           dispatch(updateAddress(data));
-          resetState(data);
+          getCurrentData();
         }
       },
     });

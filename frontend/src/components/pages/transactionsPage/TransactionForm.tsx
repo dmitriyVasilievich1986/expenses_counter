@@ -1,22 +1,27 @@
 import { useSearchParams, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import React from "react";
+import React, { useState, useEffect } from "react";
 
 import InputAdornment from "@mui/material/InputAdornment";
 import Autocomplete from "@mui/material/Autocomplete";
 import Container from "@mui/material/Container";
 import TextField from "@mui/material/TextField";
 
-import { addTransactions, updateTransaction } from "../../reducers/mainReducer";
-import { ShopAddressType, ShopAddressTypeNumber } from "../shopsPage/types";
 import { FormTextField, FormActions, Form } from "../../components/form";
-import { TransactionTypeNumber, TransactionTypeDetailed } from "./types";
-import { addAddresses, addProducts } from "../../reducers/mainReducer";
 import { useNavigateWithParams } from "../../components/link";
-import { ProductTypeDetailed } from "../productsPage/types";
-import { mainStateType } from "../../reducers/types";
 import { Methods, APIs, API } from "../../api";
 import { PagesURLs } from "../../Constants";
+import {
+  updateTransaction,
+  addTransactions,
+  setAddresses,
+  setProducts,
+} from "../../reducers/mainReducer";
+
+import { ShopAddressType, ShopAddressTypeNumber } from "../shopsPage/types";
+import { TransactionTypeNumber, TransactionTypeDetailed } from "./types";
+import { ProductTypeDetailed } from "../productsPage/types";
+import { mainStateType } from "../../reducers/types";
 
 export function TransactionForm() {
   const isLoading = useSelector(
@@ -36,15 +41,11 @@ export function TransactionForm() {
   const api = new API();
 
   const [selectedTransaction, setSelectedTransaction] =
-    React.useState<TransactionTypeDetailed | null>(null);
-  const [address, setAddress] = React.useState<ShopAddressType<number> | null>(
-    null,
-  );
-  const [product, setProduct] = React.useState<ProductTypeDetailed | null>(
-    null,
-  );
-  const [price, setPrice] = React.useState<string>("0");
-  const [count, setCount] = React.useState<string>("1");
+    useState<TransactionTypeDetailed | null>(null);
+  const [address, setAddress] = useState<ShopAddressType<number> | null>(null);
+  const [product, setProduct] = useState<ProductTypeDetailed | null>(null);
+  const [price, setPrice] = useState<string>("0");
+  const [count, setCount] = useState<string>("1");
 
   const resetState = (data?: TransactionTypeDetailed) => {
     setPrice(data?.price ? String(data?.price) : "0");
@@ -54,16 +55,17 @@ export function TransactionForm() {
     setAddress(data?.address ?? null);
   };
 
-  React.useEffect(() => {
-    if (transactionId === undefined) {
-      resetState();
-      return;
-    }
+  const getCurrentData = () => {
     api.send<TransactionTypeDetailed>({
       url: `${APIs.Transaction}${transactionId}/`,
       onSuccess: resetState,
       onFail: resetState,
     });
+  };
+
+  useEffect(() => {
+    if (transactionId === undefined) resetState();
+    else getCurrentData();
   }, [transactionId]);
 
   const productChangeHandler = (_: any, value: ProductTypeDetailed | null) => {
@@ -103,7 +105,7 @@ export function TransactionForm() {
           navigate(`${PagesURLs.Transaction}/${data.id}`);
         } else {
           dispatch(updateTransaction(data));
-          resetState(data);
+          resetState();
         }
       },
     });
@@ -113,7 +115,7 @@ export function TransactionForm() {
     if (products.length !== 0 || isLoading) return;
     api.send<ProductTypeDetailed[]>({
       url: APIs.Product,
-      onSuccess: (data) => dispatch(addProducts(data)),
+      onSuccess: (data) => dispatch(setProducts(data)),
     });
   };
 
@@ -121,7 +123,7 @@ export function TransactionForm() {
     if (addresses.length !== 0 || isLoading) return;
     api.send<ShopAddressTypeNumber[]>({
       url: APIs.Address,
-      onSuccess: (data) => dispatch(addAddresses(data)),
+      onSuccess: (data) => dispatch(setAddresses(data)),
     });
   };
 

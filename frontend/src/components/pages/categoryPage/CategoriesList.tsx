@@ -4,7 +4,7 @@ import React, { useEffect } from "react";
 import List from "@mui/material/List";
 import Box from "@mui/material/Box";
 
-import { addCategories } from "../../reducers/mainReducer";
+import { setCategories } from "../../reducers/mainReducer";
 import { LinkBox } from "../../components/link";
 import { PagesURLs } from "../../Constants";
 import { APIs, API } from "../../api";
@@ -45,12 +45,11 @@ export function CategoriesListContainer() {
   );
 
   useEffect(() => {
-    if (categories.length === 0) {
-      api.send<CategoryTypeNumber[]>({
-        url: APIs.Category,
-        onSuccess: (data) => dispatch(addCategories(data)),
-      });
-    }
+    if (categories.length !== 0) return;
+    api.send<CategoryTypeNumber[]>({
+      url: APIs.Category,
+      onSuccess: (data) => dispatch(setCategories(data)),
+    });
   }, [categories]);
 
   return <CategoriesList categories={categories} parent={null} />;
