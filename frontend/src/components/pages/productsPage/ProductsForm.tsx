@@ -1,5 +1,5 @@
-import { useNavigate, useParams } from "react-router";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { useParams } from "react-router";
 import axios from "axios";
 import React from "react";
 
@@ -9,21 +9,32 @@ import TextField from "@mui/material/TextField";
 
 import { FormTextField, FormActions, Form } from "../../components/form";
 import { APIResponseType, PagesURLs, API_URLS } from "../../Constants";
+import { useNavigateWithParams } from "../../components/link";
 import { CategoryTypeNumber } from "../categoryPage/types";
-import { setMessage } from "../../reducers/mainReducer";
+import { mainStateType } from "../../reducers/types";
 import { ProductTypeDetailed } from "./types";
+import {
+  updateProduct,
+  setIsLoading,
+  addProducts,
+  addCategories,
+  setMessage,
+} from "../../reducers/mainReducer";
 
-export function ProductsForm(props: {
-  products: ProductTypeDetailed[];
-  setProducts: React.Dispatch<React.SetStateAction<ProductTypeDetailed[]>>;
-}) {
+export function ProductsForm() {
+  const isLoading = useSelector(
+    (state: { main: mainStateType }) => state.main.isLoading,
+  );
+  const categories = useSelector(
+    (state: { main: mainStateType }) => state.main.categories,
+  );
+
+  const navigate = useNavigateWithParams();
   const { productId } = useParams();
-  const navigate = useNavigate();
   const dispatch = useDispatch();
 
   const [selectedProduct, setSelectedProduct] =
     React.useState<ProductTypeDetailed | null>(null);
-  const [categories, setCategories] = React.useState<CategoryTypeNumber[]>([]);
   const [subCategory, setSubCategory] =
     React.useState<CategoryTypeNumber | null>(null);
   const [description, setDescription] = React.useState<string>("");
@@ -50,15 +61,7 @@ export function ProductsForm(props: {
         setName(data.data.name);
       })
       .catch(() => resetState());
-  }, [productId, props.products]);
-
-  React.useEffect(() => {
-    axios
-      .get(API_URLS.Category)
-      .then((data: APIResponseType<CategoryTypeNumber[]>) => {
-        setCategories(data.data);
-      });
-  }, []);
+  }, [productId]);
 
   const submitHandler = (method: "post" | "put", url: string) => {
     const data = {
@@ -70,20 +73,28 @@ export function ProductsForm(props: {
       .then((data: APIResponseType<ProductTypeDetailed>) => {
         if (method === "post") {
           dispatch(setMessage({ message: "Product created" }));
-          props.setProducts([...props.products, data.data]);
+          dispatch(addProducts([data.data]));
           navigate(`${PagesURLs.Product}/${data.data.id}`);
         } else if (method === "put") {
-          const newProducts = props.products.map((p) =>
-            p.id === data.data.id ? data.data : p,
-          );
+          dispatch(updateProduct(data.data));
           dispatch(setMessage({ message: "Product updated" }));
-          props.setProducts(newProducts);
         }
       })
       .catch((e) => {
         console.log(e);
         dispatch(setMessage({ message: "error", severity: "error" }));
       });
+  };
+
+  const loadCategories = () => {
+    if (categories.length !== 0 || isLoading) return;
+    dispatch(setIsLoading(true));
+    axios
+      .get(API_URLS.Category)
+      .then((data: APIResponseType<CategoryTypeNumber[]>) => {
+        dispatch(addCategories(data.data));
+      })
+      .finally(() => dispatch(setIsLoading(false)));
   };
 
   return (
@@ -107,8 +118,9 @@ export function ProductsForm(props: {
         <Autocomplete
           getOptionLabel={(option) => option.name}
           onChange={(_, v) => setSubCategory(v)}
-          disabled={categories.length === 0}
+          onOpen={loadCategories}
           options={categories}
+          loading={isLoading}
           value={subCategory}
           renderInput={(params) => (
             <TextField
