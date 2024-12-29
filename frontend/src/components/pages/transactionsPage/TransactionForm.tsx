@@ -1,5 +1,5 @@
 import { useSearchParams, useParams } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import dayjs from "dayjs";
 import axios from "axios";
 import React from "react";
@@ -9,6 +9,12 @@ import Autocomplete from "@mui/material/Autocomplete";
 import Container from "@mui/material/Container";
 import TextField from "@mui/material/TextField";
 
+import {
+  setAddresses,
+  setMessage,
+  setIsLoading,
+  setProducts,
+} from "../../reducers/mainReducer";
 import { ShopAddressType, ShopAddressTypeNumber } from "../shopsPage/types";
 import { FormTextField, FormActions, Form } from "../../components/form";
 import { TransactionTypeNumber, TransactionTypeDetailed } from "./types";
@@ -16,13 +22,23 @@ import { PagesURLs, APIResponseType, API_URLS } from "../../Constants";
 import { useNavigateWithParams } from "../../components/link";
 import { UrlParamsType } from "../../components/link/types";
 import { ProductTypeDetailed } from "../productsPage/types";
-import { setMessage } from "../../reducers/mainReducer";
+import { mainStateType } from "../../reducers/types";
 
 export function TransactionForm(props: {
   setTransactions: React.Dispatch<
     React.SetStateAction<TransactionTypeNumber[]>
   >;
 }) {
+  const isLoading = useSelector(
+    (state: { main: mainStateType }) => state.main.isLoading,
+  );
+  const addresses = useSelector(
+    (state: { main: mainStateType }) => state.main.addresses,
+  );
+  const products = useSelector(
+    (state: { main: mainStateType }) => state.main.products,
+  );
+
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigateWithParams();
   const { transactionId } = useParams();
@@ -33,12 +49,9 @@ export function TransactionForm(props: {
   const [address, setAddress] = React.useState<ShopAddressType<number> | null>(
     null,
   );
-  const [addresses, setAddresses] = React.useState<ShopAddressTypeNumber[]>([]);
-  const [products, setProducts] = React.useState<ProductTypeDetailed[]>([]);
   const [product, setProduct] = React.useState<ProductTypeDetailed | null>(
     null,
   );
-  const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const [price, setPrice] = React.useState<string>("0");
   const [count, setCount] = React.useState<string>("1");
 
@@ -116,24 +129,24 @@ export function TransactionForm(props: {
 
   const loadProducts = () => {
     if (products.length !== 0 || isLoading) return;
-    setIsLoading(true);
+    dispatch(setIsLoading(true));
     axios
       .get(API_URLS.Product)
       .then((data: APIResponseType<ProductTypeDetailed[]>) => {
-        setProducts(data.data);
+        dispatch(setProducts(data.data));
       })
-      .finally(() => setIsLoading(false));
+      .finally(() => dispatch(setIsLoading(false)));
   };
 
   const loadAddresses = () => {
     if (addresses.length !== 0 || isLoading) return;
-    setIsLoading(true);
+    dispatch(setIsLoading(true));
     axios
       .get(API_URLS.Address)
       .then((data: APIResponseType<ShopAddressTypeNumber[]>) => {
-        setAddresses(data.data);
+        dispatch(setAddresses(data.data));
       })
-      .finally(() => setIsLoading(false));
+      .finally(() => dispatch(setIsLoading(false)));
   };
 
   const updateAddress = (_: any, v: ShopAddressTypeNumber | null) => {
