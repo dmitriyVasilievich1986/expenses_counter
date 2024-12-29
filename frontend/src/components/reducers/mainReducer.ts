@@ -1,9 +1,12 @@
+import { ProductTypeDetailed } from "../pages/productsPage/types";
+import { CategoryTypeNumber } from "../pages/categoryPage/types";
+import { ShopAddressTypeNumber } from "../pages/shopsPage/types";
+import { mainStateOptionalType, mainStateType } from "./types";
 import { messageType } from "../components/alert/types";
 import { createSlice } from "@reduxjs/toolkit";
-import { mainStateOptionalType, mainStateType } from "./types";
 
 const initialState: mainStateType = {
-  isLoading: true,
+  isLoading: false,
   categories: [],
   addresses: [],
   products: [],
@@ -20,6 +23,30 @@ export const mainSlice = createSlice({
     setIsLoading: (state, action: { payload: boolean }) => {
       state.isLoading = action.payload;
     },
+    updateProduct: (state, action: { payload: ProductTypeDetailed }) => {
+      state.products = state.products.map((p) =>
+        p.id === action.payload.id ? action.payload : p,
+      );
+    },
+    addProducts: (state, action: { payload: ProductTypeDetailed[] }) => {
+      state.products = [...state.products, ...action.payload];
+    },
+    updateAddress: (state, action: { payload: ShopAddressTypeNumber }) => {
+      state.addresses = state.addresses.map((a) =>
+        a.id === action.payload.id ? action.payload : a,
+      );
+    },
+    addAddresses: (state, action: { payload: ShopAddressTypeNumber[] }) => {
+      state.addresses = [...state.addresses, ...action.payload];
+    },
+    updateCategoriy: (state, action: { payload: CategoryTypeNumber }) => {
+      state.categories = state.categories.map((c) =>
+        c.id === action.payload.id ? action.payload : c,
+      );
+    },
+    addCategories: (state, action: { payload: CategoryTypeNumber[] }) => {
+      state.categories = [...state.categories, ...action.payload];
+    },
     updateState: (state, action: { payload: mainStateOptionalType }) => {
       return {
         ...state,
@@ -29,6 +56,16 @@ export const mainSlice = createSlice({
   },
 });
 
-export const { setIsLoading, updateState, setMessage } = mainSlice.actions;
+export const {
+  updateCategoriy,
+  addCategories,
+  updateProduct,
+  addProducts,
+  updateAddress,
+  addAddresses,
+  setIsLoading,
+  updateState,
+  setMessage,
+} = mainSlice.actions;
 
 export default mainSlice.reducer;

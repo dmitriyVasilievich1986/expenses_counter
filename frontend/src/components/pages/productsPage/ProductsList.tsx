@@ -1,31 +1,29 @@
 import { useDispatch, useSelector } from "react-redux";
-import axios from "axios";
 import React from "react";
 
 import List from "@mui/material/List";
 import Box from "@mui/material/Box";
 
-import { PagesURLs, APIResponseType, API_URLS } from "../../Constants";
-import { setIsLoading, addProducts } from "../../reducers/mainReducer";
+import { addProducts } from "../../reducers/mainReducer";
 import { mainStateType } from "../../reducers/types";
 import { ProductTypeDetailed } from "./types";
 import { Link } from "../../components/link";
+import { PagesURLs } from "../../Constants";
+import { API, APIs } from "../../api";
 
 export function ProductsList() {
   const products = useSelector(
     (state: { main: mainStateType }) => state.main.products,
   );
   const dispatch = useDispatch();
+  const api = new API();
 
   React.useEffect(() => {
     if (products.length === 0) {
-      dispatch(setIsLoading(true));
-      axios
-        .get(API_URLS.Product)
-        .then((data: APIResponseType<ProductTypeDetailed[]>) => {
-          dispatch(addProducts(data.data));
-        })
-        .finally(() => dispatch(setIsLoading(false)));
+      api.send<ProductTypeDetailed[]>({
+        url: APIs.Product,
+        onSuccess: (data) => dispatch(addProducts(data)),
+      });
     }
   }, [products]);
 

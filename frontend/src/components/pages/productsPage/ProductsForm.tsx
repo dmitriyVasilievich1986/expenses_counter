@@ -1,6 +1,5 @@
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router";
-import axios from "axios";
 import React from "react";
 
 import Autocomplete from "@mui/material/Autocomplete";
@@ -8,17 +7,16 @@ import Container from "@mui/material/Container";
 import TextField from "@mui/material/TextField";
 
 import { FormTextField, FormActions, Form } from "../../components/form";
-import { APIResponseType, PagesURLs, API_URLS } from "../../Constants";
 import { useNavigateWithParams } from "../../components/link";
 import { CategoryTypeNumber } from "../categoryPage/types";
 import { mainStateType } from "../../reducers/types";
 import { ProductTypeDetailed } from "./types";
+import { Methods, API, APIs } from "../../api";
+import { PagesURLs } from "../../Constants";
 import {
   updateProduct,
-  setIsLoading,
-  addProducts,
   addCategories,
-  setMessage,
+  addProducts,
 } from "../../reducers/mainReducer";
 
 export function ProductsForm() {
@@ -32,6 +30,7 @@ export function ProductsForm() {
   const navigate = useNavigateWithParams();
   const { productId } = useParams();
   const dispatch = useDispatch();
+  const api = new API();
 
   const [selectedProduct, setSelectedProduct] =
     React.useState<ProductTypeDetailed | null>(null);
@@ -40,11 +39,11 @@ export function ProductsForm() {
   const [description, setDescription] = React.useState<string>("");
   const [name, setName] = React.useState<string>("");
 
-  const resetState = () => {
-    setSelectedProduct(null);
-    setSubCategory(null);
-    setDescription("");
-    setName("");
+  const resetState = (data?: ProductTypeDetailed) => {
+    setSubCategory(data?.sub_category ?? null);
+    setDescription(data?.description ?? "");
+    setSelectedProduct(data ?? null);
+    setName(data?.name ?? "");
   };
 
   React.useEffect(() => {
@@ -52,49 +51,46 @@ export function ProductsForm() {
       resetState();
       return;
     }
-    axios
-      .get(`${API_URLS.Product}${productId}/`)
-      .then((data: APIResponseType<ProductTypeDetailed>) => {
-        setSubCategory(data.data.sub_category);
-        setDescription(data.data.description);
-        setSelectedProduct(data.data);
-        setName(data.data.name);
-      })
-      .catch(() => resetState());
+    api.send<ProductTypeDetailed>({
+      url: `${APIs.Product}${productId}/`,
+      onFail: resetState,
+      onSuccess: resetState,
+    });
   }, [productId]);
 
-  const submitHandler = (method: "post" | "put", url: string) => {
+  const submitHandler = (method: Methods.post | Methods.put, url: string) => {
     const data = {
       name,
       description,
       sub_category: subCategory!.id,
     };
-    axios({ method, url, data })
-      .then((data: APIResponseType<ProductTypeDetailed>) => {
-        if (method === "post") {
-          dispatch(setMessage({ message: "Product created" }));
-          dispatch(addProducts([data.data]));
-          navigate(`${PagesURLs.Product}/${data.data.id}`);
-        } else if (method === "put") {
-          dispatch(updateProduct(data.data));
-          dispatch(setMessage({ message: "Product updated" }));
+    const messages = {
+      [Methods.post]: "Product created",
+      [Methods.put]: "Product updated",
+    };
+    api.send<ProductTypeDetailed>({
+      url,
+      method,
+      data,
+      successMessage: { message: messages[method] },
+      onSuccess: (data) => {
+        if (method === Methods.post) {
+          dispatch(addProducts([data]));
+          navigate(`${PagesURLs.Product}/${data.id}`);
+        } else {
+          dispatch(updateProduct(data));
+          resetState(data);
         }
-      })
-      .catch((e) => {
-        console.log(e);
-        dispatch(setMessage({ message: "error", severity: "error" }));
-      });
+      },
+    });
   };
 
   const loadCategories = () => {
     if (categories.length !== 0 || isLoading) return;
-    dispatch(setIsLoading(true));
-    axios
-      .get(API_URLS.Category)
-      .then((data: APIResponseType<CategoryTypeNumber[]>) => {
-        dispatch(addCategories(data.data));
-      })
-      .finally(() => dispatch(setIsLoading(false)));
+    api.send<CategoryTypeNumber[]>({
+      url: APIs.Category,
+      onSuccess: (data) => dispatch(addCategories(data)),
+    });
   };
 
   return (
@@ -144,8 +140,8 @@ export function ProductsForm() {
         <FormActions
           disabledEdit={productId === undefined}
           submitHandler={submitHandler}
-          url={API_URLS.Product}
           objectId={productId}
+          url={APIs.Product}
         />
       </Form>
     </Container>
