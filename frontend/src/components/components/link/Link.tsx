@@ -11,21 +11,39 @@ const cx = classnames.bind(style);
 export class Params implements UrlParamsType {
   address?: string | null = undefined;
   currentDate?: string | null = undefined;
+  searchParams: URLSearchParams;
 
   constructor(params?: UrlParamsType) {
-    const [searchParams] = useSearchParams();
+    this.searchParams = useSearchParams()[0];
 
-    this.currentDate =
-      params?.currentDate === null
-        ? undefined
-        : searchParams.get("currentDate");
-    this.address =
-      params?.address === null ? undefined : searchParams.get("address");
+    if (params?.currentDate === undefined)
+      this.currentDate = this.searchParams.get("currentDate");
+    else this.currentDate = params.currentDate;
+
+    if (params?.address === undefined)
+      this.address = this.searchParams.get("address");
+    else this.address = params.address;
+  }
+
+  updateCurrentDate(currentDate?: string | null) {
+    if (currentDate === undefined)
+      this.currentDate = this.searchParams.get("currentDate");
+    else this.currentDate = currentDate;
+  }
+
+  updateAddress(address?: string | null) {
+    if (address === undefined) this.address = this.searchParams.get("address");
+    else this.address = address;
+  }
+
+  update(params?: UrlParamsType) {
+    this.updateCurrentDate(params?.currentDate);
+    this.updateAddress(params?.address);
   }
 
   toString() {
     const filteredParams = Object.fromEntries(
-      Object.entries(this).filter(([_, v]) => !!v),
+      Object.entries(this).filter(([k, v]) => !!v && k !== "searchParams"),
     );
     const params = new URLSearchParams(filteredParams).toString();
     return params ? `?${params}` : "";
