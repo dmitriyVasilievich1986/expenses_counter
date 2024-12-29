@@ -23,15 +23,18 @@
   cursor: pointer;
   color: #000;
 
-  &:hover {
-    color: #ccc;
-  }
-
   &.isActive {
     text-decoration: underline 4px #000;
+  }
+}
 
-    &:hover {
-      text-decoration: underline 4px #ccc;
-    }
+.link-box {
+  padding: 0.5rem 0 0.5rem 0.5rem;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #e0e1dd;
+    padding-left: 1rem;
+    font-weight: bold;
   }
 }
