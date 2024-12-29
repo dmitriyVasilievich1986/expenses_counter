@@ -94,22 +94,19 @@ export function ShopForm(props: {
       .then((data: APIResponseType<ShopTypeNumber>) => {
         if (method === "post") {
           props.setShops([...props.shops, data.data]);
-          dispatch(
-            setMessage({ message: "Shop created", severity: "success" }),
-          );
+          dispatch(setMessage({ message: "Shop created" }));
           navigate(`${PagesURLs.Shop}${data.data.id}`);
         } else if (method === "put") {
           const newShops = props.shops.map((s) =>
             s.id === data.data.id ? data.data : s,
           );
           props.setShops(newShops);
-          dispatch(
-            setMessage({ message: "Shop updated", severity: "success" }),
-          );
+          dispatch(setMessage({ message: "Shop updated" }));
         }
       })
       .catch((e) => {
-        dispatch(setMessage({ message: e.respose.data, severity: "error" }));
+        console.log(e);
+        dispatch(setMessage({ message: "error", severity: "error" }));
       });
   };
 

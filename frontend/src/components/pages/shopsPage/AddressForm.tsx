@@ -55,12 +55,7 @@ export function AddressForm(props: {
       .then((data: APIResponseType<ShopAddressTypeNumber>) => {
         if (method === "post") {
           props.setAddresses([...props.addresses, data.data]);
-          dispatch(
-            setMessage({
-              message: "New shop branch created",
-              severity: "success",
-            }),
-          );
+          dispatch(setMessage({ message: "New shop branch created" }));
           navigate(
             `${PagesURLs.Shop}${props.selectedShop!.id}/${PagesURLs.Address}/${
               data.data.id
@@ -71,13 +66,12 @@ export function AddressForm(props: {
             a.id === data.data.id ? data.data : a,
           );
           props.setAddresses(newAddresses);
-          dispatch(
-            setMessage({ message: "Shop branch updated", severity: "success" }),
-          );
+          dispatch(setMessage({ message: "Shop branch updated" }));
         }
       })
       .catch((e) => {
-        dispatch(setMessage({ message: e.respose.data, severity: "error" }));
+        console.log(e);
+        dispatch(setMessage({ message: "error", severity: "error" }));
       });
   };
 

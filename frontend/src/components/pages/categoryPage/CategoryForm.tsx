@@ -59,22 +59,19 @@ export function CategoryForm(props: {
       .then((data: APIResponseType<CategoryTypeNumber>) => {
         if (method === "post") {
           props.setCategories([...props.categories, data.data]);
-          dispatch(
-            setMessage({ message: "Category created", severity: "success" }),
-          );
+          dispatch(setMessage({ message: "Category created" }));
           navigate(`${PagesURLs.Category}${data.data.id}`);
         } else if (method === "put") {
           const newCategories = props.categories.map((c) =>
             c.id === data.data.id ? data.data : c,
           );
-          dispatch(
-            setMessage({ message: "Category updated", severity: "success" }),
-          );
+          dispatch(setMessage({ message: "Category updated" }));
           props.setCategories(newCategories);
         }
       })
       .catch((e) => {
-        dispatch(setMessage({ message: e.respose.data, severity: "error" }));
+        console.log(e);
+        dispatch(setMessage({ message: "error", severity: "error" }));
       });
   };
 

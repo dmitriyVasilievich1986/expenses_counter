@@ -69,23 +69,20 @@ export function ProductsForm(props: {
     axios({ method, url, data })
       .then((data: APIResponseType<ProductTypeDetailed>) => {
         if (method === "post") {
-          dispatch(
-            setMessage({ message: "Product created", severity: "success" }),
-          );
+          dispatch(setMessage({ message: "Product created" }));
           props.setProducts([...props.products, data.data]);
           navigate(`${PagesURLs.Product}/${data.data.id}`);
         } else if (method === "put") {
           const newProducts = props.products.map((p) =>
             p.id === data.data.id ? data.data : p,
           );
-          dispatch(
-            setMessage({ message: "Product updated", severity: "success" }),
-          );
+          dispatch(setMessage({ message: "Product updated" }));
           props.setProducts(newProducts);
         }
       })
       .catch((e) => {
-        dispatch(setMessage({ message: e.respose.data, severity: "error" }));
+        console.log(e);
+        dispatch(setMessage({ message: "error", severity: "error" }));
       });
   };
 

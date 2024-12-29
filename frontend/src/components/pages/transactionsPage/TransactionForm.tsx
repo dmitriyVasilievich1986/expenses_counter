@@ -95,12 +95,7 @@ export function TransactionForm(props: {
       .then((data: APIResponseType<TransactionTypeNumber>) => {
         if (method === "post") {
           props.setTransactions((prev) => [...prev, data.data]);
-          dispatch(
-            setMessage({
-              message: "Transaction created",
-              severity: "success",
-            }),
-          );
+          dispatch(setMessage({ message: "Transaction created" }));
           const newParams: UrlParamsType = {
             address: String(data.data.address.id),
             currentDate: dayjs(data.data.date).format("YYYY-MM-DD"),
@@ -110,12 +105,7 @@ export function TransactionForm(props: {
           props.setTransactions((prev) =>
             prev.map((t) => (t.id === data.data.id ? data.data : t)),
           );
-          dispatch(
-            setMessage({
-              message: "Transaction updated",
-              severity: "success",
-            }),
-          );
+          dispatch(setMessage({ message: "Transaction updated" }));
         }
       })
       .catch((e) => {
