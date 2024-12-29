@@ -23,7 +23,8 @@ export function TransactionForm(props: {
     React.SetStateAction<TransactionTypeNumber[]>
   >;
 }) {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigateWithParams();
   const { transactionId } = useParams();
   const dispatch = useDispatch();
 
@@ -40,8 +41,6 @@ export function TransactionForm(props: {
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const [price, setPrice] = React.useState<string>("0");
   const [count, setCount] = React.useState<string>("1");
-
-  const navigate = useNavigateWithParams();
 
   const resetState = () => {
     setSelectedTransaction(null);
@@ -147,13 +146,22 @@ export function TransactionForm(props: {
       .finally(() => setIsLoading(false));
   };
 
+  const updateAddress = (_: any, v: ShopAddressTypeNumber | null) => {
+    setAddress(v);
+    setSearchParams((prev) => {
+      if (v === null) prev.delete("address");
+      else prev.set("address", String(v.id));
+      return prev;
+    });
+  };
+
   return (
     <Container maxWidth="lg">
       <Form title="Transaction form">
         <Autocomplete
           getOptionLabel={(option) => option.local_name}
           getOptionKey={(option) => option.id as number}
-          onChange={(_, v) => setAddress(v)}
+          onChange={updateAddress}
           onOpen={loadAddresses}
           options={addresses}
           loading={isLoading}
