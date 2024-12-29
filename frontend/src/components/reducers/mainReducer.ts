@@ -48,6 +48,9 @@ export const mainSlice = createSlice({
     addProducts: (state, action: { payload: ProductTypeDetailed[] }) => {
       state.products = [...state.products, ...action.payload];
     },
+    setProducts: (state, action: { payload: ProductTypeDetailed[] }) => {
+      state.products = action.payload;
+    },
     updateAddress: (state, action: { payload: ShopAddressTypeNumber }) => {
       state.addresses = state.addresses.map((a) =>
         a.id === action.payload.id ? action.payload : a,
@@ -99,6 +102,7 @@ export const {
   setCategories,
   updateProduct,
   addProducts,
+  setProducts,
   updateAddress,
   addAddresses,
   setAddresses,
