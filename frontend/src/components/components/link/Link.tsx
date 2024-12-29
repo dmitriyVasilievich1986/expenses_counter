@@ -21,9 +21,7 @@ export class Params implements UrlParamsType {
       this.currentDate = this.searchParams.get("currentDate");
     else this.currentDate = params.currentDate;
 
-    if (params?.address === undefined)
-      this.address = this.searchParams.get("address");
-    else this.address = params.address;
+    this.address = params?.address;
   }
 
   updateCurrentDate(currentDate?: string | null) {
