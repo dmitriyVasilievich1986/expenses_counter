@@ -2,12 +2,11 @@ import { useDispatch, useSelector } from "react-redux";
 import React from "react";
 
 import List from "@mui/material/List";
-import Box from "@mui/material/Box";
 
 import { addProducts } from "../../reducers/mainReducer";
 import { mainStateType } from "../../reducers/types";
+import { LinkBox } from "../../components/link";
 import { ProductTypeDetailed } from "./types";
-import { Link } from "../../components/link";
 import { PagesURLs } from "../../Constants";
 import { API, APIs } from "../../api";
 
@@ -30,15 +29,9 @@ export function ProductsList() {
   return (
     <List sx={{ pl: 2 }}>
       {products.map((p) => (
-        <Box sx={{ my: 2 }}>
-          <Link
-            key={p.id}
-            className="secondary"
-            to={`${PagesURLs.Product}/${p!.id}`}
-          >
-            {p.name}
-          </Link>
-        </Box>
+        <LinkBox key={p.id} to={`${PagesURLs.Product}/${p!.id}`}>
+          {p.name}
+        </LinkBox>
       ))}
     </List>
   );
