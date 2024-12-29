@@ -1,54 +1,14 @@
-export type CategoryType = {
-  id?: number | null;
-  name: string;
-  description: string;
-  parent: number | null;
+import { ProductTypeDetailed } from "../pages/productsPage/types";
+import { ShopAddressTypeNumber } from "../pages/shopsPage/types";
+import { CategoryTypeNumber } from "../pages/categoryPage/types";
+import { messageType } from "../components/alert/types";
+
+export type mainStateType = {
+  isLoading: boolean;
+  message: messageType | null;
+  products: ProductTypeDetailed[];
+  categories: CategoryTypeNumber[];
+  addresses: ShopAddressTypeNumber[];
 };
 
-export type ShopType = {
-  id?: number | null;
-  name: string;
-  description: string;
-  category: number | null;
-};
-
-export type ShopAddressType = {
-  id?: number | null;
-  shop: number;
-  address: string;
-  local_name: string;
-};
-
-export type ProductType = {
-  id?: number | null;
-  name: string;
-  description: string;
-  sub_category: number;
-};
-
-type TransactionTypeBase = {
-  id?: number | null;
-  date: Date;
-  price: number;
-  count: number;
-};
-
-export type TransactionType = TransactionTypeBase & {
-  product: number;
-  address: number;
-};
-
-export type TransactionTypeDetailed = TransactionTypeBase & {
-  product: ProductType;
-  address: ShopAddressType;
-};
-
-export type MainReducerType = {
-  main: {
-    shops: ShopType[];
-    products: ProductType[];
-    categories: CategoryType[];
-    addresses: ShopAddressType[];
-    transactions: TransactionType[];
-  };
-};
+export type mainStateOptionalType = Partial<mainStateType>;
