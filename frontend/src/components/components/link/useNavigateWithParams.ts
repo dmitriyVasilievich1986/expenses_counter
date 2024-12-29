@@ -7,7 +7,7 @@ export function useNavigateWithParams() {
   const navigate = useNavigate();
   const params = new Params();
 
-  return (to: string, newParams: UrlParamsType) => {
+  return (to: string, newParams?: UrlParamsType) => {
     params.update(newParams);
     navigate(`${to}${params.toString()}`);
   };
