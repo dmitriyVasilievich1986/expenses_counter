@@ -117,6 +117,7 @@ export function CategoryForm() {
           options={categories.filter(
             (c) => categoryId === undefined || c.id !== parseInt(categoryId),
           )}
+          getOptionKey={(option) => option.id as number}
           getOptionLabel={(option) => option.name}
           onChange={(_, v) => setParent(v)}
           onOpen={loadCategories}
