@@ -10,13 +10,10 @@ import Box from "@mui/material/Box";
 import { Params, LinkBox } from "../../components/link";
 import { Methods, APIs, API } from "../../api";
 import { PagesURLs } from "../../Constants";
+import { roundToTwo } from "../../support";
 
 import { mainSelectorType } from "../../reducers/types";
 import { TransactionTypeNumber } from "./types";
-
-function roundToTwo(num: number) {
-  return Math.round(num * 100) / 100;
-}
 
 function Transaction(props: {
   transaction: TransactionTypeNumber;

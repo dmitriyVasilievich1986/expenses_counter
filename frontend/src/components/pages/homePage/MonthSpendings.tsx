@@ -8,12 +8,9 @@ import List from "@mui/material/List";
 
 import { LinkBox } from "../../components/link";
 import { Methods, APIs, API } from "../../api";
+import { roundToTwo } from "../../support";
 
 import { MonthSpendingsResponseType, MonthSpendingsType } from "./types";
-
-function roundToTwo(num: number) {
-  return Math.round(num * 100) / 100;
-}
 
 export function MonthSpendings() {
   const [searchParams] = useSearchParams();
