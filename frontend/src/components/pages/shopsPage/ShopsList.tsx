@@ -1,6 +1,7 @@
 import { useDispatch, useSelector } from "react-redux";
 import React, { useEffect } from "react";
 
+import Typography from "@mui/material/Typography";
 import List from "@mui/material/List";
 import Box from "@mui/material/Box";
 
@@ -21,7 +22,12 @@ function Addresses(props: { addresses: ShopAddressTypeNumber[] }) {
           to={`${PagesURLs.Shop}/${a.shop}/${PagesURLs.Address}/${a.id}`}
           key={a.id}
         >
-          {a.address}
+          <Typography variant="subtitle1" sx={{ m: 0 }}>
+            {a.local_name}
+          </Typography>
+          <Typography variant="caption" sx={{ m: 0 }}>
+            {a.address}
+          </Typography>
         </LinkBox>
       ))}
     </List>
