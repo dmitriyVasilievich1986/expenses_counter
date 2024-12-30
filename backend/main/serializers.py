@@ -10,6 +10,7 @@ class ShopAddressSerializer(ModelSerializer):
             "local_name",
             "address",
             "icon",
+            "shop",
             "id",
         ]
         read_only_fields = ["icon", "id"]
