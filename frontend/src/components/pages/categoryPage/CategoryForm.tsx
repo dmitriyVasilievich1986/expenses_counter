@@ -76,7 +76,7 @@ export function CategoryForm() {
       onSuccess: (data) => {
         if (method === Methods.post) {
           dispatch(addCategories([data]));
-          navigate(`${PagesURLs.Category}${data.id}`);
+          navigate(`${PagesURLs.Category}/${data.id}`);
         } else {
           dispatch(updateCategoriy(data));
           getCurrentData();
