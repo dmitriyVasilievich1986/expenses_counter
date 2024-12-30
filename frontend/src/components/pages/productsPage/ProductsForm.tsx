@@ -114,6 +114,7 @@ export function ProductsForm() {
           value={description}
         />
         <Autocomplete
+          getOptionKey={(option) => option.id as number}
           getOptionLabel={(option) => option.name}
           onChange={(_, v) => setSubCategory(v)}
           onOpen={loadCategories}

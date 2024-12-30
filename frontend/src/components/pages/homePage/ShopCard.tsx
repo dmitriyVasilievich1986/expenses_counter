@@ -14,13 +14,10 @@ import List from "@mui/material/List";
 import Box from "@mui/material/Box";
 
 import { Params } from "../../components/link";
+import { roundToTwo } from "../../support";
 
 import { TransactionTypeNumber } from "../../pages/transactionsPage/types";
 import { ShopAddressTypeNumber } from "../shopsPage/types";
-
-function roundToTwo(num: number) {
-  return Math.round(num * 100) / 100;
-}
 
 export function ShopCard(props: {
   address: ShopAddressTypeNumber;

@@ -142,6 +142,7 @@ export function ShopForm() {
         />
         <Autocomplete
           getOptionLabel={(option) => getCategoryWithLabel(option)}
+          getOptionKey={(option) => option.id as number}
           onChange={(_, v) => setCategory(v)}
           onOpen={loadCategories}
           options={categories}

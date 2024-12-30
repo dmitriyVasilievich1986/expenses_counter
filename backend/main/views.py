@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any, TypedDict
 
-from django.db.models import Count
+from dateutil.relativedelta import relativedelta  # type: ignore
+from django.db.models import Count, F, Sum
 from django.http.request import HttpRequest
 from django.http.response import HttpResponse
 from django.shortcuts import render
@@ -181,6 +183,20 @@ class TransactionViewSet(ModelViewSet):
         transactions = Transaction.objects.filter(date__gte=start, date__lte=end)
         serializer = self.get_serializer(transactions, many=True)
         return Response(serializer.data)
+
+    @action(detail=False, methods=["post"])
+    def month_spendings(self, request: HttpRequest) -> HttpResponse:
+        current_date = datetime.strptime(request.data["date"], "%Y-%m-%d").date()
+        start = current_date.replace(day=1)
+        end = start + relativedelta(months=1)
+        transactions = (
+            Transaction.objects.filter(date__gte=start, date__lt=end)
+            .annotate(summary=F("price") * F("count"))
+            .values("date")
+            .annotate(summary=Sum("summary"))
+            .order_by("date")
+        )
+        return Response(transactions)
 
     def update(
         self, request: HttpRequest, *args: tuple[Any], **kwargs: dict[str, Any]

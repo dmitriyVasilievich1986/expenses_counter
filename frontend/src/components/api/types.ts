@@ -1,6 +1,7 @@
 const API_URL = "/expenses/";
 
 export enum APIs {
+  TransactionMonthSpendings = `${API_URL}transaction/month_spendings/`,
   TransactionDateRange = `${API_URL}transaction/date_range/`,
   ProductPopular = `${API_URL}product/popular/`,
   ProductPrice = `${API_URL}product/price/`,

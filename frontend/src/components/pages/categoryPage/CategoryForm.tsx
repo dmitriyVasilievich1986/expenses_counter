@@ -76,7 +76,7 @@ export function CategoryForm() {
       onSuccess: (data) => {
         if (method === Methods.post) {
           dispatch(addCategories([data]));
-          navigate(`${PagesURLs.Category}${data.id}`);
+          navigate(`${PagesURLs.Category}/${data.id}`);
         } else {
           dispatch(updateCategoriy(data));
           getCurrentData();
@@ -117,6 +117,7 @@ export function CategoryForm() {
           options={categories.filter(
             (c) => categoryId === undefined || c.id !== parseInt(categoryId),
           )}
+          getOptionKey={(option) => option.id as number}
           getOptionLabel={(option) => option.name}
           onChange={(_, v) => setParent(v)}
           onOpen={loadCategories}

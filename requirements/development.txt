@@ -8,17 +8,17 @@
 -r base.txt
 -e file:.
     # via -r requirements/base.in
-astroid==3.3.7
+astroid==3.3.8
     # via pylint
 build==1.2.2.post1
     # via pip-tools
 cfgv==3.4.0
     # via pre-commit
-click==8.1.7
+click==8.1.8
     # via
     #   pip-compile-multi
     #   pip-tools
-coverage[toml]==7.6.9
+coverage[toml]==7.6.10
     # via pytest-cov
 dill==0.3.9
     # via pylint
@@ -28,7 +28,7 @@ exceptiongroup==1.2.2
     # via pytest
 filelock==3.16.1
     # via virtualenv
-identify==2.6.3
+identify==2.6.4
     # via pre-commit
 iniconfig==2.0.0
     # via pytest
@@ -36,7 +36,7 @@ isort==5.13.2
     # via pylint
 mccabe==0.7.0
     # via pylint
-mypy==1.14.0
+mypy==1.14.1
     # via -r requirements/development.in
 mypy-extensions==1.0.0
     # via mypy
@@ -58,7 +58,7 @@ pluggy==1.5.0
     # via pytest
 pre-commit==4.0.1
     # via -r requirements/development.in
-pylint==3.3.2
+pylint==3.3.3
     # via -r requirements/development.in
 pyproject-hooks==1.2.0
     # via

@@ -6,6 +6,9 @@ import InputAdornment from "@mui/material/InputAdornment";
 import Autocomplete from "@mui/material/Autocomplete";
 import Container from "@mui/material/Container";
 import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import List from "@mui/material/List";
+import Box from "@mui/material/Box";
 
 import { FormTextField, FormActions, Form } from "../../components/form";
 import { useNavigateWithParams } from "../../components/link";
@@ -144,6 +147,18 @@ export function TransactionForm() {
           getOptionKey={(option) => option.id as number}
           onChange={updateAddress}
           onOpen={loadAddresses}
+          renderOption={(props: any, option: ShopAddressTypeNumber) => (
+            <Box sx={{ pl: 2, m: 0 }} {...props}>
+              <List>
+                <Typography variant="subtitle1" sx={{ m: 0 }}>
+                  {option.local_name}
+                </Typography>
+                <Typography variant="caption" sx={{ m: 0 }}>
+                  {option.address}
+                </Typography>
+              </List>
+            </Box>
+          )}
           options={addresses}
           loading={isLoading}
           value={address}
@@ -199,7 +214,7 @@ export function TransactionForm() {
             selectedTransaction !== null &&
             String(selectedTransaction.price) !== price
           }
-          startAdornment={<InputAdornment position="start">$</InputAdornment>}
+          startAdornment={<InputAdornment position="start">€</InputAdornment>}
           label="Product price"
           onChange={setPrice}
           value={price}
