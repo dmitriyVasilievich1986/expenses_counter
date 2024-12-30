@@ -67,6 +67,7 @@ export function TransactionList() {
         {roundToTwo(
           transactions.reduce((acc, t) => acc + t.price * t.count, 0),
         )}
+        €
       </Typography>
     </Box>
   );

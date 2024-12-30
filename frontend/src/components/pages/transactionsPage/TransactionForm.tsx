@@ -199,7 +199,7 @@ export function TransactionForm() {
             selectedTransaction !== null &&
             String(selectedTransaction.price) !== price
           }
-          startAdornment={<InputAdornment position="start">$</InputAdornment>}
+          startAdornment={<InputAdornment position="start">€</InputAdornment>}
           label="Product price"
           onChange={setPrice}
           value={price}
