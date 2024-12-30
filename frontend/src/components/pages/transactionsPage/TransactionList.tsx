@@ -1,18 +1,17 @@
-import { useDispatch, useSelector } from "react-redux";
 import { useSearchParams } from "react-router-dom";
 import React, { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 import dayjs from "dayjs";
 
 import Typography from "@mui/material/Typography";
 import List from "@mui/material/List";
 import Box from "@mui/material/Box";
 
-import { setTransactions } from "../../reducers/mainReducer";
 import { Params, LinkBox } from "../../components/link";
 import { Methods, APIs, API } from "../../api";
 import { PagesURLs } from "../../Constants";
 
-import { mainStateType } from "../../reducers/types";
+import { mainSelectorType } from "../../reducers/types";
 import { TransactionTypeNumber } from "./types";
 
 function roundToTwo(num: number) {
@@ -49,27 +48,8 @@ function Transaction(props: {
 
 export function TransactionList() {
   const transactions = useSelector(
-    (state: { main: mainStateType }) => state.main.transactions,
+    (state: mainSelectorType) => state.main.transactions,
   );
-
-  const [searchParams] = useSearchParams();
-  const dispatch = useDispatch();
-  const api = new API();
-
-  useEffect(() => {
-    const currentDate = searchParams.get("currentDate");
-    if (!currentDate) {
-      dispatch(setTransactions([]));
-      return;
-    }
-    api.send<TransactionTypeNumber[]>({
-      url: APIs.TransactionDateRange,
-      method: Methods.post,
-      data: { start_date: currentDate, end_date: currentDate },
-      onFail: () => dispatch(setTransactions([])),
-      onSuccess: (data) => dispatch(setTransactions(data)),
-    });
-  }, [searchParams]);
 
   if (transactions.length === 0) return null;
   return (
