@@ -39,7 +39,7 @@ function Transaction(props: {
         {props.transaction.product.name}
       </Typography>
       <Typography variant="caption" sx={{ m: 0 }}>
-        {roundToTwo(props.transaction.price)}$ X{" "}
+        {roundToTwo(props.transaction.price)}€ X{" "}
         {roundToTwo(props.transaction.count)}
       </Typography>
     </LinkBox>
