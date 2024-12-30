@@ -47,6 +47,10 @@ class ShopAddress(models.Model):
         to="Shop",
     )
 
+    @property
+    def icon(self) -> str | None:
+        return self.shop.icon
+
 
 class Transaction(models.Model):
     date = models.DateField(auto_now=False, auto_now_add=False, null=False)

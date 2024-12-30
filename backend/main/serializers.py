@@ -6,7 +6,14 @@ from .models import Category, Product, Shop, ShopAddress, SubCategory, Transacti
 class ShopAddressSerializer(ModelSerializer):
     class Meta:
         model = ShopAddress
-        fields = "__all__"
+        fields = [
+            "local_name",
+            "address",
+            "icon",
+            "shop",
+            "id",
+        ]
+        read_only_fields = ["icon", "id"]
 
 
 class CategorySerializer(ModelSerializer):

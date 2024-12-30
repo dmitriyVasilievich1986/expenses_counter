@@ -74,8 +74,9 @@ export function Link(props: {
 
 export function LinkBox(props: {
   to: PagesURLs | string;
-  params?: UrlParamsType;
   children: React.ReactNode;
+  params?: UrlParamsType;
+  smallPadding?: boolean;
 }) {
   const linkRef = React.useRef<HTMLAnchorElement>(null);
 
@@ -86,7 +87,10 @@ export function LinkBox(props: {
   };
 
   return (
-    <Box onClick={clickHandler} className={cx("link-box")}>
+    <Box
+      onClick={clickHandler}
+      className={cx("link-box", { "small-padding": props.smallPadding })}
+    >
       <Link {...props} Ref={linkRef} className="secondary">
         {props.children}
       </Link>

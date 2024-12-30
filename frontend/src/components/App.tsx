@@ -9,6 +9,7 @@ import {
   ProductsPage,
   CategoryPage,
   ShopsPage,
+  HomePage,
 } from "./pages";
 
 function App() {
@@ -18,6 +19,8 @@ function App() {
       <BrowserRouter>
         <Navbar />
         <Routes>
+          <Route path="" element={<HomePage />} />
+
           <Route path="/create">
             <Route path="category" element={<CategoryPage />}>
               <Route path=":categoryId" element={<CategoryPage />} />
