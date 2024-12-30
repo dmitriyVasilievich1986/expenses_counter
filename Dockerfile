@@ -11,7 +11,7 @@ RUN --mount=type=bind,target=/app/frontend/package.json,src=./frontend/package.j
     npm ci
 
 COPY ./frontend /app/frontend
-RUN npm run build
+RUN mkdir -p /app/backend/static/js && npm run build
 
 # backend build
 
@@ -43,7 +43,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 pip install --upgrade pip \
 && pip install -r requirements/base.txt
 
-COPY --chown=ecounter:ecounter --from=frontend /app/frontend/dist /app/backend/static/js
+COPY --chown=ecounter:ecounter --from=frontend /app/backend/static/js /app/backend/static/js
 
 EXPOSE 3000
 
