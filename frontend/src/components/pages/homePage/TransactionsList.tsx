@@ -29,7 +29,7 @@ export function TransactionsList() {
 
   useEffect(() => {
     if (addresses.length !== 0) return;
-    api.send<ShopAddressTypeNumber>({
+    api.send<ShopAddressTypeNumber[]>({
       url: APIs.Address,
       onSuccess: (data) => dispatch(setAddresses(data)),
     });

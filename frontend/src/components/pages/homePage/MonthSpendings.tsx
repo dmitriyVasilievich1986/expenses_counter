@@ -21,7 +21,7 @@ export function MonthSpendings() {
   useEffect(() => {
     const currentDate = searchParams.get("currentDate");
     if (!currentDate) return;
-    api.send<MonthSpendingsResponseType>({
+    api.send<MonthSpendingsType[]>({
       url: APIs.TransactionMonthSpendings,
       method: Methods.post,
       data: { date: currentDate },
