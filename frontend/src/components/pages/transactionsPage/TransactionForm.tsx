@@ -108,7 +108,7 @@ export function TransactionForm() {
           navigate(`${PagesURLs.Transaction}/${data.id}`);
         } else {
           dispatch(updateTransaction(data));
-          resetState();
+          getCurrentData();
         }
       },
     });
