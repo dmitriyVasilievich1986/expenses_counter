@@ -67,7 +67,7 @@ export function ShopForm() {
   };
 
   const getCurrentData = () => {
-    api.send<ShopTypeNumber>({
+    api.send<ShopTypeDetailed>({
       url: `${APIs.Shop}${shopId}/`,
       onSuccess: resetState,
       onFail: resetState,
@@ -97,8 +97,8 @@ export function ShopForm() {
       successMessage: { message: messages[method] },
       onSuccess: (data) => {
         if (method === Methods.post) {
-          dispatch(addShops(data));
-          navigate(`${PagesURLs.Shop}${data.id}`);
+          dispatch(addShops([data]));
+          navigate(`${PagesURLs.Shop}/${data.id}`);
         } else {
           dispatch(updateShop(data));
           getCurrentData();

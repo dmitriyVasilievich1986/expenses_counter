@@ -60,9 +60,9 @@ export function AddressForm() {
       successMessage: { message: messages[method] },
       onSuccess: (data) => {
         if (method === Methods.post) {
-          dispatch(addAddresses(data));
+          dispatch(addAddresses([data]));
           navigate(
-            `${PagesURLs.Shop}${shopId}/${PagesURLs.Address}/${data.id}`,
+            `${PagesURLs.Shop}/${shopId}/${PagesURLs.Address}/${data.id}`,
           );
         } else {
           dispatch(updateAddress(data));
