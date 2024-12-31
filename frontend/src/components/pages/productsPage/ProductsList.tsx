@@ -53,7 +53,7 @@ export function ProductsList() {
     <Container sx={{ maxHeight: "75vh", overflowY: "auto" }}>
       <List>
         {Object.values(categories).map((c: CategoryTypeNumber) => (
-          <Accordion defaultExpanded key={c.id}>
+          <Accordion key={c.id}>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
               <Typography component="span">{c.name}</Typography>
             </AccordionSummary>

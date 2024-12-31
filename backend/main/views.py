@@ -106,7 +106,7 @@ class ProductViewSet(ModelViewSet):
             Transaction.objects.filter(address=address)
             .values("product")
             .annotate(total=Count("product"))
-            .order_by("-total")[:5]
+            .order_by("-total")[:9]
         )
         transactions = [
             Transaction.objects.filter(product_id=x["product"]).first()

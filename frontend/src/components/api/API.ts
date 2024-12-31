@@ -14,7 +14,7 @@ export class API {
 
   send<R>(props: {
     url: APIs | string;
-    onSuccess?: (data: any) => void;
+    onSuccess?: (data: R) => void;
     onFail?: () => void;
     data?: { [key in string]: any };
     successMessage?: messageType;

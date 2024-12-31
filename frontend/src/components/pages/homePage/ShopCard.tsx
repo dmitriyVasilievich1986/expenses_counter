@@ -26,7 +26,7 @@ export function ShopCard(props: {
   const params = new Params();
 
   return (
-    <Card>
+    <Card sx={{ my: 4 }}>
       <CardHeader
         avatar={
           props.address?.icon ? (
