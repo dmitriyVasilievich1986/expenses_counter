@@ -29,8 +29,14 @@ dependencies = [
     "python-dotenv",
 ]
 
+[tool.hatch.build.targets.wheel]
+packages = ["expense_counter"]
+
 [project.urls]
 Homepage = "https://github.com/dmitriyVasilievich1986/passwords_access"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "expense_counter.expense_counter.tests_settings"
 
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.

@@ -1,5 +1,6 @@
 # frontend build
 
+ARG DOCKER_DEFAULT_PLATFORM=linux/amd64
 ARG BUILDPLATFORM=${BUILDPLATFORM:-amd64}
 FROM --platform=${BUILDPLATFORM} node:18-bullseye-slim AS frontend
 
@@ -11,7 +12,7 @@ RUN --mount=type=bind,target=/app/frontend/package.json,src=./frontend/package.j
     npm ci
 
 COPY ./frontend /app/frontend
-RUN mkdir -p /app/backend/static/js && npm run build
+RUN mkdir -p /app/expense_counter/static/js && npm run build
 
 # backend build
 
@@ -38,15 +39,15 @@ COPY --chown=ecounter:ecounter ./pyproject.toml /app
 COPY --chown=ecounter:ecounter ./frontend/package.json /app/frontend
 COPY --chown=ecounter:ecounter ./requirements/base.txt /app/requirements
 
-COPY --chown=ecounter:ecounter ./backend /app/backend
+COPY --chown=ecounter:ecounter ./expense_counter /app/expense_counter
 RUN --mount=type=cache,target=/root/.cache/pip \
 pip install --upgrade pip \
 && pip install -r requirements/base.txt
 
-COPY --chown=ecounter:ecounter --from=frontend /app/backend/static/js /app/backend/static/js
+COPY --chown=ecounter:ecounter --from=frontend /app/expense_counter/static/js /app/expense_counter/static/js
 
 EXPOSE 3000
 
-COPY --chown=ecounter:ecounter --chmod=755 ./backend/runserver.py /app/backend
+COPY --chown=ecounter:ecounter --chmod=755 ./runserver.py /app/
 
-CMD ["python", "/app/backend/runserver.py"]
+CMD ["python", "/app/runserver.py"]
