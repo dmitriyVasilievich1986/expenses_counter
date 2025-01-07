@@ -16,6 +16,7 @@ images/*png
 images/*svg
 __pycache__
 .vscode
+backup
 *.pyc
 venv*
 dist
