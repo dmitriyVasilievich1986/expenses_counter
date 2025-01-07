@@ -15,6 +15,7 @@ images/*jpg
 images/*png
 images/*svg
 __pycache__
+.coverage
 .vscode
 backup
 *.pyc
