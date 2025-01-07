@@ -22,7 +22,7 @@ jobs:
           python -m pip install -r ${{ github.workspace }}/requirements/development.txt
 
       - name: Run tests
-        run: pytest --cov-branch --cov-report=xml tests
+        run: pytest --cov-branch --cov=expense_counter --cov-report=xml tests
 
       - name: Upload results to Codecov
         uses: codecov/codecov-action@v5
