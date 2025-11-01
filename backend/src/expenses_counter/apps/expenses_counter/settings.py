@@ -16,7 +16,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
-    "expense_counter.main",
+    "expenses_counter.apps.main",
 ]
 
 MIDDLEWARE = [
@@ -29,7 +29,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = "expense_counter.expense_counter.urls"
+ROOT_URLCONF = "expenses_counter.apps.expenses_counter.urls"
 
 TEMPLATES = [
     {
@@ -47,7 +47,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "expense_counter.expense_counter.wsgi.application"
+WSGI_APPLICATION = "expenses_counter.apps.expenses_counter.wsgi.application"
 
 
 # Database
