@@ -21,6 +21,8 @@ dependencies = [
     "django>=5.2.7",
     "djangorestframework>=3.16.1",
     "psycopg[binary]>=3.2.12",
+    "pydantic>=2.12.3",
+    "pydantic-settings>=2.11.0",
     "python-dateutil>=2.9.0.post0",
     "sqlalchemy>=2.0.44",
 ]
