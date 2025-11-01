@@ -133,4 +133,5 @@ known-third-party = ["dateutil", "django", "rest_framework"]
 [dependency-groups]
 dev = [
     "pre-commit>=4.3.0",
+    "ruff>=0.14.3",
 ]
