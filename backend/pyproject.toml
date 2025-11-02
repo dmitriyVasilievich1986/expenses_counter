@@ -1,6 +1,6 @@
 [project]
 name = "expenses-counter"
-version = "1.0.0"
+dynamic = ["version"]
 keywords = ["money", "statistic"]
 classifiers = [
     "Intended Audience :: Developers",
@@ -32,6 +32,9 @@ dependencies = [
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.version]
+path = "src/expenses_counter/__init__.py"
 
 [project.urls]
 Homepage = "https://github.com/dmitriyVasilievich1986/expenses_counter"
