@@ -20,47 +20,55 @@ class AppConfig(BaseConfig):
     allowed_hosts: list[str] = Field(
         ["*"], description="The allowed hosts to use for the application"
     )
+    name: str = Field(
+        "Expenses Counter",
+        description="The name of the application",
+    )
+    description: str = Field(
+        "The program for counting expenses",
+        description="The description of the application",
+    )
+    app_port: int = Field(
+        8000,
+        description="The port to use for the application",
+    )
+    app_log_level: str = Field(
+        "INFO",
+        description="The log level to use for the application",
+    )
 
     secret_key: str = Field(
         "secret",
         description="The secret key to use for the application",
-        json_schema_extra={"env_shortcut": "SECRET_KEY"},
     )
     debug: bool = Field(
         False,
         description="The debug mode to use for the application",
-        json_schema_extra={"env_shortcut": "DEBUG"},
     )
 
     database_engine: Literal["sqlite", "postgresql"] = Field(
         "sqlite",
         description="The database engine to use",
-        json_schema_extra={"env_shortcut": "DATABASE_ENGINE"},
     )
     database_host: str = Field(
         "expenses_counter.sqlite3",
         description="The database host to use",
-        json_schema_extra={"env_shortcut": "DATABASE_HOST"},
     )
     database_password: SecretStr | None = Field(
         None,
         description="The database password to use",
-        json_schema_extra={"env_shortcut": "DATABASE_PASSWORD"},
     )
     database_user: str | None = Field(
         None,
         description="The database user to use",
-        json_schema_extra={"env_shortcut": "DATABASE_USER"},
     )
     database_name: str | None = Field(
         None,
         description="The database name to use",
-        json_schema_extra={"env_shortcut": "DATABASE_NAME"},
     )
     database_port: int | None = Field(
         None,
         description="The database port to use",
-        json_schema_extra={"env_shortcut": "DATABASE_PORT"},
     )
 
     @property
