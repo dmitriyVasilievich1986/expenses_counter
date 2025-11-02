@@ -4,6 +4,7 @@ __all__ = ("DatabaseClient",)
 
 from typing import AsyncGenerator
 
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession, create_async_engine
 
 from expenses_counter.config import AppConfig
@@ -120,3 +121,17 @@ class DatabaseClient(metaclass=Singleton):
             await self._engine.dispose()
             self._engine = None
             self._session_factory = None
+
+    async def healthcheck(self) -> bool:
+        """Check the health of the database client.
+
+        Returns:
+            True if the database client is healthy, False otherwise.
+
+        """
+        try:
+            async with self._session_factory() as session:
+                await session.execute(text("SELECT 1"))
+        except Exception:
+            return False
+        return True
