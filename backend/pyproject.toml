@@ -43,6 +43,9 @@ path = "src/expenses_counter/__init__.py"
 [project.urls]
 Homepage = "https://github.com/dmitriyVasilievich1986/expenses_counter"
 
+[project.scripts]
+expenses_counter = "expenses_counter.utils.cli.main:main"
+
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "expense_counter.expense_counter.tests_settings"
 
