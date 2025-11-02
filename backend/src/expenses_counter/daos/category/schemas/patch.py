@@ -2,10 +2,12 @@
 
 __all__ = ("CategoryPatch",)
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import Field
+
+from expenses_counter.daos.base import BaseSchema
 
 
-class CategoryPatch(BaseModel):
+class CategoryPatch(BaseSchema):
     """Pydantic schema for Category PATCH (partial update) requests.
 
     This schema is used for partial updates to category entities. All fields
@@ -21,8 +23,6 @@ class CategoryPatch(BaseModel):
             will not be updated. Set to None explicitly to remove the parent relationship.
 
     """
-
-    model_config = ConfigDict(from_attributes=True)
 
     name: str | None = Field(
         None, min_length=1, max_length=150, description="The name of the category"

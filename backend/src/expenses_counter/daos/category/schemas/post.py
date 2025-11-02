@@ -3,10 +3,12 @@
 __all__ = ("CategoryPost",)
 
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import Field
+
+from expenses_counter.daos.base import BaseSchema
 
 
-class CategoryPost(BaseModel):
+class CategoryPost(BaseSchema):
     """Pydantic schema for Category POST (create) requests.
 
     This schema is used for creating new category entities. The name field is
@@ -23,8 +25,6 @@ class CategoryPost(BaseModel):
             category. If provided, creates a subcategory under the specified parent.
 
     """
-
-    model_config = ConfigDict(from_attributes=True)
 
     name: str = Field(
         ..., min_length=1, max_length=150, description="The name of the category"

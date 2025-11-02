@@ -4,10 +4,12 @@ __all__ = ("CategoryGet",)
 
 from typing import Self
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import Field
+
+from expenses_counter.daos.base import BaseSchema
 
 
-class CategoryGet(BaseModel):
+class CategoryGet(BaseSchema):
     """Pydantic schema for Category GET responses.
 
     This schema represents a category entity as returned from the API.
@@ -22,8 +24,6 @@ class CategoryGet(BaseModel):
             Uses recursive self-reference to represent hierarchical structures.
 
     """
-
-    model_config = ConfigDict(from_attributes=True)
 
     id: int = Field(..., description="The unique identifier for the category")
     name: str = Field(..., description="The name of the category")

@@ -3,10 +3,12 @@
 __all__ = ("CategoryPut",)
 
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import Field
+
+from expenses_counter.daos.base import BaseSchema
 
 
-class CategoryPut(BaseModel):
+class CategoryPut(BaseSchema):
     """Pydantic schema for Category PUT (full update) requests.
 
     This schema is used for full updates to category entities. All fields should
@@ -24,8 +26,6 @@ class CategoryPut(BaseModel):
             under the specified parent.
 
     """
-
-    model_config = ConfigDict(from_attributes=True)
 
     name: str = Field(
         ..., min_length=1, max_length=150, description="The name of the category"
