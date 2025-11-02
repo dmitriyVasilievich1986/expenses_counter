@@ -41,8 +41,11 @@ class CategoryDAO(BaseDAO[CategoryGet, CategoryPost, CategoryPut, CategoryPatch]
                 payload = CategoryGet.model_validate(category)
                 logger.debug(f"Category found: {payload}")
                 return payload
+
+            return None
+        
         logger.debug("Category not found")
-        return None
+        raise RuntimeError(f"Category with id {pk} not found")
 
     async def get_all(self) -> list[CategoryGet]:
         """Retrieve all categories.
@@ -71,12 +74,10 @@ class CategoryDAO(BaseDAO[CategoryGet, CategoryPost, CategoryPut, CategoryPatch]
         """
         logger.debug(f"Creating category: {category}")
         async for session in self.database_client.get_session():
-            parent_category = await self.get_by_id(category.parent_id)
-            if parent_category is None:
+            if (await self.get_by_id(category.parent_id)) is None:
                 logger.error(f"Parent category with id {category.parent_id} not found")
-                raise ValueError(
-                    f"Parent category with id {category.parent_id} not found"
-                )
+                raise ValueError(f"Parent category with id {category.parent_id} not found")
+            
             new_category = Category(
                 name=category.name,
                 description=category.description,
@@ -84,11 +85,12 @@ class CategoryDAO(BaseDAO[CategoryGet, CategoryPost, CategoryPut, CategoryPatch]
             )
             session.add(new_category)
             await session.commit()
+            
             payload = await self.get_by_id(new_category.id)
             logger.debug(f"Category created: {payload.id}")
             return CategoryGet.model_validate(payload)
 
-        return None
+        raise RuntimeError("Failed to create category")
 
     async def update(self, pk: int, category: CategoryPut) -> CategoryGet:
         """Perform a full update on a category.
@@ -106,25 +108,24 @@ class CategoryDAO(BaseDAO[CategoryGet, CategoryPost, CategoryPut, CategoryPatch]
         """
         logger.debug(f"Updating category with id {pk}: {category}")
         async for session in self.database_client.get_session():
-            result = await session.execute(select(Category).where(Category.id == pk))
-            if existing_category := result.scalar_one_or_none():
-                if category.parent_id is not None:
-                    parent_category = await self.get_by_id(category.parent_id)
-                    if parent_category is None:
-                        logger.error(
-                            f"Parent category with id {category.parent_id} not found"
-                        )
-                        raise ValueError(
-                            f"Parent category with id '{category.parent_id}' not found"
-                        )
-                existing_category.parent_id = category.parent_id
-                existing_category.name = category.name
-                existing_category.description = category.description
-                await session.commit()
-                payload = await self.get_by_id(existing_category.id)
-                logger.debug(f"Category updated: {payload.id}")
-                return CategoryGet.model_validate(payload)
-        raise ValueError(f"Category with id {pk} not found")
+            if (existing_category := await self.get_by_id(pk)) is None:
+                logger.error(f"Category with id {pk} not found")
+                raise ValueError(f"Category with id {pk} not found")
+            
+            if category.parent_id and (await self.get_by_id(category.parent_id)) is None:
+                logger.error(f"Parent category with id {category.parent_id} not found")
+                raise ValueError(f"Parent category with id {category.parent_id} not found")
+            
+            existing_category.parent_id = category.parent_id
+            existing_category.name = category.name
+            existing_category.description = category.description
+            
+            await session.commit()
+            payload = await self.get_by_id(existing_category.id)
+            logger.debug(f"Category updated: {payload.id}")
+            return CategoryGet.model_validate(payload)
+        
+        raise RuntimeError("Failed to update category")
 
     async def modify(self, pk: int, category: CategoryPatch) -> CategoryGet:
         """Perform a partial update on a category.
@@ -145,26 +146,24 @@ class CategoryDAO(BaseDAO[CategoryGet, CategoryPost, CategoryPut, CategoryPatch]
         """
         logger.debug(f"Modifying category with id {pk}: {category}")
         async for session in self.database_client.get_session():
-            result = await session.execute(select(Category).where(Category.id == pk))
-            if existing_category := result.scalar_one_or_none():
-                if category.name is not None:
-                    existing_category.name = category.name
-                if category.description is not None:
-                    existing_category.description = category.description
-                if category.parent_id is not None:
-                    parent_category = await self.get_by_id(category.parent_id)
-                    if parent_category is None:
-                        logger.error(
-                            f"Parent category with id {category.parent_id} not found"
-                        )
-                        raise ValueError(
-                            f"Parent category with id '{category.parent_id}' not found"
-                        )
-                    existing_category.parent_id = category.parent_id
-                await session.commit()
-                payload = await self.get_by_id(existing_category.id)
-                logger.debug(f"Category modified: {payload.id}")
-                return CategoryGet.model_validate(payload)
+            if (existing_category := self.get_by_id(pk)) is None:
+                raise ValueError(f"Category with id {pk} not found")
+            
+            if category.name is not None:
+                existing_category.name = category.name
+            if category.description is not None:
+                existing_category.description = category.description
+            if category.parent_id:
+                if (await self.get_by_id(category.parent_id)) is None:
+                    logger.error(f"Parent category with id {category.parent_id} not found")
+                    raise ValueError(f"Parent category with id {category.parent_id} not found")
+                existing_category.parent_id = category.parent_id
+            
+            await session.commit()
+            payload = await self.get_by_id(existing_category.id)
+            logger.debug(f"Category modified: {payload.id}")
+            return CategoryGet.model_validate(payload)
+        
         raise ValueError(f"Category with id {pk} not found")
 
     async def delete(self, pk: int) -> bool:
@@ -179,11 +178,13 @@ class CategoryDAO(BaseDAO[CategoryGet, CategoryPost, CategoryPut, CategoryPatch]
         """
         logger.debug(f"Deleting category with id {pk}")
         async for session in self.database_client.get_session():
-            result = await session.execute(select(Category).where(Category.id == pk))
-            if category := result.scalar_one_or_none():
+            if (category := await self.get_by_id(pk)):
                 await session.delete(category)
                 await session.commit()
                 logger.debug(f"Category deleted: {pk}")
                 return True
-        logger.debug(f"Category not found: {pk}")
-        return False
+            else:
+                logger.debug(f"Category not found: {pk}")
+                return False
+        
+        raise RuntimeError(f"Category with id {pk} not found")
