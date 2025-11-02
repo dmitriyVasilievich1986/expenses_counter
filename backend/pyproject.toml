@@ -18,8 +18,10 @@ license = { file = "LICENSE" }
 
 requires-python = ">=3.13"
 dependencies = [
+    "aiosqlite>=0.21.0",
     "django>=5.2.7",
     "djangorestframework>=3.16.1",
+    "greenlet>=3.2.4",
     "psycopg[binary]>=3.2.12",
     "pydantic>=2.12.3",
     "pydantic-settings>=2.11.0",
@@ -134,7 +136,4 @@ section-order = [
 known-third-party = ["dateutil", "django", "rest_framework"]
 
 [dependency-groups]
-dev = [
-    "pre-commit>=4.3.0",
-    "ruff>=0.14.3",
-]
+dev = ["pre-commit>=4.3.0", "ruff>=0.14.3"]

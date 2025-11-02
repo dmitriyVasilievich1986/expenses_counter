@@ -70,12 +70,12 @@ class AppConfig(BaseConfig):
         Returns:
             str: A SQLAlchemy-compatible database URL string. Format depends on
                 the configured database engine:
-                - For SQLite: "sqlite:///{database_host}"
-                - For PostgreSQL: "postgresql://{user}:{password}:{host}:{port}/{name}"
+                - For SQLite: "sqlite+aiosqlite:///{database_host}"
+                - For PostgreSQL: "postgresql+psycopg://{user}:{password}:{host}:{port}/{name}"
 
         """
         match self.database_engine:
             case "sqlite":
-                return f"sqlite:///{self.database_host}"
+                return f"sqlite+aiosqlite:///{self.database_host}"
             case "postgresql":
-                return f"postgresql://{self.database_user}:{self.database_password}:{self.database_host}:{self.database_port}/{self.database_name}"
+                return f"postgresql+psycopg://{self.database_user}:{self.database_password}:{self.database_host}:{self.database_port}/{self.database_name}"
