@@ -19,6 +19,7 @@ license = { file = "LICENSE" }
 requires-python = ">=3.13"
 dependencies = [
     "aiosqlite>=0.21.0",
+    "click>=8.3.0",
     "django>=5.2.7",
     "djangorestframework>=3.16.1",
     "fastapi>=0.120.4",

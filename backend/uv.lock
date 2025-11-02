@@ -124,6 +124,7 @@ name = "expenses-counter"
 source = { editable = "." }
 dependencies = [
     { name = "aiosqlite" },
+    { name = "click" },
     { name = "django" },
     { name = "djangorestframework" },
     { name = "fastapi" },
@@ -146,6 +147,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "aiosqlite", specifier = ">=0.21.0" },
+    { name = "click", specifier = ">=8.3.0" },
     { name = "django", specifier = ">=5.2.7" },
     { name = "djangorestframework", specifier = ">=3.16.1" },
     { name = "fastapi", specifier = ">=0.120.4" },
