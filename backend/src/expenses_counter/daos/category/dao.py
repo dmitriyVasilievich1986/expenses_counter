@@ -111,7 +111,9 @@ class CategoryDAO(BaseDAO[CategoryGet, CategoryPost, CategoryPut, CategoryPatch]
         logger.debug(f"Updating category with id {pk}: {category}")
         async for session in self.database_client.get_session():
             result = await session.execute(
-                select(Category).options(joinedload(Category.parent))
+                select(Category)
+                .where(Category.id == pk)
+                .options(joinedload(Category.parent))
             )
             if (existing_category := result.scalar_one_or_none()) is None:
                 logger.error(f"Category with id {pk} not found")
@@ -157,7 +159,9 @@ class CategoryDAO(BaseDAO[CategoryGet, CategoryPost, CategoryPut, CategoryPatch]
         logger.debug(f"Modifying category with id {pk}: {category}")
         async for session in self.database_client.get_session():
             result = await session.execute(
-                select(Category).options(joinedload(Category.parent))
+                select(Category)
+                .where(Category.id == pk)
+                .options(joinedload(Category.parent))
             )
             if (existing_category := result.scalar_one_or_none()) is None:
                 raise ValueError(f"Category with id {pk} not found")

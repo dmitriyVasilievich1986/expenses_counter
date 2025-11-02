@@ -113,7 +113,7 @@ class ShopDAO(BaseDAO[ShopGet, ShopPost, ShopPut, ShopPatch]):
 
         async for session in self.database_client.get_session():
             result = await session.execute(
-                select(Shop).options(joinedload(Shop.category))
+                select(Shop).where(Shop.id == pk).options(joinedload(Shop.category))
             )
             if (existing_shop := result.scalar_one_or_none()) is None:
                 logger.error(f"Shop with id {pk} not found")
@@ -154,7 +154,7 @@ class ShopDAO(BaseDAO[ShopGet, ShopPost, ShopPut, ShopPatch]):
 
         async for session in self.database_client.get_session():
             result = await session.execute(
-                select(Shop).options(joinedload(Shop.category))
+                select(Shop).where(Shop.id == pk).options(joinedload(Shop.category))
             )
             if (existing_shop := result.scalar_one_or_none()) is None:
                 logger.error(f"Shop with id {pk} not found")
@@ -196,7 +196,7 @@ class ShopDAO(BaseDAO[ShopGet, ShopPost, ShopPut, ShopPatch]):
         logger.debug(f"Deleting shop with id {pk}")
         async for session in self.database_client.get_session():
             result = await session.execute(
-                select(Shop).options(joinedload(Shop.category))
+                select(Shop).where(Shop.id == pk).options(joinedload(Shop.category))
             )
             if (shop := result.scalar_one_or_none()) is not None:
                 await session.delete(shop)
