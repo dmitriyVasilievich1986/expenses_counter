@@ -2,11 +2,24 @@
 
 __all__ = ("CategoryGet",)
 
-from typing import Self
+from typing import Optional
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from expenses_counter.daos.base import BaseSchema
+
+
+class SimpleCategoryGet(BaseSchema):
+    """Pydantic schema for Simple Category GET responses.
+
+    This schema represents a category entity as returned from the API.
+    It includes the category's ID and name.
+    """
+
+    model_config = ConfigDict(extra="ignore")
+
+    id: int = Field(..., description="The unique identifier for the category")
+    name: str = Field(..., description="The name of the category")
 
 
 class CategoryGet(BaseSchema):
@@ -31,7 +44,7 @@ class CategoryGet(BaseSchema):
         None,
         description="Optional description providing additional details about the category",
     )
-    parent: Self | None = Field(
+    parent: Optional["SimpleCategoryGet"] = Field(
         None,
         description="Optional reference to the parent CategoryGet instance. None indicates a top-level category",
     )
