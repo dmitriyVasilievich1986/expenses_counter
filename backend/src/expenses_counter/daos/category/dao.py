@@ -4,6 +4,7 @@ __all__ = ("CategoryDAO",)
 
 from loguru import logger
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from expenses_counter.daos.base import BaseDAO
@@ -12,7 +13,9 @@ from expenses_counter.models.category import Category
 from .schemas import CategoryGet, CategoryPatch, CategoryPost, CategoryPut
 
 
-class CategoryDAO(BaseDAO[CategoryGet, CategoryPost, CategoryPut, CategoryPatch]):
+class CategoryDAO(
+    BaseDAO[Category, CategoryGet, CategoryPost, CategoryPut, CategoryPatch]
+):
     """Data Access Object for Category entities.
 
     This DAO implements CRUD operations for Category entities, interacting with
@@ -20,44 +23,42 @@ class CategoryDAO(BaseDAO[CategoryGet, CategoryPost, CategoryPut, CategoryPatch]
     category-specific implementations.
     """
 
-    async def get_by_id(self, pk: int) -> CategoryGet | None:
+    schema_cls = CategoryGet
+
+    async def get_instance_by_id(
+        self, pk: int, session: AsyncSession
+    ) -> Category | None:
         """Retrieve a category by its primary key.
 
         Args:
             pk: The primary key (ID) of the category to retrieve.
+            session: The async database session to use for the query.
 
         Returns:
             A CategoryGet schema instance if found, None otherwise.
 
         """
-        logger.debug(f"Getting category with id {pk}")
-        async with self.database_client.session_factory() as session:
-            result = await session.execute(
-                select(Category)
-                .where(Category.id == pk)
-                .options(joinedload(Category.parent))
-            )
-            if category := result.scalar_one_or_none():
-                payload = CategoryGet.model_validate(category)
-                logger.debug(f"Category found: {payload}")
-                return payload
+        result = await session.execute(
+            select(Category)
+            .where(Category.id == pk)
+            .options(joinedload(Category.parent))
+        )
+        return result.scalar_one_or_none()
 
-            logger.debug(f"Category not found: {pk}")
-            return None
-
-    async def get_all(self) -> list[CategoryGet]:
+    async def get_all_instances(self, session: AsyncSession) -> list[Category]:
         """Retrieve all categories.
+
+        Args:
+            session: The async database session to use for the query.
 
         Returns:
             A list of CategoryGet schema instances for all categories.
 
         """
-        async with self.database_client.session_factory() as session:
-            result = await session.execute(select(Category))
-            return [
-                CategoryGet.model_validate(category)
-                for category in result.scalars().all()
-            ]
+        result = await session.execute(
+            select(Category).options(joinedload(Category.parent))
+        )
+        return result.scalars().all()
 
     async def create(self, category: CategoryPost) -> CategoryGet:
         """Create a new category.
@@ -71,7 +72,7 @@ class CategoryDAO(BaseDAO[CategoryGet, CategoryPost, CategoryPut, CategoryPatch]
         """
         logger.debug(f"Creating category: {category}")
         async with self.database_client.session_factory() as session:
-            if (await self.get_by_id(category.parent_id)) is None:
+            if (await self.get_instance_by_id(category.parent_id, session)) is None:
                 logger.error(f"Parent category with id {category.parent_id} not found")
                 raise ValueError(
                     f"Parent category with id {category.parent_id} not found"
@@ -105,18 +106,15 @@ class CategoryDAO(BaseDAO[CategoryGet, CategoryPost, CategoryPut, CategoryPatch]
         """
         logger.debug(f"Updating category with id {pk}: {category}")
         async with self.database_client.session_factory() as session:
-            result = await session.execute(
-                select(Category)
-                .where(Category.id == pk)
-                .options(joinedload(Category.parent))
-            )
-            if (existing_category := result.scalar_one_or_none()) is None:
+            if (
+                existing_category := await self.get_instance_by_id(pk, session)
+            ) is None:
                 logger.error(f"Category with id {pk} not found")
                 raise ValueError(f"Category with id {pk} not found")
 
             if (
                 category.parent_id
-                and (await self.get_by_id(category.parent_id)) is None
+                and (await self.get_instance_by_id(category.parent_id, session)) is None
             ):
                 logger.error(f"Parent category with id {category.parent_id} not found")
                 raise ValueError(
@@ -151,12 +149,9 @@ class CategoryDAO(BaseDAO[CategoryGet, CategoryPost, CategoryPut, CategoryPatch]
         """
         logger.debug(f"Modifying category with id {pk}: {category}")
         async with self.database_client.session_factory() as session:
-            result = await session.execute(
-                select(Category)
-                .where(Category.id == pk)
-                .options(joinedload(Category.parent))
-            )
-            if (existing_category := result.scalar_one_or_none()) is None:
+            if (
+                existing_category := await self.get_instance_by_id(pk, session)
+            ) is None:
                 raise ValueError(f"Category with id {pk} not found")
 
             if category.name is not None:
@@ -164,7 +159,7 @@ class CategoryDAO(BaseDAO[CategoryGet, CategoryPost, CategoryPut, CategoryPatch]
             if category.description is not None:
                 existing_category.description = category.description
             if category.parent_id:
-                if (await self.get_by_id(category.parent_id)) is None:
+                if (await self.get_instance_by_id(category.parent_id, session)) is None:
                     logger.error(
                         f"Parent category with id {category.parent_id} not found"
                     )
@@ -177,23 +172,3 @@ class CategoryDAO(BaseDAO[CategoryGet, CategoryPost, CategoryPut, CategoryPatch]
             payload = await self.get_by_id(existing_category.id)
             logger.debug(f"Category modified: {payload.id}")
             return payload
-
-    async def delete(self, pk: int) -> bool:
-        """Delete a category by its primary key.
-
-        Args:
-            pk: The primary key (ID) of the category to delete.
-
-        Returns:
-            True if the category was deleted, False if it was not found.
-
-        """
-        logger.debug(f"Deleting category with id {pk}")
-        async with self.database_client.session_factory() as session:
-            if category := await self.get_by_id(pk):
-                await session.delete(category)
-                await session.commit()
-                logger.debug(f"Category deleted: {pk}")
-                return True
-            logger.debug(f"Category not found: {pk}")
-            return False

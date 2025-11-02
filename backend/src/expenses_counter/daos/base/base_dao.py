@@ -3,19 +3,23 @@
 __all__ = ("BaseDAO",)
 
 from abc import ABC, abstractmethod
-from typing import Generic, TypeVar
+from typing import Generic, Type, TypeVar
 
+from loguru import logger
 from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from expenses_counter.models.base import Base
 from expenses_counter.services.database import DatabaseClient
 
-T = TypeVar("T")
-C = TypeVar("C", bound=BaseModel)
-U = TypeVar("U", bound=BaseModel)
-M = TypeVar("M", bound=BaseModel)
+B = TypeVar("B", bound=Type[Base])
+T = TypeVar("T", bound=Type[BaseModel])
+C = TypeVar("C", bound=Type[BaseModel])
+U = TypeVar("U", bound=Type[BaseModel])
+M = TypeVar("M", bound=Type[BaseModel])
 
 
-class BaseDAO(ABC, Generic[T, C, U, M]):
+class BaseDAO(ABC, Generic[B, T, C, U, M]):
     """Abstract base class for Data Access Objects (DAOs).
 
     This class defines the standard interface for CRUD operations that all
@@ -23,11 +27,14 @@ class BaseDAO(ABC, Generic[T, C, U, M]):
     ensure type safety across different DAO implementations.
 
     Type Parameters:
+        B: Instance model type.
         T: The domain model type returned by DAO methods.
         C: The Pydantic model type used for creating new entities.
         U: The Pydantic model type used for full updates (PUT operations).
         M: The Pydantic model type used for partial updates (PATCH operations).
     """
+
+    schema_cls: T
 
     def __init__(self, database_client: DatabaseClient):
         """Initialize the BaseDAO with a database client.
@@ -39,6 +46,40 @@ class BaseDAO(ABC, Generic[T, C, U, M]):
         self.database_client = database_client
 
     @abstractmethod
+    async def get_instance_by_id(self, pk: int, session: AsyncSession) -> B | None:
+        """Retrieve a database instance by its primary key.
+
+        This method should be implemented by subclasses to fetch a single
+        database model instance based on its primary key. It operates within
+        the provided database session.
+
+        Args:
+            pk: The primary key of the entity to retrieve.
+            session: The async database session to use for the query.
+
+        Returns:
+            The database model instance if found, None otherwise.
+
+        """
+        pass
+
+    @abstractmethod
+    async def get_all_instances(self, session: AsyncSession) -> list[B]:
+        """Retrieve all database instances of this type.
+
+        This method should be implemented by subclasses to fetch all
+        database model instances of the entity type. It operates within
+        the provided database session.
+
+        Args:
+            session: The async database session to use for the query.
+
+        Returns:
+            A list of all database model instances.
+
+        """
+        pass
+
     async def get_by_id(self, pk: int) -> T | None:
         """Retrieve an entity by its primary key.
 
@@ -49,9 +90,14 @@ class BaseDAO(ABC, Generic[T, C, U, M]):
             The entity if found, None otherwise.
 
         """
-        pass
+        async with self.database_client.session_factory() as session:
+            if (instance := await self.get_instance_by_id(pk, session)) is None:
+                logger.debug(f"Instance not found: {pk}")
+                return None
+            payload = self.schema_cls.model_validate(instance)
+            logger.debug(f"Instance found: {payload}")
+            return payload
 
-    @abstractmethod
     async def get_all(self) -> list[T]:
         """Retrieve all entities of this type.
 
@@ -59,7 +105,13 @@ class BaseDAO(ABC, Generic[T, C, U, M]):
             A list of all entities.
 
         """
-        pass
+        async with self.database_client.session_factory() as session:
+            instances = await self.get_all_instances(session)
+            payload = [
+                self.schema_cls.model_validate(instance) for instance in instances
+            ]
+            logger.debug(f"Instances found: {payload}")
+            return payload
 
     @abstractmethod
     async def create(self, obj: C) -> T:
@@ -102,7 +154,6 @@ class BaseDAO(ABC, Generic[T, C, U, M]):
         """
         pass
 
-    @abstractmethod
     async def delete(self, pk: int) -> bool:
         """Delete an entity by its primary key.
 
@@ -113,4 +164,12 @@ class BaseDAO(ABC, Generic[T, C, U, M]):
             True if the entity was deleted, False otherwise.
 
         """
-        pass
+        async with self.database_client.session_factory() as session:
+            if (instance := await self.get_instance_by_id(pk, session)) is None:
+                logger.debug(f"Instance not found: {pk}")
+                return False
+
+            await session.delete(instance)
+            await session.commit()
+            logger.debug(f"Instance deleted: {pk}")
+            return True

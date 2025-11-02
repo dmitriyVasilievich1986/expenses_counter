@@ -4,6 +4,7 @@ __all__ = ("ShopDAO",)
 
 from loguru import logger
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from expenses_counter.daos.base import BaseDAO
@@ -13,7 +14,7 @@ from expenses_counter.models.shop import Shop
 from .schemas import ShopGet, ShopPatch, ShopPost, ShopPut
 
 
-class ShopDAO(BaseDAO[ShopGet, ShopPost, ShopPut, ShopPatch]):
+class ShopDAO(BaseDAO[Shop, ShopGet, ShopPost, ShopPut, ShopPatch]):
     """Data Access Object for Shop entities.
 
     This DAO implements CRUD operations for Shop entities, interacting with
@@ -21,41 +22,36 @@ class ShopDAO(BaseDAO[ShopGet, ShopPost, ShopPut, ShopPatch]):
     shop-specific implementations.
     """
 
-    async def get_by_id(self, pk: int) -> ShopGet | None:
+    schema_cls = ShopGet
+
+    async def get_instance_by_id(self, pk: int, session: AsyncSession) -> Shop | None:
         """Retrieve a shop by its primary key.
 
         Args:
             pk: The primary key (ID) of the shop to retrieve.
+            session: The async database session to use for the query.
 
         Returns:
             A ShopGet schema instance if found, None otherwise.
 
         """
-        logger.debug(f"Getting shop with id {pk}")
-        async with self.database_client.session_factory() as session:
-            result = await session.execute(
-                select(Shop).where(Shop.id == pk).options(joinedload(Shop.category))
-            )
-            if shop := result.scalar_one_or_none():
-                payload = ShopGet.model_validate(shop)
-                logger.debug(f"Shop found: {payload}")
-                return payload
+        result = await session.execute(
+            select(Shop).where(Shop.id == pk).options(joinedload(Shop.category))
+        )
+        return result.scalar_one_or_none()
 
-            logger.debug("Shop not found")
-            return None
-
-    async def get_all(self) -> list[ShopGet]:
+    async def get_all_instances(self, session: AsyncSession) -> list[Shop]:
         """Retrieve all shops.
+
+        Args:
+            session: The async database session to use for the query.
 
         Returns:
             A list of ShopGet schema instances.
 
         """
-        async with self.database_client.session_factory() as session:
-            result = await session.execute(
-                select(Shop).options(joinedload(Shop.category))
-            )
-            return [ShopGet.model_validate(shop) for shop in result.scalars().all()]
+        result = await session.execute(select(Shop).options(joinedload(Shop.category)))
+        return result.scalars().all()
 
     async def create(self, shop: ShopPost) -> ShopGet:
         """Create a new shop.
@@ -73,7 +69,8 @@ class ShopDAO(BaseDAO[ShopGet, ShopPost, ShopPut, ShopPatch]):
         async with self.database_client.session_factory() as session:
             if (
                 shop.category_id
-                and (await category_dao.get_by_id(shop.category_id)) is None
+                and (await category_dao.get_instance_by_id(shop.category_id, session))
+                is None
             ):
                 logger.error(f"Category with id {shop.category_id} not found")
                 raise ValueError(f"Category with id {shop.category_id} not found")
@@ -106,16 +103,14 @@ class ShopDAO(BaseDAO[ShopGet, ShopPost, ShopPut, ShopPatch]):
         category_dao = CategoryDAO(self.database_client)
 
         async with self.database_client.session_factory() as session:
-            result = await session.execute(
-                select(Shop).where(Shop.id == pk).options(joinedload(Shop.category))
-            )
-            if (existing_shop := result.scalar_one_or_none()) is None:
+            if (existing_shop := await self.get_instance_by_id(pk, session)) is None:
                 logger.error(f"Shop with id {pk} not found")
                 raise ValueError(f"Shop with id {pk} not found")
 
             if (
                 shop.category_id
-                and (await category_dao.get_by_id(shop.category_id)) is None
+                and (await category_dao.get_instance_by_id(shop.category_id, session))
+                is None
             ):
                 logger.error(f"Category with id {shop.category_id} not found")
                 raise ValueError(f"Category with id {shop.category_id} not found")
@@ -145,16 +140,14 @@ class ShopDAO(BaseDAO[ShopGet, ShopPost, ShopPut, ShopPatch]):
         category_dao = CategoryDAO(self.database_client)
 
         async with self.database_client.session_factory() as session:
-            result = await session.execute(
-                select(Shop).where(Shop.id == pk).options(joinedload(Shop.category))
-            )
-            if (existing_shop := result.scalar_one_or_none()) is None:
+            if (existing_shop := await self.get_instance_by_id(pk, session)) is None:
                 logger.error(f"Shop with id {pk} not found")
                 raise ValueError(f"Shop with id {pk} not found")
 
             if (
                 shop.category_id
-                and (await category_dao.get_by_id(shop.category_id)) is None
+                and (await category_dao.get_instance_by_id(shop.category_id, session))
+                is None
             ):
                 logger.error(f"Category with id {shop.category_id} not found")
                 raise ValueError(f"Category with id {shop.category_id} not found")
@@ -172,26 +165,3 @@ class ShopDAO(BaseDAO[ShopGet, ShopPost, ShopPut, ShopPatch]):
             payload = await self.get_by_id(existing_shop.id)
             logger.debug(f"Shop modified: {payload}")
             return payload
-
-    async def delete(self, pk: int) -> bool:
-        """Delete a shop by its primary key.
-
-        Args:
-            pk: The primary key (ID) of the shop to delete.
-
-        Returns:
-            True if the shop was deleted, False if it was not found.
-
-        """
-        logger.debug(f"Deleting shop with id {pk}")
-        async with self.database_client.session_factory() as session:
-            result = await session.execute(
-                select(Shop).where(Shop.id == pk).options(joinedload(Shop.category))
-            )
-            if (shop := result.scalar_one_or_none()) is not None:
-                await session.delete(shop)
-                await session.commit()
-                logger.debug(f"Shop deleted: {pk}")
-                return True
-            logger.debug(f"Shop not found: {pk}")
-            return False
