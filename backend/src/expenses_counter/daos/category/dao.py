@@ -31,7 +31,7 @@ class CategoryDAO(BaseDAO[CategoryGet, CategoryPost, CategoryPut, CategoryPatch]
 
         """
         logger.debug(f"Getting category with id {pk}")
-        async for session in self.database_client.get_session():
+        async with self.database_client.session_factory() as session:
             result = await session.execute(
                 select(Category)
                 .where(Category.id == pk)
@@ -42,10 +42,8 @@ class CategoryDAO(BaseDAO[CategoryGet, CategoryPost, CategoryPut, CategoryPatch]
                 logger.debug(f"Category found: {payload}")
                 return payload
 
+            logger.debug(f"Category not found: {pk}")
             return None
-
-        logger.debug("Category not found")
-        raise RuntimeError(f"Category with id {pk} not found")
 
     async def get_all(self) -> list[CategoryGet]:
         """Retrieve all categories.
@@ -54,13 +52,12 @@ class CategoryDAO(BaseDAO[CategoryGet, CategoryPost, CategoryPut, CategoryPatch]
             A list of CategoryGet schema instances for all categories.
 
         """
-        async for session in self.database_client.get_session():
+        async with self.database_client.session_factory() as session:
             result = await session.execute(select(Category))
             return [
                 CategoryGet.model_validate(category)
                 for category in result.scalars().all()
             ]
-        raise RuntimeError("Failed to get all categories")
 
     async def create(self, category: CategoryPost) -> CategoryGet:
         """Create a new category.
@@ -73,7 +70,7 @@ class CategoryDAO(BaseDAO[CategoryGet, CategoryPost, CategoryPut, CategoryPatch]
 
         """
         logger.debug(f"Creating category: {category}")
-        async for session in self.database_client.get_session():
+        async with self.database_client.session_factory() as session:
             if (await self.get_by_id(category.parent_id)) is None:
                 logger.error(f"Parent category with id {category.parent_id} not found")
                 raise ValueError(
@@ -92,8 +89,6 @@ class CategoryDAO(BaseDAO[CategoryGet, CategoryPost, CategoryPut, CategoryPatch]
             logger.debug(f"Category created: {payload.id}")
             return payload
 
-        raise RuntimeError("Failed to create category")
-
     async def update(self, pk: int, category: CategoryPut) -> CategoryGet:
         """Perform a full update on a category.
 
@@ -109,7 +104,7 @@ class CategoryDAO(BaseDAO[CategoryGet, CategoryPost, CategoryPut, CategoryPatch]
 
         """
         logger.debug(f"Updating category with id {pk}: {category}")
-        async for session in self.database_client.get_session():
+        async with self.database_client.session_factory() as session:
             result = await session.execute(
                 select(Category)
                 .where(Category.id == pk)
@@ -137,8 +132,6 @@ class CategoryDAO(BaseDAO[CategoryGet, CategoryPost, CategoryPut, CategoryPatch]
             logger.debug(f"Category updated: {payload.id}")
             return payload
 
-        raise RuntimeError("Failed to update category")
-
     async def modify(self, pk: int, category: CategoryPatch) -> CategoryGet:
         """Perform a partial update on a category.
 
@@ -157,7 +150,7 @@ class CategoryDAO(BaseDAO[CategoryGet, CategoryPost, CategoryPut, CategoryPatch]
 
         """
         logger.debug(f"Modifying category with id {pk}: {category}")
-        async for session in self.database_client.get_session():
+        async with self.database_client.session_factory() as session:
             result = await session.execute(
                 select(Category)
                 .where(Category.id == pk)
@@ -185,8 +178,6 @@ class CategoryDAO(BaseDAO[CategoryGet, CategoryPost, CategoryPut, CategoryPatch]
             logger.debug(f"Category modified: {payload.id}")
             return payload
 
-        raise ValueError(f"Category with id {pk} not found")
-
     async def delete(self, pk: int) -> bool:
         """Delete a category by its primary key.
 
@@ -198,7 +189,7 @@ class CategoryDAO(BaseDAO[CategoryGet, CategoryPost, CategoryPut, CategoryPatch]
 
         """
         logger.debug(f"Deleting category with id {pk}")
-        async for session in self.database_client.get_session():
+        async with self.database_client.session_factory() as session:
             if category := await self.get_by_id(pk):
                 await session.delete(category)
                 await session.commit()
@@ -206,5 +197,3 @@ class CategoryDAO(BaseDAO[CategoryGet, CategoryPost, CategoryPut, CategoryPatch]
                 return True
             logger.debug(f"Category not found: {pk}")
             return False
-
-        raise RuntimeError(f"Category with id {pk} not found")

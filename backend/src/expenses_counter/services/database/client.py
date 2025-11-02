@@ -52,6 +52,18 @@ class DatabaseClient(metaclass=Singleton):
                 expire_on_commit=False,
             )
 
+    @property
+    def session_factory(self) -> async_sessionmaker[AsyncSession]:
+        """Get the session factory.
+
+        Returns:
+            The session factory.
+
+        """
+        if self._session_factory is None:
+            raise RuntimeError("Database client not initialized")
+        return self._session_factory
+
     async def get_session(self) -> AsyncGenerator[AsyncSession, None]:
         """Get an async database session.
 

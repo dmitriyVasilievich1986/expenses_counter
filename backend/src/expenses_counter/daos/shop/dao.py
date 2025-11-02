@@ -32,7 +32,7 @@ class ShopDAO(BaseDAO[ShopGet, ShopPost, ShopPut, ShopPatch]):
 
         """
         logger.debug(f"Getting shop with id {pk}")
-        async for session in self.database_client.get_session():
+        async with self.database_client.session_factory() as session:
             result = await session.execute(
                 select(Shop).where(Shop.id == pk).options(joinedload(Shop.category))
             )
@@ -44,8 +44,6 @@ class ShopDAO(BaseDAO[ShopGet, ShopPost, ShopPut, ShopPatch]):
             logger.debug("Shop not found")
             return None
 
-        raise RuntimeError(f"Shop with id {pk} not found")
-
     async def get_all(self) -> list[ShopGet]:
         """Retrieve all shops.
 
@@ -53,13 +51,11 @@ class ShopDAO(BaseDAO[ShopGet, ShopPost, ShopPut, ShopPatch]):
             A list of ShopGet schema instances.
 
         """
-        async for session in self.database_client.get_session():
+        async with self.database_client.session_factory() as session:
             result = await session.execute(
                 select(Shop).options(joinedload(Shop.category))
             )
             return [ShopGet.model_validate(shop) for shop in result.scalars().all()]
-
-        raise RuntimeError("Failed to get all shops")
 
     async def create(self, shop: ShopPost) -> ShopGet:
         """Create a new shop.
@@ -74,7 +70,7 @@ class ShopDAO(BaseDAO[ShopGet, ShopPost, ShopPut, ShopPatch]):
         logger.debug(f"Creating shop: {shop}")
         category_dao = CategoryDAO(self.database_client)
 
-        async for session in self.database_client.get_session():
+        async with self.database_client.session_factory() as session:
             if (
                 shop.category_id
                 and (await category_dao.get_by_id(shop.category_id)) is None
@@ -95,8 +91,6 @@ class ShopDAO(BaseDAO[ShopGet, ShopPost, ShopPut, ShopPatch]):
             logger.debug(f"Shop created: {payload}")
             return payload
 
-        raise RuntimeError("Failed to create shop")
-
     async def update(self, pk: int, shop: ShopPut) -> ShopGet:
         """Update a shop by its primary key.
 
@@ -111,7 +105,7 @@ class ShopDAO(BaseDAO[ShopGet, ShopPost, ShopPut, ShopPatch]):
         logger.debug(f"Updating shop with id {pk}: {shop}")
         category_dao = CategoryDAO(self.database_client)
 
-        async for session in self.database_client.get_session():
+        async with self.database_client.session_factory() as session:
             result = await session.execute(
                 select(Shop).where(Shop.id == pk).options(joinedload(Shop.category))
             )
@@ -136,8 +130,6 @@ class ShopDAO(BaseDAO[ShopGet, ShopPost, ShopPut, ShopPatch]):
             logger.debug(f"Shop updated: {payload}")
             return payload
 
-        raise RuntimeError("Failed to update shop")
-
     async def modify(self, pk: int, shop: ShopPatch) -> ShopGet:
         """Modify a shop by its primary key.
 
@@ -152,7 +144,7 @@ class ShopDAO(BaseDAO[ShopGet, ShopPost, ShopPut, ShopPatch]):
         logger.debug(f"Modifying shop with id {pk}: {shop}")
         category_dao = CategoryDAO(self.database_client)
 
-        async for session in self.database_client.get_session():
+        async with self.database_client.session_factory() as session:
             result = await session.execute(
                 select(Shop).where(Shop.id == pk).options(joinedload(Shop.category))
             )
@@ -181,8 +173,6 @@ class ShopDAO(BaseDAO[ShopGet, ShopPost, ShopPut, ShopPatch]):
             logger.debug(f"Shop modified: {payload}")
             return payload
 
-        raise RuntimeError("Failed to modify shop")
-
     async def delete(self, pk: int) -> bool:
         """Delete a shop by its primary key.
 
@@ -194,7 +184,7 @@ class ShopDAO(BaseDAO[ShopGet, ShopPost, ShopPut, ShopPatch]):
 
         """
         logger.debug(f"Deleting shop with id {pk}")
-        async for session in self.database_client.get_session():
+        async with self.database_client.session_factory() as session:
             result = await session.execute(
                 select(Shop).where(Shop.id == pk).options(joinedload(Shop.category))
             )
@@ -205,5 +195,3 @@ class ShopDAO(BaseDAO[ShopGet, ShopPost, ShopPut, ShopPatch]):
                 return True
             logger.debug(f"Shop not found: {pk}")
             return False
-
-        raise RuntimeError(f"Shop with id {pk} not found")
