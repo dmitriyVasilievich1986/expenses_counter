@@ -140,7 +140,18 @@ section-order = [
     "first-party",
     "local-folder",
 ]
-known-third-party = ["dateutil", "django", "rest_framework"]
+known-third-party = [
+    "click",
+    "dateutil",
+    "django",
+    "fastapi",
+    "loguru",
+    "pydantic",
+    "pydantic_settings",
+    "rest_framework",
+    "sqlalchemy",
+    "uvicorn",
+]
 
 [dependency-groups]
 dev = ["pre-commit>=4.3.0", "ruff>=0.14.3"]
