@@ -1,0 +1,37 @@
+"""Category GET schema module."""
+
+__all__ = ("CategoryGet",)
+
+from typing import Self
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class CategoryGet(BaseModel):
+    """Pydantic schema for Category GET responses.
+
+    This schema represents a category entity as returned from the API.
+    It includes the category's ID, name, description, and optional parent
+    category reference, enabling hierarchical category structures.
+
+    Attributes:
+        id: The unique identifier for the category.
+        name: The name of the category.
+        description: Optional description providing additional details about the category.
+        parent: Optional reference to the parent CategoryGet instance. None for top-level categories.
+            Uses recursive self-reference to represent hierarchical structures.
+
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int = Field(..., description="The unique identifier for the category")
+    name: str = Field(..., description="The name of the category")
+    description: str | None = Field(
+        None,
+        description="Optional description providing additional details about the category",
+    )
+    parent: Self | None = Field(
+        None,
+        description="Optional reference to the parent CategoryGet instance. None indicates a top-level category",
+    )
