@@ -3,8 +3,13 @@
 __all__ = ("Category",)
 
 
+from typing import TYPE_CHECKING
+
 from sqlalchemy import Column, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, relationship
+
+if TYPE_CHECKING:
+    from expenses_counter.models.shop import Shop
 
 from .base import Base
 
@@ -30,6 +35,8 @@ class Category(Base):
     id: int = Column[int](Integer, primary_key=True, autoincrement=True)
     name: str = Column[str](String(150), nullable=False)
     description: str | None = Column[str | None](Text, nullable=True)
+
+    shops: Mapped[list["Shop"]] = relationship("Shop", back_populates="category")
 
     parent_id: int | None = Column[int | None](
         ForeignKey("main_category.id"), nullable=True

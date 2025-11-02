@@ -1,26 +1,26 @@
-"""Dependency provider for category DAO."""
+"""Dependency provider for shop DAO."""
 
-__all__ = ("get_category",)
+__all__ = ("get_shop",)
 
 from typing import Annotated
 
 from fastapi import Depends
 
-from expenses_counter.daos import CategoryDAO
+from expenses_counter.daos import ShopDAO
 from expenses_counter.modules.middlewares.dependencies.get_db import get_db
 from expenses_counter.services.database import DatabaseClient
 
 
-def get_category(
+def get_shop(
     db: Annotated[DatabaseClient, Depends(get_db)],
-) -> CategoryDAO:
-    """Dependency function that provides a singleton instance of CategoryDAO.
+) -> ShopDAO:
+    """Dependency function that provides a singleton instance of ShopDAO.
 
     Args:
         db: The database client.
 
     Returns:
-        A CategoryDAO instance.
+        A ShopDAO instance.
 
     """
-    return CategoryDAO(database_client=db)
+    return ShopDAO(database_client=db)

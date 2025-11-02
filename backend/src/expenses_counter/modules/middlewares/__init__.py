@@ -1,6 +1,6 @@
 """Middlewares module."""
 
 from .app_lifespan import lifespan
-from .dependencies import get_config, get_db
+from .dependencies import get_category, get_config, get_db, get_shop
 
-__all__ = ("get_config", "get_db", "lifespan")
+__all__ = ("get_category", "get_config", "get_db", "get_shop", "lifespan")
