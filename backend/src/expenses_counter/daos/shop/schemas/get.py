@@ -42,6 +42,4 @@ class ShopGet(BaseSchema):
     name: str = Field(..., description="The name of the shop")
     icon: str | None = Field(None, description="The icon of the shop")
     description: str | None = Field(None, description="The description of the shop")
-    category: SimpleCategoryGet | None = Field(
-        None, description="The category of the shop"
-    )
+    category: SimpleCategoryGet | None = Field(None, description="The category of the shop")

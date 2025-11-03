@@ -24,9 +24,7 @@ class AddressDAO(BaseDAO[Address, AddressGet, AddressPost, AddressPut, AddressPa
 
     schema_cls = AddressGet
 
-    async def get_instance_by_id(
-        self, pk: int, session: AsyncSession
-    ) -> Address | None:
+    async def get_instance_by_id(self, pk: int, session: AsyncSession) -> Address | None:
         """Retrieve an address by its primary key.
 
         Args:
@@ -37,9 +35,7 @@ class AddressDAO(BaseDAO[Address, AddressGet, AddressPost, AddressPut, AddressPa
             An Address instance if found, None otherwise.
 
         """
-        result = await session.execute(
-            select(Address).where(Address.id == pk).options(joinedload(Address.shop))
-        )
+        result = await session.execute(select(Address).where(Address.id == pk).options(joinedload(Address.shop)))
         return result.scalar_one_or_none()
 
     async def get_all_instances(self, session: AsyncSession) -> list[Address]:
@@ -52,9 +48,7 @@ class AddressDAO(BaseDAO[Address, AddressGet, AddressPost, AddressPut, AddressPa
             A list of Address instances for all addresses.
 
         """
-        result = await session.execute(
-            select(Address).options(joinedload(Address.shop))
-        )
+        result = await session.execute(select(Address).options(joinedload(Address.shop)))
         return result.scalars().all()
 
     async def create(self, address: AddressPost) -> AddressGet:
@@ -148,9 +142,7 @@ class AddressDAO(BaseDAO[Address, AddressGet, AddressPost, AddressPut, AddressPa
                 existing_address.address = address.address
             if address.shop_id is not None:
                 shop_dao = ShopDAO(self.database_client)
-                if (
-                    await shop_dao.get_instance_by_id(address.shop_id, session)
-                ) is None:
+                if (await shop_dao.get_instance_by_id(address.shop_id, session)) is None:
                     logger.error(f"Shop with id {address.shop_id} not found")
                     raise ValueError(f"Shop with id {address.shop_id} not found")
                 existing_address.shop_id = address.shop_id

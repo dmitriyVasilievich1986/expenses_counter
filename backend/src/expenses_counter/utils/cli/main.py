@@ -6,9 +6,7 @@ from expenses_counter.config import AppConfig
 
 
 @click.group(help="CLI for managing the Expenses Counter.")
-@click.version_option(
-    app_version, "-v", "--version", message=f"Expenses Counter, version {app_version}"
-)
+@click.version_option(app_version, "-v", "--version", message=f"Expenses Counter, version {app_version}")
 @click.pass_context
 def main(ctx: click.Context) -> None:
     """Initialize the main CLI group for the Expenses Counter.

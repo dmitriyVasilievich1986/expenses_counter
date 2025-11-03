@@ -48,6 +48,4 @@ class Shop(Base):
         ForeignKey("main_category.id"),
         nullable=True,
     )
-    category: Mapped["Category"] = relationship(
-        "Category", remote_side=[category_id], back_populates="shops"
-    )
+    category: Mapped["Category"] = relationship("Category", remote_side=[category_id], back_populates="shops")

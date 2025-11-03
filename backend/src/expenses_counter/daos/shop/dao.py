@@ -35,9 +35,7 @@ class ShopDAO(BaseDAO[Shop, ShopGet, ShopPost, ShopPut, ShopPatch]):
             A ShopGet schema instance if found, None otherwise.
 
         """
-        result = await session.execute(
-            select(Shop).where(Shop.id == pk).options(joinedload(Shop.category))
-        )
+        result = await session.execute(select(Shop).where(Shop.id == pk).options(joinedload(Shop.category)))
         return result.scalar_one_or_none()
 
     async def get_all_instances(self, session: AsyncSession) -> list[Shop]:
@@ -67,11 +65,7 @@ class ShopDAO(BaseDAO[Shop, ShopGet, ShopPost, ShopPut, ShopPatch]):
         category_dao = CategoryDAO(self.database_client)
 
         async with self.database_client.session_factory() as session:
-            if (
-                shop.category_id
-                and (await category_dao.get_instance_by_id(shop.category_id, session))
-                is None
-            ):
+            if shop.category_id and (await category_dao.get_instance_by_id(shop.category_id, session)) is None:
                 logger.error(f"Category with id {shop.category_id} not found")
                 raise ValueError(f"Category with id {shop.category_id} not found")
 
@@ -107,11 +101,7 @@ class ShopDAO(BaseDAO[Shop, ShopGet, ShopPost, ShopPut, ShopPatch]):
                 logger.error(f"Shop with id {pk} not found")
                 raise ValueError(f"Shop with id {pk} not found")
 
-            if (
-                shop.category_id
-                and (await category_dao.get_instance_by_id(shop.category_id, session))
-                is None
-            ):
+            if shop.category_id and (await category_dao.get_instance_by_id(shop.category_id, session)) is None:
                 logger.error(f"Category with id {shop.category_id} not found")
                 raise ValueError(f"Category with id {shop.category_id} not found")
 
@@ -144,11 +134,7 @@ class ShopDAO(BaseDAO[Shop, ShopGet, ShopPost, ShopPut, ShopPatch]):
                 logger.error(f"Shop with id {pk} not found")
                 raise ValueError(f"Shop with id {pk} not found")
 
-            if (
-                shop.category_id
-                and (await category_dao.get_instance_by_id(shop.category_id, session))
-                is None
-            ):
+            if shop.category_id and (await category_dao.get_instance_by_id(shop.category_id, session)) is None:
                 logger.error(f"Category with id {shop.category_id} not found")
                 raise ValueError(f"Category with id {shop.category_id} not found")
 

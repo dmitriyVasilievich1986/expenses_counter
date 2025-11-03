@@ -107,9 +107,7 @@ class BaseDAO(ABC, Generic[B, T, C, U, M]):
         """
         async with self.database_client.session_factory() as session:
             instances = await self.get_all_instances(session)
-            payload = [
-                self.schema_cls.model_validate(instance) for instance in instances
-            ]
+            payload = [self.schema_cls.model_validate(instance) for instance in instances]
             logger.debug(f"Instances found: {payload}")
             return payload
 

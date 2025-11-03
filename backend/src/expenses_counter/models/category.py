@@ -11,6 +11,7 @@ from sqlalchemy.orm import Mapped, relationship
 from .base import Base
 
 if TYPE_CHECKING:
+    from expenses_counter.models.product import Product
     from expenses_counter.models.shop import Shop
 
 
@@ -37,8 +38,7 @@ class Category(Base):
     description: str | None = Column[str | None](Text, nullable=True)
 
     shops: Mapped[list["Shop"]] = relationship("Shop", back_populates="category")
+    products: Mapped[list["Product"]] = relationship("Product", back_populates="sub_category")
 
-    parent_id: int | None = Column[int | None](
-        ForeignKey("main_category.id"), nullable=True
-    )
+    parent_id: int | None = Column[int | None](ForeignKey("main_category.id"), nullable=True)
     parent: Mapped["Category"] = relationship("Category", remote_side=[id])

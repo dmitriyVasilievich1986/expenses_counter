@@ -13,9 +13,7 @@ from expenses_counter.models.category import Category
 from .schemas import CategoryGet, CategoryPatch, CategoryPost, CategoryPut
 
 
-class CategoryDAO(
-    BaseDAO[Category, CategoryGet, CategoryPost, CategoryPut, CategoryPatch]
-):
+class CategoryDAO(BaseDAO[Category, CategoryGet, CategoryPost, CategoryPut, CategoryPatch]):
     """Data Access Object for Category entities.
 
     This DAO implements CRUD operations for Category entities, interacting with
@@ -25,9 +23,7 @@ class CategoryDAO(
 
     schema_cls = CategoryGet
 
-    async def get_instance_by_id(
-        self, pk: int, session: AsyncSession
-    ) -> Category | None:
+    async def get_instance_by_id(self, pk: int, session: AsyncSession) -> Category | None:
         """Retrieve a category by its primary key.
 
         Args:
@@ -38,11 +34,7 @@ class CategoryDAO(
             A CategoryGet schema instance if found, None otherwise.
 
         """
-        result = await session.execute(
-            select(Category)
-            .where(Category.id == pk)
-            .options(joinedload(Category.parent))
-        )
+        result = await session.execute(select(Category).where(Category.id == pk).options(joinedload(Category.parent)))
         return result.scalar_one_or_none()
 
     async def get_all_instances(self, session: AsyncSession) -> list[Category]:
@@ -55,9 +47,7 @@ class CategoryDAO(
             A list of CategoryGet schema instances for all categories.
 
         """
-        result = await session.execute(
-            select(Category).options(joinedload(Category.parent))
-        )
+        result = await session.execute(select(Category).options(joinedload(Category.parent)))
         return result.scalars().all()
 
     async def create(self, category: CategoryPost) -> CategoryGet:
@@ -74,9 +64,7 @@ class CategoryDAO(
         async with self.database_client.session_factory() as session:
             if (await self.get_instance_by_id(category.parent_id, session)) is None:
                 logger.error(f"Parent category with id {category.parent_id} not found")
-                raise ValueError(
-                    f"Parent category with id {category.parent_id} not found"
-                )
+                raise ValueError(f"Parent category with id {category.parent_id} not found")
 
             new_category = Category(
                 name=category.name,
@@ -106,20 +94,13 @@ class CategoryDAO(
         """
         logger.debug(f"Updating category with id {pk}: {category}")
         async with self.database_client.session_factory() as session:
-            if (
-                existing_category := await self.get_instance_by_id(pk, session)
-            ) is None:
+            if (existing_category := await self.get_instance_by_id(pk, session)) is None:
                 logger.error(f"Category with id {pk} not found")
                 raise ValueError(f"Category with id {pk} not found")
 
-            if (
-                category.parent_id
-                and (await self.get_instance_by_id(category.parent_id, session)) is None
-            ):
+            if category.parent_id and (await self.get_instance_by_id(category.parent_id, session)) is None:
                 logger.error(f"Parent category with id {category.parent_id} not found")
-                raise ValueError(
-                    f"Parent category with id {category.parent_id} not found"
-                )
+                raise ValueError(f"Parent category with id {category.parent_id} not found")
 
             existing_category.parent_id = category.parent_id
             existing_category.name = category.name
@@ -149,9 +130,7 @@ class CategoryDAO(
         """
         logger.debug(f"Modifying category with id {pk}: {category}")
         async with self.database_client.session_factory() as session:
-            if (
-                existing_category := await self.get_instance_by_id(pk, session)
-            ) is None:
+            if (existing_category := await self.get_instance_by_id(pk, session)) is None:
                 raise ValueError(f"Category with id {pk} not found")
 
             if category.name is not None:
@@ -160,12 +139,8 @@ class CategoryDAO(
                 existing_category.description = category.description
             if category.parent_id:
                 if (await self.get_instance_by_id(category.parent_id, session)) is None:
-                    logger.error(
-                        f"Parent category with id {category.parent_id} not found"
-                    )
-                    raise ValueError(
-                        f"Parent category with id {category.parent_id} not found"
-                    )
+                    logger.error(f"Parent category with id {category.parent_id} not found")
+                    raise ValueError(f"Parent category with id {category.parent_id} not found")
                 existing_category.parent_id = category.parent_id
 
             await session.commit()

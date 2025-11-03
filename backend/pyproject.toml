@@ -76,6 +76,9 @@ docstring-code-format = false
 # enabled.
 docstring-code-line-length = "dynamic"
 
+[tool.ruff]
+line-length = 120
+
 [tool.ruff.lint]
 # Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
 # Unlike Flake8, Ruff doesn't enable pycodestyle warnings (`W`) or

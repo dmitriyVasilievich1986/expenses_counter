@@ -17,9 +17,7 @@ class AppConfig(BaseConfig):
     Supports both SQLite and PostgreSQL database engines.
     """
 
-    allowed_hosts: list[str] = Field(
-        ["*"], description="The allowed hosts to use for the application"
-    )
+    allowed_hosts: list[str] = Field(["*"], description="The allowed hosts to use for the application")
     name: str = Field(
         "Expenses Counter",
         description="The name of the application",

@@ -26,9 +26,7 @@ class CategoryPost(BaseSchema):
 
     """
 
-    name: str = Field(
-        ..., min_length=1, max_length=150, description="The name of the category"
-    )
+    name: str = Field(..., min_length=1, max_length=150, description="The name of the category")
     description: str | None = Field(
         None,
         min_length=0,

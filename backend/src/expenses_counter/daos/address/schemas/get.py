@@ -25,9 +25,7 @@ class AddressGet(BaseSchema):
     """
 
     id: int = Field(..., description="The unique identifier for the address")
-    local_name: str = Field(
-        ..., description="The local name or identifier for this address location"
-    )
+    local_name: str = Field(..., description="The local name or identifier for this address location")
     address: str = Field(..., description="The physical address string")
     shop: "SimpleShopGet" = Field(
         ...,
