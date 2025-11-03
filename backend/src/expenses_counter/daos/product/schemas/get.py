@@ -1,13 +1,26 @@
 """Product GET schema module."""
 
-__all__ = ("ProductGet",)
+__all__ = ("ProductGet", "SimpleProductGet")
 
 from typing import Optional
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from expenses_counter.daos.base import BaseSchema
 from expenses_counter.daos.category.schemas.get import SimpleCategoryGet
+
+
+class SimpleProductGet(BaseSchema):
+    """Pydantic schema for Simple Product GET responses.
+
+    This schema represents a product entity as returned from the API.
+    It includes the product's ID and name.
+    """
+
+    model_config = ConfigDict(extra="ignore")
+
+    id: int = Field(..., description="The unique identifier for the product")
+    name: str = Field(..., description="The name of the product")
 
 
 class ProductGet(BaseSchema):

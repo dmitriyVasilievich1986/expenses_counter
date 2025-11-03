@@ -1,6 +1,6 @@
 """Dependencies module."""
 
-from .daos import get_address, get_category, get_product, get_shop
+from .daos import get_address, get_category, get_product, get_shop, get_transaction
 from .get_config import get_config
 from .get_db import get_db
 
@@ -11,4 +11,5 @@ __all__ = (
     "get_db",
     "get_product",
     "get_shop",
+    "get_transaction",
 )
