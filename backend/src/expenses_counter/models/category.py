@@ -8,10 +8,10 @@ from typing import TYPE_CHECKING
 from sqlalchemy import Column, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, relationship
 
+from .base import Base
+
 if TYPE_CHECKING:
     from expenses_counter.models.shop import Shop
-
-from .base import Base
 
 
 class Category(Base):
