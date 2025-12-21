@@ -160,4 +160,6 @@ known-third-party = [
 ]
 
 [dependency-groups]
-dev = ["pre-commit>=4.3.0", "ruff>=0.14.3"]
+dev = [
+ "ruff>=0.14.3",
+]
