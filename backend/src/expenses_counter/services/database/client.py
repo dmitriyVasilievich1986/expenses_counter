@@ -82,7 +82,7 @@ class DatabaseClient(metaclass=Singleton):
             .. code-block:: python
 
                 from expenses_counter.services.database import DatabaseClient
-                from expenses_counter.models import Category
+                from expenses_counter.services.database.models import Category
 
                 client = DatabaseClient()
 

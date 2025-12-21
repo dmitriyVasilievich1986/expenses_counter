@@ -9,7 +9,7 @@ from sqlalchemy.orm import joinedload
 
 from expenses_counter.services.daos.base import BaseDAO
 from expenses_counter.services.daos.category.dao import CategoryDAO
-from expenses_counter.models.shop import Shop
+from expenses_counter.services.database.models.shop import Shop
 
 from .schemas import ShopGet, ShopPatch, ShopPost, ShopPut
 

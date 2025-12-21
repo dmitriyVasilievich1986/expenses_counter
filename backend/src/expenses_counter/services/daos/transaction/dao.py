@@ -10,7 +10,7 @@ from sqlalchemy.orm import joinedload
 from expenses_counter.services.daos.address import AddressDAO
 from expenses_counter.services.daos.base import BaseDAO
 from expenses_counter.services.daos.product import ProductDAO
-from expenses_counter.models.transaction import Transaction
+from expenses_counter.services.database.models.transaction import Transaction
 
 from .schemas import TransactionGet, TransactionPatch, TransactionPost, TransactionPut
 

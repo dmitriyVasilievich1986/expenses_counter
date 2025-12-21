@@ -10,8 +10,8 @@ from sqlalchemy.orm import Mapped, relationship
 from .base import Base
 
 if TYPE_CHECKING:
-    from expenses_counter.models.category import Category
-    from expenses_counter.models.transaction import Transaction
+    from expenses_counter.services.database.models.category import Category
+    from expenses_counter.services.database.models.transaction import Transaction
 
 
 class Product(Base):

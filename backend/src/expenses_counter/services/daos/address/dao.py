@@ -9,7 +9,7 @@ from sqlalchemy.orm import joinedload
 
 from expenses_counter.services.daos.base import BaseDAO
 from expenses_counter.services.daos.shop.dao import ShopDAO
-from expenses_counter.models.address import Address
+from expenses_counter.services.database.models.address import Address
 
 from .schemas import AddressGet, AddressPatch, AddressPost, AddressPut
 

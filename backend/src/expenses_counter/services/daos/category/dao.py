@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from expenses_counter.services.daos.base import BaseDAO
-from expenses_counter.models.category import Category
+from expenses_counter.services.database.models.category import Category
 
 from .schemas import CategoryGet, CategoryPatch, CategoryPost, CategoryPut
 

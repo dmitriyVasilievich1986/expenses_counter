@@ -9,7 +9,7 @@ from loguru import logger
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from expenses_counter.models.base import Base
+from expenses_counter.services.database.models.base import Base
 from expenses_counter.services.database import DatabaseClient
 
 B = TypeVar("B", bound=Type[Base])

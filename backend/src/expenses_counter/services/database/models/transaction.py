@@ -11,8 +11,8 @@ from sqlalchemy.orm import Mapped, relationship
 from .base import Base
 
 if TYPE_CHECKING:
-    from expenses_counter.models.address import Address
-    from expenses_counter.models.product import Product
+    from expenses_counter.services.database.models.address import Address
+    from expenses_counter.services.database.models.product import Product
 
 class Transaction(Base):
     """SQLAlchemy model representing a Transaction entity.
