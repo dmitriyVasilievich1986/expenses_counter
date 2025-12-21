@@ -2,8 +2,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from expenses_counter.daos.address import AddressDAO
-from expenses_counter.daos.address.schemas import (
+from expenses_counter.services.daos.address import AddressDAO
+from expenses_counter.services.daos.address.schemas import (
     AddressGet,
     AddressPatch,
     AddressPost,

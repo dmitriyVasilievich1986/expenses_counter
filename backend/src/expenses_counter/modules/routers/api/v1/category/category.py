@@ -11,8 +11,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from expenses_counter.daos.category import CategoryDAO
-from expenses_counter.daos.category.schemas import (
+from expenses_counter.services.daos.category import CategoryDAO
+from expenses_counter.services.daos.category.schemas import (
     CategoryGet,
     CategoryPatch,
     CategoryPost,

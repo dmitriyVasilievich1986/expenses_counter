@@ -6,8 +6,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from expenses_counter.daos import TransactionDAO
-from expenses_counter.daos.transaction.schemas import (
+from expenses_counter.services.daos import TransactionDAO
+from expenses_counter.services.daos.transaction.schemas import (
     TransactionGet,
     TransactionPatch,
     TransactionPost,

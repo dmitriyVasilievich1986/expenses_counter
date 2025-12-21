@@ -6,7 +6,7 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from expenses_counter.daos import ProductDAO
+from expenses_counter.services.daos import ProductDAO
 from expenses_counter.modules.middlewares.dependencies.get_db import get_db
 from expenses_counter.services.database import DatabaseClient
 

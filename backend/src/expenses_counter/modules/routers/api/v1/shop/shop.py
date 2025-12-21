@@ -6,8 +6,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from expenses_counter.daos import ShopDAO
-from expenses_counter.daos.shop.schemas import (
+from expenses_counter.services.daos import ShopDAO
+from expenses_counter.services.daos.shop.schemas import (
     ShopGet,
     ShopPatch,
     ShopPost,
