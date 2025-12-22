@@ -38,11 +38,11 @@ def get_app(config: AppConfig | None = None) -> FastAPI:
 
     logger.debug("Creating FastAPI app...")
     app = FastAPI(
-        title=config.name,
-        description=config.description,
+        title=config.info.name,
+        description=config.info.description,
         version=app_version,
-        debug=config.debug,
-        log_level=config.app_log_level,
+        debug=config.info.api_info.debug,
+        log_level=config.info.api_info.log_level,
         lifespan=lifespan,
     )
     logger.debug("Adding system router...")
