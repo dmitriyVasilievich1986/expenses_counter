@@ -40,4 +40,3 @@ class TransactionGet(BaseSchema):
         ...,
         description="Reference to the SimpleAddressGet instance associated with this transaction",
     )
-

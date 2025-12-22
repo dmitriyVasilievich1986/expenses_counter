@@ -188,4 +188,3 @@ class TransactionDAO(BaseDAO[Transaction, TransactionGet, TransactionPost, Trans
             payload = await self.get_by_id(existing_transaction.id)
             logger.debug(f"Transaction modified: {payload.id}")
             return payload
-

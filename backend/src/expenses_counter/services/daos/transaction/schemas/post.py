@@ -29,4 +29,3 @@ class TransactionPost(BaseSchema):
     price: float = Field(0, description="The price of the transaction")
     product_id: int = Field(..., description="The product id of the transaction")
     address_id: int = Field(..., description="The address id of the transaction")
-

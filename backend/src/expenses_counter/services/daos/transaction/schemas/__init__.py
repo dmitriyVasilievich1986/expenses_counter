@@ -6,4 +6,3 @@ from .post import TransactionPost
 from .put import TransactionPut
 
 __all__ = ("TransactionGet", "TransactionPatch", "TransactionPost", "TransactionPut")
-

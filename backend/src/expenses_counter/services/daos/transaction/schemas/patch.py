@@ -30,4 +30,3 @@ class TransactionPatch(BaseSchema):
     price: float | None = Field(None, description="The price of the transaction")
     product_id: int | None = Field(None, description="The product id of the transaction")
     address_id: int | None = Field(None, description="The address id of the transaction")
-

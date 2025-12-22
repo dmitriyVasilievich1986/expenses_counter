@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from expenses_counter.services.database.models.shop import Shop
     from expenses_counter.services.database.models.transaction import Transaction
 
+
 class Address(Base):
     """SQLAlchemy model representing an Address entity.
 
