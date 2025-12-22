@@ -27,6 +27,14 @@ def main(ctx: click.Context) -> None:
 
 
 @main.command(help="Run the Expenses Counter application server.")
+@click.pass_context
+def show_config(ctx: click.Context) -> None:
+    """Show the Expenses Counter application configuration."""
+    config: AppConfig = ctx.obj["config"]
+    click.echo(config.model_dump_json(indent=2))
+
+
+@main.command(help="Run the Expenses Counter application server.")
 @click.option("--host", default="0.0.0.0", help="Host to bind the server to.")
 @click.option("--port", default=3000, help="Port to bind the server to.")
 @click.option("--reload", is_flag=True, help="Enable auto-reload for development.")
