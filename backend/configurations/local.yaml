@@ -18,5 +18,5 @@ info:
 
 services:
     database:
-        provider: sqlite
+        provider: "sqlite+aiosqlite"
         host: expenses_counter.sqlite3
