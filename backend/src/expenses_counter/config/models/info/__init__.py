@@ -32,6 +32,7 @@ class Info(BaseModel):
     """
 
     name: str = Field("Expenses Counter", description="The name of the application")
+    description: str = Field("Expenses Counter", description="The description of the application")
     version: str = Field(app_version, description="The version of the application")
 
     api_info: APIInfo = Field(..., description="The API information")
