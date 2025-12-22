@@ -42,8 +42,8 @@ class DatabaseClient(metaclass=Singleton):
         if self._engine is None:
             config = app_config or AppConfig.get_or_create()
             self._engine = create_async_engine(
-                config.sqlalchemy_url,
-                echo=config.debug,
+                config.services.database.url,
+                echo=config.info.api_info.debug,
                 future=True,
             )
             self._session_factory = async_sessionmaker[AsyncSession](
