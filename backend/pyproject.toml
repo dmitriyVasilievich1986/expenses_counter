@@ -19,6 +19,7 @@ license = { file = "LICENSE" }
 requires-python = ">=3.13"
 dependencies = [
     "aiosqlite>=0.21.0",
+    "asyncpg>=0.31.0",
     "click>=8.3.0",
     "django>=5.2.7",
     "djangorestframework>=3.16.1",
@@ -29,7 +30,7 @@ dependencies = [
     "pydantic>=2.12.3",
     "pydantic-settings[yaml]>=2.11.0",
     "python-dateutil>=2.9.0.post0",
-    "sqlalchemy>=2.0.44",
+    "sqlalchemy[asyncio]>=2.0.44",
     "uvicorn>=0.38.0",
 ]
 
@@ -160,6 +161,4 @@ known-third-party = [
 ]
 
 [dependency-groups]
-dev = [
- "ruff>=0.14.3",
-]
+dev = ["ruff>=0.14.3"]
