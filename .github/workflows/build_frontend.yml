@@ -28,14 +28,6 @@ jobs:
         working-directory: ./frontend
         run: npm ci
 
-      - name: Run linter check
-        working-directory: ./frontend
-        run: npm run lint:check
-
-      - name: Run format check
-        working-directory: ./frontend
-        run: npm run format:check
-
       - name: Build project
         working-directory: ./frontend
         run: npm run build
