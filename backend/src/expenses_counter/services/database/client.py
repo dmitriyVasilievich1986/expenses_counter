@@ -4,8 +4,10 @@ __all__ = ("DatabaseClient",)
 
 from typing import AsyncGenerator
 
+from loguru import logger
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession, create_async_engine
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncEngine, AsyncSession, create_async_engine
 
 from expenses_counter.config import AppConfig
 from expenses_counter.utils import Singleton
@@ -24,8 +26,8 @@ class DatabaseClient(metaclass=Singleton):
 
     """
 
-    _engine = None
-    _session_factory: async_sessionmaker[AsyncSession] | None = None
+    _engine: AsyncEngine
+    _session_factory: async_sessionmaker[AsyncSession]
 
     def __init__(self, app_config: AppConfig | None = None) -> None:
         """Initialize the database client.
@@ -39,18 +41,31 @@ class DatabaseClient(metaclass=Singleton):
                 the default AppConfig instance will be used.
 
         """
-        if self._engine is None:
-            config = app_config or AppConfig.get_or_create()
-            self._engine = create_async_engine(
-                config.services.database.url,
-                echo=config.info.api_info.debug,
-                future=True,
-            )
-            self._session_factory = async_sessionmaker[AsyncSession](
-                self._engine,
-                class_=AsyncSession,
-                expire_on_commit=False,
-            )
+        if app_config is None:
+            raise RuntimeError("App config is required")
+        logger.info(f"Initializing database client with URL: {app_config.services.database.url}")
+
+        self._engine = create_async_engine(
+            app_config.services.database.url,
+            echo=app_config.info.api_info.debug,
+            future=True,
+        )
+        self._session_factory = async_sessionmaker[AsyncSession](
+            self._engine,
+            class_=AsyncSession,
+            expire_on_commit=False,
+        )
+        logger.info("Database client initialized successfully.")
+
+    @property
+    def engine(self) -> AsyncEngine:
+        """Get the database engine.
+
+        Returns:
+            The database engine.
+
+        """
+        return self._engine
 
     @property
     def session_factory(self) -> async_sessionmaker[AsyncSession]:
@@ -60,8 +75,6 @@ class DatabaseClient(metaclass=Singleton):
             The session factory.
 
         """
-        if self._session_factory is None:
-            raise RuntimeError("Database client not initialized")
         return self._session_factory
 
     async def get_session(self) -> AsyncGenerator[AsyncSession, None]:
@@ -117,8 +130,6 @@ class DatabaseClient(metaclass=Singleton):
                     await session.commit()
 
         """
-        if self._session_factory is None:
-            raise RuntimeError("Database client not initialized")
         async with self._session_factory() as session:
             yield session
 
@@ -129,21 +140,25 @@ class DatabaseClient(metaclass=Singleton):
         This should be called when shutting down the application to properly
         clean up database connections.
         """
-        if self._engine is not None:
-            await self._engine.dispose()
-            self._engine = None
-            self._session_factory = None
+        await self._engine.dispose()
+        logger.info("Database client closed successfully.")
 
     async def healthcheck(self) -> bool:
         """Check the health of the database client.
 
+        Executes a simple SELECT query to verify database connectivity and
+        operational status.
+
         Returns:
-            True if the database client is healthy, False otherwise.
+            True if the database client is healthy and can execute queries,
+            False if any SQLAlchemy error occurs during the health check.
 
         """
         try:
             async with self._session_factory() as session:
                 await session.execute(text("SELECT 1"))
-        except Exception:
+        except SQLAlchemyError as e:
+            logger.error(f"Database health check failed: {e}")
             return False
+
         return True
