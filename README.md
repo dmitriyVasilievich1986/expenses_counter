@@ -1,4 +1,2 @@
-# Expense counter.
-
-[![codecov](https://codecov.io/github/dmitriyVasilievich1986/expenses_counter/graph/badge.svg?token=4S2QMLH6ZQ)](https://codecov.io/github/dmitriyVasilievich1986/expenses_counter)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=dmitriyVasilievich1986_expenses_counter&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=dmitriyVasilievich1986_expenses_counter)
+[![build-backend](https://github.com/dmitriyVasilievich1986/expenses_counter/actions/workflows/build_backend.yml/badge.svg)](https://github.com/dmitriyVasilievich1986/expenses_counter/actions/workflows/build_backend.yml)
+[![build-frontend](https://github.com/dmitriyVasilievich1986/expenses_counter/actions/workflows/build_frontend.yml/badge.svg)](https://github.com/dmitriyVasilievich1986/expenses_counter/actions/workflows/build_frontend.yml)
