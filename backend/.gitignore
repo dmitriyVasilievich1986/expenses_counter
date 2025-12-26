@@ -3,7 +3,7 @@
 .venv/
 
 *.sqlite3
-.env
+*.env
 logs/
 
 .ruff_cache/
