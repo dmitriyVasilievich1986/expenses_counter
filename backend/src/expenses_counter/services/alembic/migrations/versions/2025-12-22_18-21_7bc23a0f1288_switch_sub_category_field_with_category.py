@@ -64,11 +64,16 @@ def downgrade():
     Note: This will result in data loss as category references cannot be
     automatically converted back to subcategory references.
     """
-    op.drop_constraint("main_shop_sub_category_id_fkey", "main_shop", type_="foreignkey")
-    op.drop_column("main_shop", "sub_category_id")
-    op.add_column("main_shop", sa.Column("category_id", sa.BigInteger(), nullable=True))
+    op.drop_constraint("main_shop_category_id_fkey", "main_shop", type_="foreignkey")
+    op.drop_column("main_shop", "category_id")
+    op.add_column("main_shop", sa.Column("sub_category_id", sa.BigInteger(), nullable=True))
     op.create_foreign_key(
-        "main_shop_category_id_fkey", "main_shop", "main_category", ["category_id"], ["id"], ondelete="CASCADE"
+        "main_shop_sub_category_id_fkey",
+        "main_shop",
+        "main_subcategory",
+        ["sub_category_id"],
+        ["id"],
+        ondelete="CASCADE",
     )
 
     op.drop_constraint("main_product_category_id_fkey", "main_product", type_="foreignkey")
