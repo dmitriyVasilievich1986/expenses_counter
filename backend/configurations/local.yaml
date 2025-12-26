@@ -18,5 +18,9 @@ info:
 
 services:
     database:
-        provider: "sqlite+aiosqlite"
-        host: expenses_counter.sqlite3
+        provider: "postgresql+asyncpg"
+        name: expenses_counter
+        host: localhost
+        port: 5432
+        password: root
+        user: root
