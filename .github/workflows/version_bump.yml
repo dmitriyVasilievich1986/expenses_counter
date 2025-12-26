@@ -128,14 +128,3 @@ jobs:
           git tag -a "frontend-v${{ steps.get-version.outputs.version }}" -m "Frontend release v${{ steps.get-version.outputs.version }}"
           git push origin ${{ github.ref_name }}
           git push origin "frontend-v${{ steps.get-version.outputs.version }}"
-
-      - name: Create GitHub Release
-        if: steps.check-frontend.outputs.changed == 'true' && github.ref_name == 'master'
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: frontend-v${{ steps.get-version.outputs.version }}
-          name: Frontend v${{ steps.get-version.outputs.version }}
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
