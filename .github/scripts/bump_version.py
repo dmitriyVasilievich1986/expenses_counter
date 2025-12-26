@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Version bumping script for keychain project.
+"""Version bumping script for Expenses Counter project.
 
-Handles version bumping for both Python (__init__.py) and JSON (package.json) files.
+Handles version bumping for both Python (src/expenses_counter/__init__.py) and JSON (package.json) files.
 """
 
 import argparse
