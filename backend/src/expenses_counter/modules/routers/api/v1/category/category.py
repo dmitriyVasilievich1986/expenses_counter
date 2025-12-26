@@ -11,6 +11,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 
+from expenses_counter.modules.middlewares.dependencies import get_category
 from expenses_counter.services.daos.category import CategoryDAO
 from expenses_counter.services.daos.category.schemas import (
     CategoryGet,
@@ -18,7 +19,6 @@ from expenses_counter.services.daos.category.schemas import (
     CategoryPost,
     CategoryPut,
 )
-from expenses_counter.modules.middlewares.dependencies import get_category
 
 router = APIRouter(prefix="/category", tags=["Category"])
 

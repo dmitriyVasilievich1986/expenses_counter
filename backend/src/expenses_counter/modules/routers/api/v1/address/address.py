@@ -2,6 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 
+from expenses_counter.modules.middlewares.dependencies import get_address
 from expenses_counter.services.daos.address import AddressDAO
 from expenses_counter.services.daos.address.schemas import (
     AddressGet,
@@ -9,7 +10,6 @@ from expenses_counter.services.daos.address.schemas import (
     AddressPost,
     AddressPut,
 )
-from expenses_counter.modules.middlewares.dependencies import get_address
 
 router = APIRouter(prefix="/address", tags=["Address"])
 

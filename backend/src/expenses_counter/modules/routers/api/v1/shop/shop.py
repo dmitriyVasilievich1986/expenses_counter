@@ -6,6 +6,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 
+from expenses_counter.modules.middlewares.dependencies import get_shop
 from expenses_counter.services.daos import ShopDAO
 from expenses_counter.services.daos.shop.schemas import (
     ShopGet,
@@ -13,7 +14,6 @@ from expenses_counter.services.daos.shop.schemas import (
     ShopPost,
     ShopPut,
 )
-from expenses_counter.modules.middlewares.dependencies import get_shop
 
 router = APIRouter(prefix="/shop", tags=["Shop"])
 

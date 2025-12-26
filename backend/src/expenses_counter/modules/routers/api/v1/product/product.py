@@ -6,6 +6,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 
+from expenses_counter.modules.middlewares.dependencies import get_product
 from expenses_counter.services.daos import ProductDAO
 from expenses_counter.services.daos.product.schemas import (
     ProductGet,
@@ -13,7 +14,6 @@ from expenses_counter.services.daos.product.schemas import (
     ProductPost,
     ProductPut,
 )
-from expenses_counter.modules.middlewares.dependencies import get_product
 
 router = APIRouter(prefix="/product", tags=["Product"])
 
