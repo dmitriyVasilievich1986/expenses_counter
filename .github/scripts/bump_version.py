@@ -6,12 +6,13 @@ Handles version bumping for both Python (src/expenses_counter/__init__.py) and J
 
 import argparse
 import json
+import logging
 import re
 import sys
 from pathlib import Path
 from typing import Tuple
 
-from loguru import logger
+logger = logging.getLogger(__name__)
 
 
 def parse_version(version_string: str) -> Tuple[int, int, int]:
