@@ -6,6 +6,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 
+from expenses_counter.modules.middlewares.dependencies import get_transaction
 from expenses_counter.services.daos import TransactionDAO
 from expenses_counter.services.daos.transaction.schemas import (
     TransactionGet,
@@ -13,7 +14,6 @@ from expenses_counter.services.daos.transaction.schemas import (
     TransactionPost,
     TransactionPut,
 )
-from expenses_counter.modules.middlewares.dependencies import get_transaction
 
 router = APIRouter(prefix="/transaction", tags=["Transaction"])
 
@@ -144,4 +144,3 @@ async def delete_transaction(
         return await transaction_dao.delete(transaction_id)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
-
