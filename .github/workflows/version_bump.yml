@@ -41,7 +41,7 @@ jobs:
         if: steps.check-backend.outputs.changed == 'true'
         run: |
           python .github/scripts/bump_version.py \
-            --file backend/src/keychain/__init__.py \
+            --file backend/src/expenses_counter/__init__.py \
             --type python \
             --branch ${{ github.ref_name }}
 
@@ -49,7 +49,7 @@ jobs:
         if: steps.check-backend.outputs.changed == 'true'
         id: get-version
         run: |
-          VERSION=$(python .github/scripts/bump_version.py --file backend/src/keychain/__init__.py --type python --get-version)
+          VERSION=$(python .github/scripts/bump_version.py --file backend/src/expenses_counter/__init__.py --type python --get-version)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Commit and push backend version
@@ -58,7 +58,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git add backend/src/keychain/__init__.py
+          git add backend/src/expenses_counter/__init__.py
           git commit -m "chore: bump backend version to ${{ steps.get-version.outputs.version }} [version bump]"
           git tag -a "backend-v${{ steps.get-version.outputs.version }}" -m "Backend release v${{ steps.get-version.outputs.version }}"
           git push origin ${{ github.ref_name }}
