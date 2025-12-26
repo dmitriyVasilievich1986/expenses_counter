@@ -64,17 +64,6 @@ jobs:
           git push origin ${{ github.ref_name }}
           git push origin "backend-v${{ steps.get-version.outputs.version }}"
 
-      - name: Create GitHub Release
-        if: steps.check-backend.outputs.changed == 'true' && github.ref_name == 'master'
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: backend-v${{ steps.get-version.outputs.version }}
-          name: Backend v${{ steps.get-version.outputs.version }}
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   bump-frontend-version:
     runs-on: ubuntu-latest
     if: ${{ !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[version bump]') }}
