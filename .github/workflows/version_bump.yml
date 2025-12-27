@@ -20,7 +20,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -162,7 +162,7 @@ jobs:
 
           git add backend/src/expenses_counter/__init__.py frontend/package.json
           git commit -m "$COMMIT_MSG"
-          git push
+          git push origin HEAD:${{ github.head_ref }}
 
       - name: Summary
         if: steps.check_commit.outputs.skip == 'false'
