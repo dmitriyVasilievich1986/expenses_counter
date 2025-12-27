@@ -32,14 +32,20 @@ jobs:
       - name: Check for existing version bump commit
         id: check_commit
         run: |
-          # Check if the last commit message contains "[version bump]"
-          LAST_COMMIT_MSG=$(git log -1 --pretty=%B)
-          if echo "$LAST_COMMIT_MSG" | grep -q "\[version bump\]"; then
+          # Get the base branch for comparison
+          BASE_BRANCH="${{ github.base_ref }}"
+
+          # Check if any commit in the PR contains "[version bump]"
+          if git log origin/$BASE_BRANCH..HEAD --pretty=%B | grep -q "\[version bump\]"; then
             echo "skip=true" >> $GITHUB_OUTPUT
-            echo "Found existing version bump commit, skipping..."
+            echo "Found existing version bump commit in PR, skipping..."
+
+            # Show which commit(s) contain the marker
+            echo "Version bump commits found:"
+            git log origin/$BASE_BRANCH..HEAD --pretty=format:"%h - %s" --grep="\[version bump\]"
           else
             echo "skip=false" >> $GITHUB_OUTPUT
-            echo "No version bump commit found, proceeding..."
+            echo "No version bump commit found in PR, proceeding..."
           fi
 
       - name: Check for backend changes
