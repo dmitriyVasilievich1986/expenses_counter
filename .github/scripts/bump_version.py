@@ -155,7 +155,7 @@ def main():
 
     # If only getting version, print and exit
     if args.get_version:
-        logger.info(current_version)
+        print(current_version)
         return
 
     # Validate branch argument is provided for bumping
