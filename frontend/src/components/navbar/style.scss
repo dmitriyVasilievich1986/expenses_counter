@@ -1,0 +1,11 @@
+.navlink-text {
+    color: #fff3b0;
+    text-decoration: none;
+    font-size: 1.2rem;
+    font-weight: 600;
+    transition: color 0.3s ease;
+
+    &:hover {
+        color: #e09f3e;
+    }
+}
