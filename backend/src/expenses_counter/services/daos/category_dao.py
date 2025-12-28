@@ -12,9 +12,9 @@ __all__ = ("CategoryDAO",)
 
 from typing import Literal
 
-from sqlalchemy import asc, desc, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import load_only, selectinload
+from sqlalchemy.orm import selectinload
 from sqlalchemy.sql import ColumnElement
 
 from expenses_counter.services.daos.base import BaseDAO, error_handler
@@ -56,47 +56,6 @@ class CategoryDAO(BaseDAO[Category]):
         stmt = select(Category).options(selectinload(Category.parent, recursion_depth=-1)).where(Category.id == pk)
         result = await session.execute(stmt)
         return result.scalar()
-
-    async def _get_all_raw(
-        self,
-        session: AsyncSession,
-        limit: int,
-        offset: int,
-        sort_by: str,
-        sort_order: Literal["asc", "desc"],
-        filters: list[ColumnElement[bool]] | None,
-    ) -> list[Category]:
-        """Retrieve multiple categories with pagination, sorting, and filtering.
-
-        This method overrides the base implementation to optimize query performance
-        by loading only the id and name fields. Parent relationships are not loaded
-        in bulk queries for performance reasons.
-
-        Args:
-            session: The active database session.
-            limit: Maximum number of records to return.
-            offset: Number of records to skip for pagination.
-            sort_by: The column name to sort by.
-            sort_order: Sort direction, either "asc" or "desc".
-            filters: Optional list of SQLAlchemy filter expressions.
-
-        Returns:
-            A list of Category model instances with limited fields loaded.
-
-        """
-        order_func = asc if sort_order == "asc" else desc
-        stmt = (
-            select(Category)
-            .options(load_only(Category.id, Category.name))
-            .limit(limit)
-            .offset(offset)
-            .order_by(order_func(getattr(Category, sort_by)))
-        )
-        if filters:
-            stmt = stmt.where(*filters)
-
-        result = await session.execute(stmt)
-        return result.scalars().all()
 
     @error_handler
     async def get_all_by_parent(
