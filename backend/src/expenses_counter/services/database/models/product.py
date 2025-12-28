@@ -37,10 +37,5 @@ class Product(Base):
 
     transactions: Mapped[list["Transaction"]] = relationship("Transaction", back_populates="product")
 
-    sub_category_id: int | None = Column[int | None](
-        ForeignKey("main_category.id"),
-        nullable=True,
-    )
-    sub_category: Mapped["Category"] = relationship(
-        "Category", remote_side=[sub_category_id], back_populates="products"
-    )
+    category_id: int | None = Column[int | None](ForeignKey("main_category.id"), nullable=True)
+    category: Mapped["Category | None"] = relationship("Category", back_populates="products")
