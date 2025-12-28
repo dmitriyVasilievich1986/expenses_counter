@@ -22,6 +22,7 @@ from pydantic import BaseModel
 from sqlalchemy import asc, desc, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import load_only
+from sqlalchemy.orm.attributes import InstrumentedAttribute
 from sqlalchemy.sql import ColumnElement
 
 from expenses_counter.services.database import DatabaseClient
@@ -50,6 +51,7 @@ class BaseDAO(ABC, Generic[B]):
     """
 
     database_model: type[B]
+    get_all_columns: tuple[InstrumentedAttribute, ...]
 
     def __init__(self, database_client: DatabaseClient, **_: Any) -> None:
         """Initialize the BaseDAO with a database client.
@@ -126,7 +128,7 @@ class BaseDAO(ABC, Generic[B]):
         order_func = asc if sort_order == "asc" else desc
         stmt = (
             select(self.database_model)
-            .options(load_only(self.database_model.id, self.database_model.name))
+            .options(load_only(*self.get_all_columns))
             .limit(limit)
             .offset(offset)
             .order_by(order_func(getattr(self.database_model, sort_by)))

@@ -19,6 +19,7 @@ class ProductDAO(BaseDAO[Product]):
     """
 
     database_model = Product
+    get_all_columns = (Product.id, Product.name)
 
     async def _get_by_id_raw(self, session: AsyncSession, pk: int) -> Product:
         """Retrieve a single Product record by its primary key with category relationship loaded.

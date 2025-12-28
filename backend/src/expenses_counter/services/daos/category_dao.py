@@ -34,6 +34,7 @@ class CategoryDAO(BaseDAO[Category]):
     """
 
     database_model = Category
+    get_all_columns = (Category.id, Category.name)
 
     async def _get_by_id_raw(self, session: AsyncSession, pk: int) -> Category:
         """Retrieve a single category by ID with all parent levels loaded recursively.
