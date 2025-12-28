@@ -38,7 +38,21 @@ class Category(Base):
     description: str | None = Column[str | None](Text, nullable=True)
 
     shops: Mapped[list["Shop"]] = relationship("Shop", back_populates="category")
-    products: Mapped[list["Product"]] = relationship("Product", back_populates="sub_category")
+    products: Mapped[list["Product"]] = relationship("Product", back_populates="category")
 
     parent_id: int | None = Column[int | None](ForeignKey("main_category.id"), nullable=True)
-    parent: Mapped["Category"] = relationship("Category", remote_side=[id])
+    parent: Mapped["Category | None"] = relationship("Category", remote_side=[id], back_populates="children")
+    children: Mapped[list["Category | None"]] = relationship("Category", back_populates="parent")
+
+    @property
+    def full_name(self) -> str:
+        """Get the full hierarchical name of the category.
+
+        In Python, this recursively builds the name by traversing parents.
+        At the SQL level, this returns just the name (recursive CTEs would be needed for full hierarchy).
+        """
+        payload = self.name
+        if self.parent:
+            payload = f"{self.parent.full_name} / {payload}"
+
+        return payload
