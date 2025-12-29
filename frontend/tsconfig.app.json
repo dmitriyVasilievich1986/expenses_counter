@@ -18,7 +18,11 @@
     "baseUrl": ".",
     "paths": {
       "@components": ["src/components"],
-      "@components/*": ["src/components/*"]
+      "@components/*": ["src/components/*"],
+      "@pages": ["src/pages"],
+      "@pages/*": ["src/pages/*"],
+      "@store": ["src/store"],
+      "@store/*": ["src/store/*"]
     },
 
     /* Linting */
