@@ -7,8 +7,6 @@ from pydantic import Field
 from expenses_counter.modules.routers.schemas.base.metadata import PaginationMetadata
 from expenses_counter.modules.routers.schemas.base.response import BaseResponseFromModelSchema
 
-__all__ = ("GetAllProductsResponse", "SimpleProductGet")
-
 
 class SimpleProductGet(BaseResponseFromModelSchema):
     """Response model for getting a single product."""
