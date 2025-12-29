@@ -1,0 +1,16 @@
+.card {
+  border-radius: 10px !important;
+  transition:
+    box-shadow 0.3s ease-in-out,
+    background-color 0.3s ease-in-out,
+    transform 0.3s ease-in-out !important;
+  box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.5) !important;
+  background-color: #edede9 !important;
+
+  &:hover {
+    box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.1) !important;
+    cursor: pointer;
+    background-color: #d5bdaf !important;
+    transform: translateY(-4px);
+  }
+}
