@@ -42,4 +42,4 @@ class Address(Base):
     transactions: Mapped[list["Transaction"]] = relationship("Transaction", back_populates="address")
 
     shop_id: int = Column[int](ForeignKey("main_shop.id"), nullable=False)
-    shop: Mapped["Shop"] = relationship("Shop", remote_side=[shop_id])
+    shop: Mapped["Shop"] = relationship("Shop", back_populates="addresses")

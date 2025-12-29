@@ -44,8 +44,5 @@ class Shop(Base):
 
     addresses: Mapped[list["Address"]] = relationship("Address", back_populates="shop")
 
-    category_id: int | None = Column[int | None](
-        ForeignKey("main_category.id"),
-        nullable=True,
-    )
-    category: Mapped["Category"] = relationship("Category", remote_side=[category_id], back_populates="shops")
+    category_id: int | None = Column[int | None](ForeignKey("main_category.id"), nullable=True)
+    category: Mapped["Category | None"] = relationship("Category", back_populates="shops")
