@@ -16,13 +16,13 @@ class PaginationMetadata(BaseResponseModel):
     in client applications.
 
     Attributes:
-        total: The total number of OAuth parameter records matching the query filters.
+        total: The total number of records matching the query filters.
             Used to calculate the total number of pages available.
         page: The current page number (1-indexed). Indicates which page of results
             is being returned.
         page_size: The number of items per page. Determines how many records are
             included in the current response.
-        sort_by: The field name used for sorting the results (e.g., "application_id",
+        sort_by: The field name used for sorting the results (e.g., "id",
             "created_at"). Indicates which column the data is ordered by.
         sort_order: The sort direction, either "asc" (ascending) or "desc" (descending).
             Indicates whether results are sorted from lowest to highest or vice versa.
@@ -32,10 +32,10 @@ class PaginationMetadata(BaseResponseModel):
         ...     total=150,
         ...     page=3,
         ...     page_size=20,
-        ...     sort_by="application_id",
+        ...     sort_by="id",
         ...     sort_order="asc"
         ... )
-        >>> # This indicates: showing items 41-60 of 150 total, sorted by application_id A-Z
+        >>> # This indicates: showing items 41-60 of 150 total, sorted by id A-Z
 
     """
 
