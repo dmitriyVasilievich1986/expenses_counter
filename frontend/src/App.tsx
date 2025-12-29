@@ -1,14 +1,17 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
-import { Navbar } from "@components";
-import "./App.css";
+import { Navbar } from '@components';
+import { Home, ShopList } from '@pages';
+import { Routes, Route } from 'react-router';
 
 function App() {
   return (
     <>
       <Navbar />
-      <p>APP</p>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/shop">
+          <Route index element={<ShopList />} />
+        </Route>
+      </Routes>
     </>
   );
 }
