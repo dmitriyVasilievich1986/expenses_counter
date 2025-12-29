@@ -42,7 +42,7 @@ class Category(Base):
 
     parent_id: int | None = Column[int | None](ForeignKey("main_category.id"), nullable=True)
     parent: Mapped["Category | None"] = relationship("Category", remote_side=[id], back_populates="children")
-    children: Mapped[list["Category | None"]] = relationship("Category", back_populates="parent")
+    children: Mapped[list["Category"]] = relationship("Category", back_populates="parent")
 
     @property
     def full_name(self) -> str:
