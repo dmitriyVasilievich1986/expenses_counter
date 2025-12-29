@@ -7,6 +7,7 @@ the FastAPI application instance with all necessary middleware, routers, and set
 __all__ = ("get_app",)
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 
 from expenses_counter import __version__ as app_version
@@ -45,6 +46,16 @@ def get_app(config: AppConfig | None = None) -> FastAPI:
         log_level=config.info.api_info.log_level,
         lifespan=lifespan,
     )
+
+    logger.debug(f"Adding CORS middleware with allowed origins: {config.info.cors_info.origins}")
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=config.info.cors_info.origins,
+        allow_credentials=config.info.cors_info.allow_credentials,
+        allow_methods=config.info.cors_info.allow_methods,
+        allow_headers=config.info.cors_info.allow_headers,
+    )
+
     logger.debug("Adding system router...")
     app.include_router(system_router)
 
