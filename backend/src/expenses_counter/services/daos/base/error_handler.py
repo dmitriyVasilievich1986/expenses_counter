@@ -12,7 +12,7 @@ from .exceptions import DBException, NotFoundException, RelationshipNotFoundExce
 R = TypeVar("R")
 
 
-def error_handler(func: Callable[..., R]) -> R:
+def error_handler(func: Callable[..., R]) -> Callable[..., R]:
     """Decorator for handling database errors in async DAO methods.
 
     This decorator wraps async methods to catch common database exceptions
