@@ -6,6 +6,8 @@ import type { ShopStoreStateType } from './types';
 export const useShopStore = create<ShopStoreStateType>()(
   devtools((set) => ({
     shops: [],
+    currentShop: null,
+    setCurrentShop: (shop) => set({ currentShop: shop }, undefined, 'setCurrentShop'),
     addShops: (shops) =>
       set((state) => ({ shops: [...state.shops, ...shops] }), undefined, 'addShops'),
     updateShop: (shop) =>
