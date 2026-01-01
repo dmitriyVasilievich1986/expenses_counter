@@ -1,4 +1,4 @@
 import { Home } from './home';
-import { ShopList } from './shop';
+import { ShopList, CreateShop } from './shop';
 
-export { Home, ShopList };
+export { Home, ShopList, CreateShop };
