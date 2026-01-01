@@ -7,9 +7,14 @@ import * as defaultStyle from './style.scss';
 
 const cx = classnames.bind(defaultStyle);
 
-export function Card(props: { title: string; description?: string | null; icon?: string | null }) {
+export function Card(props: {
+  title: string;
+  description?: string | null;
+  icon?: string | null;
+  onClick?: () => void;
+}) {
   return (
-    <MuiCard className={cx('card')}>
+    <MuiCard className={cx('card')} onClick={props.onClick}>
       <CardHeader
         avatar={
           props.icon ? (
