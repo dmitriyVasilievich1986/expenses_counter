@@ -9,7 +9,7 @@ export type CategoryType = CategorySimpleType & {
 };
 
 export type CategoryStoreStateType = {
-  categories: CategorySimpleType[];
+  categories: CategorySimpleType[] | null;
   addCategories: (categories: CategorySimpleType[]) => void;
   updateCategory: (category: CategorySimpleType) => void;
   deleteCategory: (id: number) => void;
