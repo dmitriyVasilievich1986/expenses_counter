@@ -1,5 +1,5 @@
 import { useShopStore } from './shopStore';
 
-import type { ShopSimpleType, ShopType } from './types';
+import type { AddressSimpleType, ShopSimpleType, ShopType } from './types';
 
-export { useShopStore, type ShopSimpleType, type ShopType };
+export { useShopStore, type ShopSimpleType, type ShopType, type AddressSimpleType };
