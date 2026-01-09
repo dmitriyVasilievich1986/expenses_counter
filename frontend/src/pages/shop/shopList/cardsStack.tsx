@@ -9,10 +9,10 @@ import { type ShopSimpleType } from '@store/shop';
 
 export function CardsStack(props: { categoryId: number | null; shops: ShopSimpleType[] }) {
   const categories = useCategoryStore((state) => state.categories);
-  const category = categories.find((c) => c.id === props.categoryId);
-
   const navigate = useNavigate();
+  const category = categories?.find((c) => c.id === props.categoryId);
 
+  if (categories === null) return null;
   return (
     <>
       <Divider sx={{ my: 2 }}>{category ? <Chip label={category.name} /> : null}</Divider>
