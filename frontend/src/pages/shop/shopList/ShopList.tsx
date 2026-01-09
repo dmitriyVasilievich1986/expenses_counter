@@ -14,33 +14,35 @@ import { CardsStack } from './cardsStack';
 
 export function ShopList() {
   const shops = useShopStore((state) => state.shops);
+  const addShops = useShopStore((state) => state.addShops);
   const categories = useCategoryStore((state) => state.categories);
+  const addCategories = useCategoryStore((state) => state.addCategories);
 
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (shops.length !== 0) return;
+    if (shops !== null) return;
     axios
       .get<{
         data: ShopSimpleType[];
       }>(`${import.meta.env.VITE_API_HOST}/api/v1/shop`)
       .then((response) => {
-        useShopStore.setState({ shops: response.data.data });
+        addShops(response.data.data);
       });
-  }, [shops]);
+  }, [shops, addShops]);
 
   useEffect(() => {
-    if (categories.length !== 0) return;
+    if (categories !== null) return;
     axios
       .get<{
         data: CategorySimpleType[];
       }>(`${import.meta.env.VITE_API_HOST}/api/v1/category`)
       .then((response) => {
-        useCategoryStore.setState({ categories: response.data.data });
+        addCategories(response.data.data);
       });
-  }, [categories]);
+  }, [categories, addCategories]);
 
-  const shopsByCategory = _.groupBy(shops, (shop) => shop.categoryId);
+  const shopsByCategory = _.groupBy(shops ?? [], (shop) => shop.categoryId);
 
   return (
     <Container maxWidth="lg" sx={{ mt: 2 }}>
