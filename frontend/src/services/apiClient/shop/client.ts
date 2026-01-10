@@ -1,5 +1,7 @@
 import { useShopStore, type ShopSimpleType, type ShopType } from '@store/shop';
+
 import { apiClientInstance, useApiClientWrapper } from '../base';
+
 import type { ShopPostRequest, ShopPutRequest } from './types';
 
 export const useShopAPIClient = () => {

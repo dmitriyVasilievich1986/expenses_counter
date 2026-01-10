@@ -1,5 +1,7 @@
 import { useCategoryStore, type CategorySimpleType, type CategoryType } from '@store/category';
+
 import { apiClientInstance, useApiClientWrapper } from '../base';
+
 import type { CategoryPostRequest, CategoryPutRequest } from './types';
 
 export const useCategoryAPIClient = () => {

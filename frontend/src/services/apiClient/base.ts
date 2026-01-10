@@ -1,5 +1,6 @@
-import { useMainStore } from '@store/main';
 import axios from 'axios';
+
+import { useMainStore } from '@store/main';
 
 export const apiClientInstance = axios.create({
   baseURL: import.meta.env.VITE_API_HOST,
