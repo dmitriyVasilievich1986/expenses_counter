@@ -22,6 +22,9 @@ export function Navbar() {
             <Link to="/shop" className={cx('navlink-text')}>
               <Typography variant="h6">Shops</Typography>
             </Link>
+            <Link to="/product" className={cx('navlink-text')}>
+              <Typography variant="h6">Products</Typography>
+            </Link>
           </Stack>
         </Toolbar>
       </Container>
