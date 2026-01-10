@@ -6,11 +6,12 @@ import _ from 'lodash';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router';
 
+import { CardsStack } from '@components/cardsStack';
+import { useShopAPIClient, useCategoryAPIClient } from '@services/apiClient';
 import { useCategoryStore } from '@store/category';
 import { useShopStore } from '@store/shop';
 
-import { CardsStack } from './cardsStack';
-import { useShopAPIClient, useCategoryAPIClient } from '@services/apiClient';
+// import { CardsStack } from './cardsStack';
 
 export function ShopList() {
   const shops = useShopStore((state) => state.shops);
@@ -34,7 +35,12 @@ export function ShopList() {
   return (
     <Container maxWidth="lg" sx={{ mt: 2 }}>
       {Object.keys(shopsByCategory).map((k) => (
-        <CardsStack key={k} categoryId={parseInt(k) ?? null} shops={shopsByCategory[k]} />
+        <CardsStack
+          key={k}
+          categoryId={parseInt(k) ?? null}
+          items={shopsByCategory[k]}
+          onClick={() => navigate(`/shop/${k}`)}
+        />
       ))}
       <Box sx={{ display: 'flex', justifyContent: 'end', mt: 2 }}>
         <Button variant="contained" color="primary" onClick={() => navigate('/shop/create')}>

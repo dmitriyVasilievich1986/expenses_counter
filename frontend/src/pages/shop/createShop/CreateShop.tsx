@@ -4,10 +4,10 @@ import Typography from '@mui/material/Typography';
 import { useEffect } from 'react';
 import { useParams } from 'react-router';
 
-import { useShopStore } from '@store/shop';
-import { AddressesList } from './addressList';
 import { useShopAPIClient } from '@services/apiClient';
+import { useShopStore } from '@store/shop';
 
+import { AddressesList } from './addressList';
 import { CreateShopForm } from './CreateShopForm';
 
 export function CreateShop() {

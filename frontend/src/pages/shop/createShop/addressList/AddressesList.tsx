@@ -1,11 +1,13 @@
-import { SubmitButton } from '@components/submitButton';
-import type { AddressType } from '@store/shop';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
-import { AddressCard } from './AddressCard';
 import { useParams } from 'react-router';
+
+import { SubmitButton } from '@components/submitButton';
 import { useAddressAPIClient } from '@services/apiClient';
 import type { AddressPostRequest } from '@services/apiClient/address/types';
+import type { AddressType } from '@store/shop';
+
+import { AddressCard } from './AddressCard';
 
 export function AddressesList(props: { addresses: AddressType[] }) {
   const { shopId } = useParams();

@@ -1,14 +1,15 @@
-import type { AddressType } from '@store/shop';
-import Paper from '@mui/material/Paper';
-import { Input } from '@components/input';
 import Box from '@mui/material/Box';
+import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { SubmitButton } from '@components/submitButton';
+import { useRef } from 'react';
 import { useParams } from 'react-router';
+
+import { Input } from '@components/input';
+import { SubmitButton } from '@components/submitButton';
 import { useAddressAPIClient } from '@services/apiClient';
 import type { AddressPutRequest } from '@services/apiClient/address/types';
-import { useRef } from 'react';
+import type { AddressType } from '@store/shop';
 
 export function AddressCard(props: { address: AddressType }) {
   const { shopId } = useParams();
