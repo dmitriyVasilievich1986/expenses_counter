@@ -1,5 +1,5 @@
 import { useCategoryStore } from './categoryStore';
 
-import type { CategorySimpleType } from './types';
+import type { CategorySimpleType, CategoryType } from './types';
 
-export { useCategoryStore, type CategorySimpleType };
+export { useCategoryStore, type CategorySimpleType, type CategoryType };
