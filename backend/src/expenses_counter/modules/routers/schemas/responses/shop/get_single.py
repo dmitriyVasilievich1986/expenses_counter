@@ -5,6 +5,7 @@ __all__ = ("GetSingleShopResponse",)
 from pydantic import Field
 
 from expenses_counter.modules.routers.schemas.base.response import BaseResponseFromModelSchema
+from expenses_counter.modules.routers.schemas.responses.address import SimpleAddressGet
 from expenses_counter.modules.routers.schemas.responses.category import SimpleCategoryGet
 
 
@@ -17,4 +18,7 @@ class GetSingleShopResponse(BaseResponseFromModelSchema):
     description: str | None = Field(
         None, description="Optional description providing additional details about the shop"
     )
+    category_id: int | None = Field(None, description="The category id of the shop")
     category: SimpleCategoryGet | None = Field(None, description="The category that classifies this shop")
+
+    addresses: list[SimpleAddressGet] = Field(..., description="The addresses of the shop")

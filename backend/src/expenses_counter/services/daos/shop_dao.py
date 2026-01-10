@@ -19,7 +19,7 @@ class ShopDAO(BaseDAO[Shop]):
     """
 
     database_model = Shop
-    get_all_columns = (Shop.id, Shop.name)
+    get_all_columns = (Shop.id, Shop.name, Shop.description, Shop.icon, Shop.category_id)
 
     async def _get_by_id_raw(self, session: AsyncSession, pk: int) -> Shop:
         """Retrieve a single Shop record by its primary key with category relationship loaded.
@@ -35,6 +35,8 @@ class ShopDAO(BaseDAO[Shop]):
             The Shop model instance, or None if not found.
 
         """
-        stmt = select(Shop).options(selectinload(Shop.category)).where(Shop.id == pk)
+        stmt = (
+            select(Shop).options(selectinload(Shop.category)).options(selectinload(Shop.addresses)).where(Shop.id == pk)
+        )
         result = await session.execute(stmt)
         return result.scalar()
