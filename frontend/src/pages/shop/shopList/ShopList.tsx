@@ -2,45 +2,32 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
-import axios from 'axios';
 import _ from 'lodash';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router';
 
-import { useCategoryStore, type CategorySimpleType } from '@store/category';
-import { useShopStore, type ShopSimpleType } from '@store/shop';
+import { useCategoryStore } from '@store/category';
+import { useShopStore } from '@store/shop';
 
 import { CardsStack } from './cardsStack';
+import { useShopAPIClient, useCategoryAPIClient } from '@services/apiClient';
 
 export function ShopList() {
   const shops = useShopStore((state) => state.shops);
-  const addShops = useShopStore((state) => state.addShops);
   const categories = useCategoryStore((state) => state.categories);
-  const addCategories = useCategoryStore((state) => state.addCategories);
+
+  const { getShops } = useShopAPIClient();
+  const { getCategories } = useCategoryAPIClient();
 
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (shops !== null) return;
-    axios
-      .get<{
-        data: ShopSimpleType[];
-      }>(`${import.meta.env.VITE_API_HOST}/api/v1/shop`)
-      .then((response) => {
-        addShops(response.data.data);
-      });
-  }, [shops, addShops]);
+    if (shops === null) getShops();
+  }, [shops]);
 
   useEffect(() => {
-    if (categories !== null) return;
-    axios
-      .get<{
-        data: CategorySimpleType[];
-      }>(`${import.meta.env.VITE_API_HOST}/api/v1/category`)
-      .then((response) => {
-        addCategories(response.data.data);
-      });
-  }, [categories, addCategories]);
+    if (categories === null) getCategories();
+  }, [categories]);
 
   const shopsByCategory = _.groupBy(shops ?? [], (shop) => shop.categoryId);
 
