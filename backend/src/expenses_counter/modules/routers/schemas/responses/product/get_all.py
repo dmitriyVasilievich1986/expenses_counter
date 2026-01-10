@@ -13,6 +13,8 @@ class SimpleProductGet(BaseResponseFromModelSchema):
 
     id: int = Field(..., description="The unique identifier for the product")
     name: str = Field(..., description="The name of the product")
+    description: str | None = Field(None, description="The description of the product")
+    category_id: int | None = Field(None, description="The category id of the product")
 
 
 class GetAllProductsResponse(BaseResponseFromModelSchema):
