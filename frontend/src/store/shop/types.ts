@@ -1,6 +1,6 @@
 import type { CategorySimpleType } from '../category/types';
 
-export type AddressSimpleType = {
+export type AddressType = {
   id: number;
   address: string;
   localName: string;
@@ -16,7 +16,7 @@ export type ShopSimpleType = {
 
 export type ShopType = ShopSimpleType & {
   category: CategorySimpleType;
-  addresses: AddressSimpleType[];
+  addresses: AddressType[];
 };
 
 export type ShopStoreStateType = {
@@ -26,7 +26,7 @@ export type ShopStoreStateType = {
   updateShop: (shop: ShopSimpleType) => void;
   deleteShop: (id: number) => void;
   setCurrentShop: (shop: ShopType | null) => void;
-  addAddress: (address: AddressSimpleType) => void;
-  updateAddress: (address: AddressSimpleType) => void;
+  addAddress: (address: AddressType) => void;
+  updateAddress: (address: AddressType) => void;
   deleteAddress: (id: number) => void;
 };
