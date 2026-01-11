@@ -8,11 +8,7 @@ import { Card } from '@components/card';
 import { useTransactionStore } from '@store/transaction';
 import type { TransactionType } from '@store/transaction';
 
-export function TransactionsStack(props: {
-  categoryId: number | null;
-  items: TransactionType[];
-  onClick: () => void;
-}) {
+export function TransactionsStack(props: { items: TransactionType[]; onClick: () => void }) {
   const { currentTransaction } = useTransactionStore();
   const navigate = useNavigate();
 
