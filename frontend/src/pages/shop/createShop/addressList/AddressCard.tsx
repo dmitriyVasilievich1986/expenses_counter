@@ -13,19 +13,19 @@ import type { AddressType } from '@store/shop';
 
 export function AddressCard(props: { address: AddressType }) {
   const { shopId } = useParams();
-  const { putAddress, deleteAddress } = useAddressAPIClient();
+  const { putCurrentShopAddress, deleteCurrentShopAddress } = useAddressAPIClient();
   const formRef = useRef<HTMLFormElement>(null);
 
   const updateHandler = () => {
     const formData = new FormData(formRef.current as HTMLFormElement);
     const data = Object.fromEntries(formData.entries()) as unknown as AddressPutRequest;
     const addressId = props.address.id;
-    putAddress(addressId, data);
+    putCurrentShopAddress(addressId, data);
   };
 
   const deleteHandler = () => {
     const addressId = props.address.id;
-    deleteAddress(addressId);
+    deleteCurrentShopAddress(addressId);
   };
 
   return (

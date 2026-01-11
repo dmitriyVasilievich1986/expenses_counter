@@ -22,11 +22,13 @@ export type ShopType = ShopSimpleType & {
 export type ShopStoreStateType = {
   currentShop: ShopType | null;
   shops: ShopSimpleType[] | null;
+  addresses: AddressType[] | null;
   addShops: (shops: ShopSimpleType[]) => void;
   updateShop: (shop: ShopSimpleType) => void;
   deleteShop: (id: number) => void;
   setCurrentShop: (shop: ShopType | null) => void;
-  addAddress: (address: AddressType) => void;
-  updateAddress: (address: AddressType) => void;
-  deleteAddress: (id: number) => void;
+  addCurrentShopAddress: (address: AddressType) => void;
+  updateCurrentShopAddress: (address: AddressType) => void;
+  deleteCurrentShopAddress: (id: number) => void;
+  setAddresses: (addresses: AddressType[]) => void;
 };

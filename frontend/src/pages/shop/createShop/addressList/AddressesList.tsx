@@ -11,7 +11,7 @@ import { AddressCard } from './AddressCard';
 
 export function AddressesList(props: { addresses: AddressType[] }) {
   const { shopId } = useParams();
-  const { postAddress } = useAddressAPIClient();
+  const { postCurrentShopAddress } = useAddressAPIClient();
 
   const createHandler = () => {
     const data: AddressPostRequest = {
@@ -19,7 +19,7 @@ export function AddressesList(props: { addresses: AddressType[] }) {
       localName: 'localName',
       shopId: parseInt(shopId as string),
     };
-    postAddress(data);
+    postCurrentShopAddress(data);
   };
 
   return (
