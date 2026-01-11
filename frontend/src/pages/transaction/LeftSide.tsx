@@ -22,7 +22,7 @@ export function LeftSide() {
     if (transactions === null) {
       getTransactions(currentDate);
     }
-  }, [currentDate]);
+  }, [currentDate, transactions]);
 
   const handleMonthChange = (date: Dayjs | null) => {
     if (date) {
