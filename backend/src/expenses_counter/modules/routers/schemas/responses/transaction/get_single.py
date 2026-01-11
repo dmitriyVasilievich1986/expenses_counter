@@ -31,5 +31,7 @@ class GetSingleTransactionResponse(BaseResponseFromModelSchema):
     date: datetime.date = Field(..., description="The date of the transaction")
     count: float = Field(..., description="The quantity/count of items in the transaction")
     price: float = Field(..., description="The price of the transaction")
+    address_id: int = Field(..., description="The address id where this transaction occurred")
+    product_id: int = Field(..., description="The product id associated with this transaction")
     product: SimpleProductForTransactionGet = Field(..., description="The product associated with this transaction")
     address: SimpleAddressForTransactionGet = Field(..., description="The address where this transaction occurred")
