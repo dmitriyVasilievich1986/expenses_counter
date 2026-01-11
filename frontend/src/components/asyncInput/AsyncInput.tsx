@@ -19,7 +19,9 @@ export function AsyncInput<I>(props: {
   useEffect(() => {
     if (props.value === null) {
       props.getItems().then((data) => {
-        props.onChange(data[0] as I);
+        if (data.length > 0) {
+          props.onChange(data[0] as I);
+        }
       });
     }
   }, [props.items]);
