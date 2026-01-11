@@ -2,10 +2,6 @@
 
 __all__ = ("ProductDAO",)
 
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
-
 from expenses_counter.services.daos.base import BaseDAO
 from expenses_counter.services.database.models.product import Product
 
@@ -20,21 +16,4 @@ class ProductDAO(BaseDAO[Product]):
 
     database_model = Product
     get_all_columns = (Product.id, Product.name, Product.description, Product.category_id)
-
-    async def _get_by_id_raw(self, session: AsyncSession, pk: int) -> Product:
-        """Retrieve a single Product record by its primary key with category relationship loaded.
-
-        This is a raw method that works within an existing session context.
-        It eagerly loads the associated category relationship to avoid N+1 queries.
-
-        Args:
-            session: The active database session.
-            pk: The primary key of the product to retrieve.
-
-        Returns:
-            The Product model instance, or None if not found.
-
-        """
-        stmt = select(Product).options(selectinload(Product.category)).where(Product.id == pk)
-        result = await session.execute(stmt)
-        return result.scalar()
+    select_in_options_single = (Product.category,)
