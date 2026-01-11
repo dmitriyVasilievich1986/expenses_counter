@@ -17,7 +17,7 @@ export function TransactionsStack(props: {
   const navigate = useNavigate();
 
   const address = props.items[0].address;
-  const totalMoney = _.sumBy(props.items, (item) => item.price * item.count);
+  const totalMoney = _.sumBy(props.items, (item) => item.price * item.count).toFixed(2);
 
   return (
     <>
@@ -30,7 +30,7 @@ export function TransactionsStack(props: {
             <Card
               title={item.product.name}
               isSelected={currentTransaction?.id === item.id}
-              description={`${item.count} * ${item.price}€ = ${item.price * item.count}€`}
+              description={`${item.count} * ${item.price}€ = ${(item.price * item.count).toFixed(2)}€`}
               onClick={() => navigate(`/transaction/${item.id}`)}
             />
           </Grid>

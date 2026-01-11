@@ -42,7 +42,7 @@ export function LeftSide() {
       (transactions ?? []).filter((t) => t.date === date.format('YYYY-MM-DD')),
       (t) => t.price * t.count
     );
-    return sum > 0 ? `${sum}€` : null;
+    return sum > 0 ? `${sum.toFixed(2)}€` : null;
   };
 
   return (
