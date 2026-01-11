@@ -53,6 +53,7 @@ export const useTransactionAPIClient = () => {
           `/api/v1/transaction/${id}`,
           request
         );
+        setCurrentTransaction(response.data);
         updateTransaction(response.data);
         return response.data;
       });
