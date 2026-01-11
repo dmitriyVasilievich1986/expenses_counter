@@ -3,7 +3,7 @@ import Stack from '@mui/material/Stack';
 import { useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 
-import { CategoryInput } from '@components/categoryInput';
+import { AsyncInput } from '@components/asyncInput';
 import { Input } from '@components/input';
 import { SubmitButton } from '@components/submitButton';
 import { useProductAPIClient } from '@services/apiClient/product/client';
@@ -11,11 +11,15 @@ import type { ProductPostRequest } from '@services/apiClient/product/types';
 import type { CategorySimpleType } from '@store/category';
 import { useMainStore } from '@store/main';
 import { useProductStore } from '@store/product';
+import { useCategoryAPIClient } from '@services/apiClient';
+import { useCategoryStore } from '@store/category';
 
 export function CreateProductForm() {
   const navigate = useNavigate();
   const { productId } = useParams();
   const formRef = useRef<HTMLFormElement>(null);
+  const { getCategories } = useCategoryAPIClient();
+  const { categories } = useCategoryStore();
 
   const currentProduct = useProductStore((state) => state.currentProduct);
   const [category, setCategory] = useState<CategorySimpleType | null>(
@@ -52,7 +56,13 @@ export function CreateProductForm() {
           name="description"
           defaultValue={currentProduct?.description ?? ''}
         />
-        <CategoryInput value={category} onChange={setCategory} />
+        <AsyncInput
+          value={category}
+          onChange={setCategory}
+          items={categories}
+          getItems={getCategories}
+          label="Category"
+        />
       </Stack>
       <Box sx={{ display: 'flex', justifyContent: 'end', mt: 2 }}>
         <SubmitButton

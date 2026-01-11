@@ -3,6 +3,6 @@ import { Card } from './card';
 import { SubmitButton } from './submitButton';
 import { Input } from './input';
 import { CardsStack } from './cardsStack';
-import { CategoryInput } from './categoryInput';
+import { AsyncInput } from './asyncInput';
 
-export { Navbar, Card, SubmitButton, Input, CardsStack, CategoryInput };
+export { Navbar, Card, SubmitButton, Input, CardsStack, AsyncInput };

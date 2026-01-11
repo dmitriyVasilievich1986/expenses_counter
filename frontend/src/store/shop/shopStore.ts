@@ -7,6 +7,7 @@ export const useShopStore = create<ShopStoreStateType>()(
   devtools((set) => ({
     shops: null,
     currentShop: null,
+    addresses: null,
     setCurrentShop: (shop) => set({ currentShop: shop }, undefined, 'setCurrentShop'),
     addShops: (shops) =>
       set((state) => ({ shops: [...(state.shops ?? []), ...shops] }), undefined, 'addShops'),
@@ -24,11 +25,12 @@ export const useShopStore = create<ShopStoreStateType>()(
         undefined,
         'deleteShop'
       ),
-    addAddress: (address) =>
+    addCurrentShopAddress: (address) =>
       set(
         (state) => {
           if (!state.currentShop) return state;
           return {
+            addresses: state.addresses === null ? null : [...state.addresses, address],
             currentShop: {
               ...state.currentShop,
               addresses: [...state.currentShop.addresses, address],
@@ -36,13 +38,17 @@ export const useShopStore = create<ShopStoreStateType>()(
           };
         },
         undefined,
-        'addAddress'
+        'addCurrentShopAddress'
       ),
-    updateAddress: (address) =>
+    updateCurrentShopAddress: (address) =>
       set(
         (state) => {
           if (!state.currentShop) return state;
           return {
+            addresses:
+              state.addresses === null
+                ? null
+                : state.addresses.map((a) => (a.id === address.id ? address : a)),
             currentShop: {
               ...state.currentShop,
               addresses: state.currentShop.addresses.map((a) =>
@@ -52,13 +58,14 @@ export const useShopStore = create<ShopStoreStateType>()(
           };
         },
         undefined,
-        'updateAddress'
+        'updateCurrentShopAddress'
       ),
-    deleteAddress: (id) =>
+    deleteCurrentShopAddress: (id) =>
       set(
         (state) => {
           if (!state.currentShop) return state;
           return {
+            addresses: state.addresses === null ? null : state.addresses.filter((a) => a.id !== id),
             currentShop: {
               ...state.currentShop,
               addresses: state.currentShop.addresses.filter((a) => a.id !== id),
@@ -66,7 +73,8 @@ export const useShopStore = create<ShopStoreStateType>()(
           };
         },
         undefined,
-        'deleteAddress'
+        'deleteCurrentShopAddress'
       ),
+    setAddresses: (addresses) => set({ addresses: addresses }, undefined, 'setAddresses'),
   }))
 );

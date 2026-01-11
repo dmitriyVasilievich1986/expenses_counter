@@ -40,7 +40,7 @@ class PaginationMetadata(BaseResponseModel):
     """
 
     total: int = Field(..., description="The total number of parameters")
-    offset: int = Field(..., description="The offset of the parameters")
-    limit: int = Field(..., description="The limit of the parameters")
+    offset: int | None = Field(..., description="The offset of the parameters")
+    limit: int | None = Field(..., description="The limit of the parameters")
     sort_by: str = Field(..., description="The field to sort the parameters by")
     sort_order: str = Field(..., description="The order to sort the parameters by")

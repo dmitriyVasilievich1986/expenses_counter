@@ -3,7 +3,7 @@ import Stack from '@mui/material/Stack';
 import { useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 
-import { CategoryInput } from '@components/categoryInput';
+import { AsyncInput } from '@components/asyncInput';
 import { Input } from '@components/input';
 import { SubmitButton } from '@components/submitButton';
 import { useShopAPIClient } from '@services/apiClient';
@@ -11,11 +11,15 @@ import type { ShopPostRequest } from '@services/apiClient/shop/types';
 import type { CategorySimpleType } from '@store/category';
 import { useMainStore } from '@store/main';
 import { useShopStore } from '@store/shop';
+import { useCategoryAPIClient } from '@services/apiClient';
+import { useCategoryStore } from '@store/category';
 
 export function CreateShopForm() {
   const navigate = useNavigate();
   const { shopId } = useParams();
   const formRef = useRef<HTMLFormElement>(null);
+  const { getCategories } = useCategoryAPIClient();
+  const { categories } = useCategoryStore();
 
   const currentShop = useShopStore((state) => state.currentShop);
   const [category, setCategory] = useState<CategorySimpleType | null>(
@@ -53,7 +57,13 @@ export function CreateShopForm() {
           defaultValue={currentShop?.description ?? ''}
         />
         <Input label="Shop logo URL" name="icon" defaultValue={currentShop?.icon ?? ''} />
-        <CategoryInput value={category} onChange={setCategory} />
+        <AsyncInput
+          value={category}
+          onChange={setCategory}
+          items={categories}
+          getItems={getCategories}
+          label="Category"
+        />
       </Stack>
       <Box sx={{ display: 'flex', justifyContent: 'end', mt: 2 }}>
         <SubmitButton

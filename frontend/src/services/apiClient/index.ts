@@ -2,5 +2,12 @@ import { useAddressAPIClient } from './address';
 import { useCategoryAPIClient } from './category';
 import { useProductAPIClient } from './product';
 import { useShopAPIClient } from './shop';
+import { useTransactionAPIClient } from './transaction';
 
-export { useCategoryAPIClient, useShopAPIClient, useAddressAPIClient, useProductAPIClient };
+export {
+  useCategoryAPIClient,
+  useShopAPIClient,
+  useAddressAPIClient,
+  useProductAPIClient,
+  useTransactionAPIClient,
+};

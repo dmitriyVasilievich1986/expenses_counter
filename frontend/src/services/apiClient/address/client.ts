@@ -5,28 +5,42 @@ import { apiClientInstance, useApiClientWrapper } from '../base';
 import type { AddressPostRequest, AddressPutRequest } from './types';
 
 export const useAddressAPIClient = () => {
-  const { addAddress, updateAddress, deleteAddress } = useShopStore();
+  const {
+    addCurrentShopAddress,
+    updateCurrentShopAddress,
+    deleteCurrentShopAddress,
+    setAddresses,
+    addresses,
+  } = useShopStore();
   const { wrapper } = useApiClientWrapper();
 
   return {
-    postAddress: async (request: AddressPostRequest): Promise<AddressType> => {
+    getAddresses: async (): Promise<AddressType[]> => {
+      return wrapper(async () => {
+        if (addresses !== null) return addresses;
+        const response = await apiClientInstance.get<{ data: AddressType[] }>(`/api/v1/address`);
+        setAddresses(response.data.data);
+        return response.data.data;
+      });
+    },
+    postCurrentShopAddress: async (request: AddressPostRequest): Promise<AddressType> => {
       return wrapper(async () => {
         const response = await apiClientInstance.post<AddressType>(`/api/v1/address`, request);
-        addAddress(response.data);
+        addCurrentShopAddress(response.data);
         return response.data;
       });
     },
-    putAddress: async (id: number, request: AddressPutRequest): Promise<AddressType> => {
+    putCurrentShopAddress: async (id: number, request: AddressPutRequest): Promise<AddressType> => {
       return wrapper(async () => {
         const response = await apiClientInstance.put<AddressType>(`/api/v1/address/${id}`, request);
-        updateAddress(response.data);
+        updateCurrentShopAddress(response.data);
         return response.data;
       });
     },
-    deleteAddress: async (id: number): Promise<void> => {
+    deleteCurrentShopAddress: async (id: number): Promise<void> => {
       return wrapper(async () => {
         await apiClientInstance.delete<void>(`/api/v1/address/${id}`);
-        deleteAddress(id);
+        deleteCurrentShopAddress(id);
       });
     },
   };

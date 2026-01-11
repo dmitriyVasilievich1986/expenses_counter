@@ -8,6 +8,8 @@ from pydantic import Field
 
 from expenses_counter.modules.routers.schemas.base.metadata import PaginationMetadata
 from expenses_counter.modules.routers.schemas.base.response import BaseResponseFromModelSchema
+from expenses_counter.modules.routers.schemas.responses.address import SimpleAddressGet
+from expenses_counter.modules.routers.schemas.responses.product import SimpleProductGet
 
 
 class SimpleTransactionGet(BaseResponseFromModelSchema):
@@ -19,6 +21,8 @@ class SimpleTransactionGet(BaseResponseFromModelSchema):
     price: float = Field(..., description="The price of the transaction")
     product_id: int = Field(..., description="The product id associated with this transaction")
     address_id: int = Field(..., description="The address id where this transaction occurred")
+    product: SimpleProductGet = Field(..., description="The product associated with this transaction")
+    address: SimpleAddressGet = Field(..., description="The address associated with this transaction")
 
 
 class GetAllTransactionsResponse(BaseResponseFromModelSchema):

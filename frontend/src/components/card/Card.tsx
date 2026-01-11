@@ -12,9 +12,10 @@ export function Card(props: {
   description?: string | null;
   icon?: string | null;
   onClick?: () => void;
+  isSelected?: boolean;
 }) {
   return (
-    <MuiCard className={cx('card')} onClick={props.onClick}>
+    <MuiCard className={cx('card', { selected: props.isSelected })} onClick={props.onClick}>
       <CardHeader
         avatar={
           props.icon ? (

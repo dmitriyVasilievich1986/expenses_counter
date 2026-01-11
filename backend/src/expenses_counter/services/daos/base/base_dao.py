@@ -21,7 +21,7 @@ from loguru import logger
 from pydantic import BaseModel
 from sqlalchemy import asc, desc, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import load_only
+from sqlalchemy.orm import load_only, selectinload
 from sqlalchemy.orm.attributes import InstrumentedAttribute
 from sqlalchemy.sql import ColumnElement
 
@@ -51,7 +51,9 @@ class BaseDAO(ABC, Generic[B]):
     """
 
     database_model: type[B]
-    get_all_columns: tuple[InstrumentedAttribute, ...]
+    get_all_columns: tuple[InstrumentedAttribute, ...] | None = None
+    select_in_options_single: tuple[InstrumentedAttribute, ...] | None = None
+    select_in_options_all: tuple[InstrumentedAttribute, ...] | None = None
 
     def __init__(self, database_client: DatabaseClient, **_: Any) -> None:
         """Initialize the BaseDAO with a database client.
@@ -77,6 +79,10 @@ class BaseDAO(ABC, Generic[B]):
 
         """
         stmt = select(self.database_model).where(self.database_model.id == pk)
+
+        if self.select_in_options_single:
+            stmt = stmt.options(*map(selectinload, self.select_in_options_single))
+
         result = await session.execute(stmt)
         return result.scalar()
 
@@ -103,8 +109,8 @@ class BaseDAO(ABC, Generic[B]):
     async def _get_all_raw(
         self,
         session: AsyncSession,
-        limit: int,
-        offset: int,
+        limit: int | None,
+        offset: int | None,
         sort_by: str,
         sort_order: Literal["asc", "desc"],
         filters: list[ColumnElement[bool]] | None,
@@ -126,14 +132,18 @@ class BaseDAO(ABC, Generic[B]):
 
         """
         order_func = asc if sort_order == "asc" else desc
-        stmt = (
-            select(self.database_model)
-            .options(load_only(*self.get_all_columns))
-            .limit(limit)
-            .offset(offset)
-            .order_by(order_func(getattr(self.database_model, sort_by)))
-        )
+        stmt = select(self.database_model).order_by(order_func(getattr(self.database_model, sort_by)))
 
+        if self.get_all_columns:
+            stmt = stmt.options(load_only(*self.get_all_columns))
+
+        if self.select_in_options_all:
+            stmt = stmt.options(*map(selectinload, self.select_in_options_all))
+
+        if limit:
+            stmt = stmt.limit(limit)
+        if offset:
+            stmt = stmt.offset(offset)
         if filters:
             stmt = stmt.where(*filters)
 
@@ -163,8 +173,8 @@ class BaseDAO(ABC, Generic[B]):
     @error_handler
     async def get_all(
         self,
-        limit: int = 100,
-        offset: int = 0,
+        limit: int | None = 100,
+        offset: int | None = 0,
         sort_by: str = "id",
         sort_order: Literal["asc", "desc"] = "asc",
         filters: list[ColumnElement[bool]] | None = None,

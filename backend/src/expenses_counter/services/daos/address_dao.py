@@ -2,10 +2,6 @@
 
 __all__ = ("AddressDAO",)
 
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
-
 from expenses_counter.services.daos.base import BaseDAO
 from expenses_counter.services.database.models.address import Address
 
@@ -19,9 +15,5 @@ class AddressDAO(BaseDAO[Address]):
     """
 
     database_model = Address
-    get_all_columns = (Address.id, Address.local_name)
-
-    async def _get_by_id_raw(self, session: AsyncSession, pk: int) -> Address:
-        stmt = select(Address).options(selectinload(Address.shop)).where(Address.id == pk)
-        result = await session.execute(stmt)
-        return result.scalar()
+    get_all_columns = (Address.id, Address.local_name, Address.address)
+    select_in_options_single = (Address.shop,)

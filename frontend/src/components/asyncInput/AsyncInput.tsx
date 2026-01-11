@@ -3,45 +3,47 @@ import CircularProgress from '@mui/material/CircularProgress';
 import TextField from '@mui/material/TextField';
 import { useEffect } from 'react';
 
-import { useCategoryAPIClient } from '@services/apiClient';
-import { useCategoryStore } from '@store/category';
-import type { CategorySimpleType } from '@store/category';
 import { useMainStore } from '@store/main';
 
-export function CategoryInput(props: {
-  value: CategorySimpleType | null;
-  onChange: (value: CategorySimpleType) => void;
+export function AsyncInput<I>(props: {
+  value: I | null;
+  onChange: (value: I) => void;
+  items: I[] | null;
+  getItems: () => Promise<I[]>;
+  label: string;
+  nameColumn?: keyof I;
 }) {
-  const categories = useCategoryStore((state) => state.categories);
+  const nameColumn = (props.nameColumn ?? 'name') as keyof I;
   const isLoading = useMainStore((state) => state.isLoading);
-
-  const { getCategories } = useCategoryAPIClient();
 
   useEffect(() => {
     if (props.value === null) {
-      getCategories().then((newCategories) => {
-        props.onChange(newCategories[0]);
+      props.getItems().then((data) => {
+        if (data.length > 0) {
+          props.onChange(data[0] as I);
+        }
       });
     }
-  }, [categories]);
+  }, [props.items]);
 
   const handleOpen = async () => {
-    await getCategories();
+    await props.getItems();
   };
 
   if (props.value === null) return null;
   return (
     <Autocomplete
-      options={categories ?? [props.value]}
-      getOptionLabel={(option) => (option as CategorySimpleType).name}
+      options={props.items ?? [props.value]}
+      getOptionLabel={(option) => (option as I)[nameColumn] as string}
       value={props.value}
       onOpen={handleOpen}
-      onChange={(_, v) => props.onChange(v as CategorySimpleType)}
+      getOptionKey={(option) => (option as unknown as { id: number }).id}
+      onChange={(_, v) => props.onChange(v as I)}
+      disableClearable
       renderInput={(params) => (
         <TextField
-          name="categoryId"
           {...params}
-          label="Category"
+          label={props.label}
           slotProps={{
             input: {
               ...params.InputProps,
