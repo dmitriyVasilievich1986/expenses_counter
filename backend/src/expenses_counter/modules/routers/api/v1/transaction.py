@@ -26,12 +26,15 @@ __all__ = ("router",)
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Path, Query
+from dateutil.relativedelta import relativedelta
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query
 
 from expenses_counter.modules.middlewares.dependencies import get_transaction
 from expenses_counter.modules.routers.schemas.base.metadata import PaginationMetadata
 from expenses_counter.modules.routers.schemas.requests.transaction import (
     GetAllTransactionsQuery,
+    MonthlyBodyRequest,
+    MonthlyQuery,
     PostTransactionBody,
     PutTransactionBody,
 )
@@ -42,8 +45,37 @@ from expenses_counter.modules.routers.schemas.responses.transaction import (
 )
 from expenses_counter.services.daos import TransactionDAO
 from expenses_counter.services.daos.base.exceptions import DBException, NotFoundException, RelationshipNotFoundException
+from expenses_counter.services.database.models.transaction import Transaction
 
 router = APIRouter(prefix="/transaction", tags=["Transaction"])
+
+
+@router.post("/monthly", response_model=GetAllTransactionsResponse)
+async def get_transactions_by_date_range(
+    body: Annotated[MonthlyBodyRequest, Body(description="The body of the request")],
+    query: Annotated[MonthlyQuery, Query(description="The query parameters")],
+    transaction_dao: Annotated[TransactionDAO, Depends(get_transaction)],
+):
+    """Retrieve all transactions by date range."""
+    start_date = body.date.replace(day=1)
+    end_date = start_date + relativedelta(months=1)
+    try:
+        data, total = await transaction_dao.get_all(
+            filters=[Transaction.date >= start_date, Transaction.date < end_date],
+            limit=None,
+            offset=None,
+            sort_by=query.sort_by,
+            sort_order=query.sort_order,
+        )
+        metadata = PaginationMetadata(
+            total=total, offset=None, limit=None, sort_by=query.sort_by, sort_order=query.sort_order
+        )
+    except DBException as e:
+        raise HTTPException(status_code=500, detail="Something went wrong while retrieving the transaction list") from e
+
+    return GetAllTransactionsResponse(
+        data=[SimpleTransactionGet.model_validate(transaction) for transaction in data], metadata=metadata
+    )
 
 
 @router.get("", response_model=GetAllTransactionsResponse)
