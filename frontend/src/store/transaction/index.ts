@@ -1,5 +1,5 @@
 import { useTransactionStore } from './transactionStore';
 
-import type { TransactionSimpleType, TransactionType } from './types';
+import type { TransactionType } from './types';
 
-export { useTransactionStore, type TransactionSimpleType, type TransactionType };
+export { useTransactionStore, type TransactionType };
