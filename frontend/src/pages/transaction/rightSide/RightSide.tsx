@@ -23,7 +23,6 @@ export function RightSide() {
         {Object.keys(transactionsByAddress).map((addressId) => (
           <TransactionsStack
             key={addressId}
-            categoryId={addressId ? parseInt(addressId) : null}
             items={transactionsByAddress[addressId]}
             onClick={() => navigate(`/transaction/${addressId}`)}
           />
