@@ -19,7 +19,7 @@ class AddressDAO(BaseDAO[Address]):
     """
 
     database_model = Address
-    get_all_columns = (Address.id, Address.local_name)
+    get_all_columns = (Address.id, Address.local_name, Address.address)
 
     async def _get_by_id_raw(self, session: AsyncSession, pk: int) -> Address:
         stmt = select(Address).options(selectinload(Address.shop)).where(Address.id == pk)
