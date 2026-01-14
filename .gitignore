@@ -1,6 +1,6 @@
 /postgres_data/
 nginx/ssl/
 /scripts/
+/db/data/
 /static/
 /backup/
-/db/data/
