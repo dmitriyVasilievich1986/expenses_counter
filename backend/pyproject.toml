@@ -35,6 +35,14 @@ dependencies = [
     "uvicorn>=0.38.0",
 ]
 
+[dependency-groups]
+dev = [
+    "ipykernel>=7.1.0",
+    "pandas>=2.3.3",
+    "psycopg2-binary>=2.9.11",
+    "ruff>=0.14.3",
+]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
@@ -47,9 +55,6 @@ Homepage = "https://github.com/dmitriyVasilievich1986/expenses_counter"
 
 [project.scripts]
 expenses_counter = "expenses_counter.utils.cli.main:main"
-
-[tool.pytest.ini_options]
-DJANGO_SETTINGS_MODULE = "expense_counter.expense_counter.tests_settings"
 
 [tool.ruff.format]
 # Like Black, use double quotes for strings.
@@ -160,6 +165,3 @@ known-third-party = [
     "sqlalchemy",
     "uvicorn",
 ]
-
-[dependency-groups]
-dev = ["ruff>=0.14.3"]
