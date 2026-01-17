@@ -7,21 +7,21 @@ from typing import Annotated
 from fastapi import Depends
 
 from expenses_counter.config.app_config import AppConfig
-from expenses_counter.services.database import DatabaseClient
+from expenses_counter.services.database import AsyncDatabaseClient
 
 from .get_config import get_config
 
 
 def get_db(
     app_config: Annotated[AppConfig, Depends(get_config)],
-) -> DatabaseClient:
-    """Dependency function that provides a singleton instance of DatabaseClient.
+) -> AsyncDatabaseClient:
+    """Dependency function that provides a singleton instance of AsyncDatabaseClient.
 
     Args:
         app_config: The application configuration.
 
     Returns:
-        A singleton instance of DatabaseClient.
+        A singleton instance of AsyncDatabaseClient.
 
     """
-    return DatabaseClient(app_config=app_config)
+    return AsyncDatabaseClient(app_config=app_config)

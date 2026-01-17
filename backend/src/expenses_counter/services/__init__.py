@@ -1,5 +1,5 @@
 """Services module."""
 
-from .database import DatabaseClient
+from .database import AsyncDatabaseClient
 
-__all__ = ("DatabaseClient",)
+__all__ = ("AsyncDatabaseClient",)

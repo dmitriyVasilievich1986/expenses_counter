@@ -8,11 +8,11 @@ from fastapi import Depends
 
 from expenses_counter.modules.middlewares.dependencies.get_db import get_db
 from expenses_counter.services.daos import ProductDAO
-from expenses_counter.services.database import DatabaseClient
+from expenses_counter.services.database import AsyncDatabaseClient
 
 
 def get_product(
-    db: Annotated[DatabaseClient, Depends(get_db)],
+    db: Annotated[AsyncDatabaseClient, Depends(get_db)],
 ) -> ProductDAO:
     """Dependency function that provides a singleton instance of ProductDAO.
 
