@@ -189,7 +189,7 @@ class CreateTransactionCommand(BaseCommand):
 
         try:
             category = await self._get_category(self.default_category_id)
-            self.default_category = category.id
+            self.default_category_id = category.id
         except ValueError as e:
             logger.error(f"Error getting category: {e}")
             raise ValueError("Default category not found") from e
