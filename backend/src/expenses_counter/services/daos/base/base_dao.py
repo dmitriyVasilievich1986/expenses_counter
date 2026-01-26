@@ -17,7 +17,7 @@ __all__ = ("BaseDAO",)
 from abc import ABC
 from functools import wraps
 from types import TracebackType
-from typing import Any, Callable, Literal, TypeVar
+from typing import Any, Callable, Literal, Self, TypeVar
 
 from loguru import logger
 from sqlalchemy import asc, desc, func, select, update
@@ -46,6 +46,7 @@ class BaseDAO[DatabaseModel: Base](ABC):
 
     """
 
+    pk_column_name: str = "id"
     database_model: type[DatabaseModel]
     get_all_columns: tuple[InstrumentedAttribute, ...] | None = None
     select_in_options_single: tuple[InstrumentedAttribute, ...] | None = None
@@ -125,17 +126,19 @@ class BaseDAO[DatabaseModel: Base](ABC):
         await self.session.aclose()
 
     @error_handler
-    async def get_by_id(self, pk: int) -> DatabaseModel:
+    async def get_by_id(self, pk: int, pk_column_name: str | None = None) -> DatabaseModel:
         """Retrieve a single record by its primary key.
 
         Args:
             pk: The primary key (ID) of the record to retrieve.
+            pk_column_name: The name of the primary key column to use.
 
         Returns:
             The database model instance, or None if not found.
 
         """
-        stmt = select(self.database_model).where(self.database_model.id == pk)
+        pk_column_name = pk_column_name or self.pk_column_name
+        stmt = select(self.database_model).where(getattr(self.database_model, pk_column_name) == pk)
 
         if self.select_in_options_single:
             stmt = stmt.options(*map(selectinload, self.select_in_options_single))
