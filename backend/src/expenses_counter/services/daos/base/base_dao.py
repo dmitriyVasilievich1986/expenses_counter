@@ -15,10 +15,9 @@ Type Variables:
 __all__ = ("BaseDAO",)
 
 from abc import ABC
-from typing import Any, Generic, Literal, Type, TypeVar
+from typing import Any, Literal
 
 from loguru import logger
-from pydantic import BaseModel
 from sqlalchemy import asc, desc, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import load_only, selectinload
@@ -30,11 +29,8 @@ from expenses_counter.services.database.models.base import Base
 
 from .error_handler import error_handler
 
-B = TypeVar("B", bound=Type[Base])
-R = TypeVar("R", bound=Type[BaseModel])
 
-
-class BaseDAO(ABC, Generic[B]):
+class BaseDAO[DatabaseModel: Base](ABC):
     """Abstract base class for Data Access Objects.
 
     This class provides common CRUD (Create, Read, Update, Delete) operations
@@ -50,7 +46,7 @@ class BaseDAO(ABC, Generic[B]):
 
     """
 
-    database_model: type[B]
+    database_model: type[DatabaseModel]
     get_all_columns: tuple[InstrumentedAttribute, ...] | None = None
     select_in_options_single: tuple[InstrumentedAttribute, ...] | None = None
     select_in_options_all: tuple[InstrumentedAttribute, ...] | None = None
@@ -65,7 +61,7 @@ class BaseDAO(ABC, Generic[B]):
         """
         self.database_client = database_client
 
-    async def _get_by_id_raw(self, session: AsyncSession, pk: int) -> B:
+    async def _get_by_id_raw(self, session: AsyncSession, pk: int) -> DatabaseModel:
         """Retrieve a single database record by its primary key.
 
         This is a raw method that works within an existing session context.
@@ -87,7 +83,7 @@ class BaseDAO(ABC, Generic[B]):
         return result.scalar()
 
     @error_handler
-    async def get_by_id(self, pk: int) -> B:
+    async def get_by_id(self, pk: int) -> DatabaseModel:
         """Retrieve a single database record by its primary key.
 
         This method manages its own session and includes error handling.
@@ -114,7 +110,7 @@ class BaseDAO(ABC, Generic[B]):
         sort_by: str,
         sort_order: Literal["asc", "desc"],
         filters: list[ColumnElement[bool]] | None,
-    ) -> list[B]:
+    ) -> list[DatabaseModel]:
         """Retrieve multiple database records with pagination, sorting, and filtering.
 
         This is a raw method that works within an existing session context.
@@ -178,7 +174,7 @@ class BaseDAO(ABC, Generic[B]):
         sort_by: str = "id",
         sort_order: Literal["asc", "desc"] = "asc",
         filters: list[ColumnElement[bool]] | None = None,
-    ) -> tuple[list[B], int]:
+    ) -> tuple[list[DatabaseModel], int]:
         """Retrieve multiple database records with pagination, sorting, and filtering.
 
         This method manages its own session and includes error handling.
@@ -204,7 +200,7 @@ class BaseDAO(ABC, Generic[B]):
             total = await self._get_all_count_raw(session, filters)
             return payload, total
 
-    async def _create_raw(self, session: AsyncSession, **kwargs) -> B:
+    async def _create_raw(self, session: AsyncSession, **kwargs) -> DatabaseModel:
         """Create a new database record.
 
         This is a raw method that works within an existing session context.
@@ -223,7 +219,7 @@ class BaseDAO(ABC, Generic[B]):
         return await self._get_by_id_raw(session, obj.id)
 
     @error_handler
-    async def create(self, **kwargs) -> B:
+    async def create(self, **kwargs) -> DatabaseModel:
         """Create a new database record.
 
         This method manages its own session and includes error handling.
@@ -244,7 +240,7 @@ class BaseDAO(ABC, Generic[B]):
             logger.debug(f"Instance created: {payload.id}")
             return payload
 
-    async def _update_raw(self, session: AsyncSession, pk: int, **kwargs: Any) -> B:
+    async def _update_raw(self, session: AsyncSession, pk: int, **kwargs: Any) -> DatabaseModel:
         """Update an existing database record.
 
         This is a raw method that works within an existing session context.
@@ -264,7 +260,7 @@ class BaseDAO(ABC, Generic[B]):
         return await self._get_by_id_raw(session, pk)
 
     @error_handler
-    async def update(self, pk: int, **kwargs: Any) -> B:
+    async def update(self, pk: int, **kwargs: Any) -> DatabaseModel:
         """Update an existing database record.
 
         This method manages its own session and includes error handling.
