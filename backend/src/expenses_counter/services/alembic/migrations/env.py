@@ -17,8 +17,7 @@ from alembic import context
 from loguru import logger
 
 from expenses_counter.config import AppConfig
-from expenses_counter.services.database import models
-from expenses_counter.services.database.client import DatabaseClient
+from expenses_counter.services.database import AsyncDatabaseClient, models
 from expenses_counter.services.database.models.base import mapper_registry
 
 config = context.config
@@ -26,7 +25,7 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 config = AppConfig.get_or_create()
-db_client = DatabaseClient(app_config=config)
+db_client = AsyncDatabaseClient(app_config=config)
 
 logger.info("Alembic migrations started")
 logger.info(f"Models: {models.__all__}")

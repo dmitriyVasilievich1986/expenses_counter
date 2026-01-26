@@ -25,7 +25,7 @@ from sqlalchemy.orm import load_only, selectinload
 from sqlalchemy.orm.attributes import InstrumentedAttribute
 from sqlalchemy.sql import ColumnElement
 
-from expenses_counter.services.database import DatabaseClient
+from expenses_counter.services.database import AsyncDatabaseClient
 from expenses_counter.services.database.models.base import Base
 
 from .error_handler import error_handler
@@ -55,7 +55,7 @@ class BaseDAO(ABC, Generic[B]):
     select_in_options_single: tuple[InstrumentedAttribute, ...] | None = None
     select_in_options_all: tuple[InstrumentedAttribute, ...] | None = None
 
-    def __init__(self, database_client: DatabaseClient, **_: Any) -> None:
+    def __init__(self, database_client: AsyncDatabaseClient, **_: Any) -> None:
         """Initialize the BaseDAO with a database client.
 
         Args:

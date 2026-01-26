@@ -1,6 +1,6 @@
 """Database client module."""
 
-__all__ = ("DatabaseClient",)
+__all__ = ("AsyncDatabaseClient",)
 
 from typing import AsyncGenerator
 
@@ -13,7 +13,7 @@ from expenses_counter.config import AppConfig
 from expenses_counter.utils import Singleton
 
 
-class DatabaseClient(metaclass=Singleton):
+class AsyncDatabaseClient(metaclass=Singleton):
     """Async SQLAlchemy singleton database client.
 
     This class provides a singleton instance for managing async database connections
@@ -94,10 +94,10 @@ class DatabaseClient(metaclass=Singleton):
 
             .. code-block:: python
 
-                from expenses_counter.services.database import DatabaseClient
+                from expenses_counter.services.database import AsyncDatabaseClient
                 from expenses_counter.services.database.models import Category
 
-                client = DatabaseClient()
+                client = AsyncDatabaseClient()
 
                 # Query example
                 async for session in client.get_session():

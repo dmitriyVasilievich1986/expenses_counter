@@ -2,8 +2,8 @@
 
 from sqlalchemy.orm import declarative_base
 
-from .client import DatabaseClient
+from .async_client import AsyncDatabaseClient
 
 Base = declarative_base()
 
-__all__ = ("Base", "DatabaseClient")
+__all__ = ("AsyncDatabaseClient", "Base")

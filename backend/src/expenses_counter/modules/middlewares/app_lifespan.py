@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from loguru import logger
 
 from expenses_counter.config.app_config import AppConfig
-from expenses_counter.services.database import DatabaseClient
+from expenses_counter.services.database import AsyncDatabaseClient
 
 
 @asynccontextmanager
@@ -34,7 +34,7 @@ async def lifespan(
     # Initialize services
     logger.info("Initializing Database client...")
     app_config = AppConfig.get_or_create()
-    database_client = DatabaseClient(app_config=app_config)
+    database_client = AsyncDatabaseClient(app_config=app_config)
     logger.info("Database client initialized successfully.")
 
     yield

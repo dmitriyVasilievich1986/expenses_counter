@@ -11,7 +11,7 @@ from expenses_counter.modules.routers.schemas.responses.system import (
     HealthResponse,
     UnhealthResponse,
 )
-from expenses_counter.services.database import DatabaseClient
+from expenses_counter.services.database import AsyncDatabaseClient
 
 router = APIRouter()
 
@@ -33,7 +33,7 @@ router = APIRouter()
     },
 )
 async def health_check(
-    db: Annotated[DatabaseClient, Depends(get_db)],
+    db: Annotated[AsyncDatabaseClient, Depends(get_db)],
 ):
     """Perform a health check on the service by verifying connectivity to Redis cache and message clients.
 
