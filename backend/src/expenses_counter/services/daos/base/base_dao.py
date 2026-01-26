@@ -144,7 +144,7 @@ class BaseDAO[DatabaseModel: Base](ABC):
             stmt = stmt.options(*map(selectinload, self.select_in_options_single))
 
         result = await self.session.execute(stmt)
-        return result.scalar()
+        return result.scalar_one()
 
     @error_handler
     async def get_total(self, filters: list[ColumnElement[bool]] | None) -> int:
