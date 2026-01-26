@@ -87,9 +87,6 @@ class CategoryDAO(BaseDAO[Category]):
                 - A list of Category model instances matching the criteria.
                 - The total count of matching records (ignoring limit/offset).
 
-        Raises:
-            DBException: For general database errors.
-
         """
         additional_filters = [Category.parent_id == parent_id]
         filters = [*additional_filters, *(filters or [])]

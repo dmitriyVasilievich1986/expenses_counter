@@ -27,6 +27,7 @@ __all__ = ("router",)
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
+from sqlalchemy.exc import DatabaseError, IntegrityError, NoResultFound
 
 from expenses_counter.modules.middlewares.dependencies import get_address
 from expenses_counter.modules.routers.schemas.base.metadata import PaginationMetadata
@@ -41,7 +42,6 @@ from expenses_counter.modules.routers.schemas.responses.address import (
     SimpleAddressGet,
 )
 from expenses_counter.services.daos import AddressDAO
-from expenses_counter.services.daos.base.exceptions import DBException, NotFoundException, RelationshipNotFoundException
 
 router = APIRouter(prefix="/address", tags=["Address"])
 
@@ -71,7 +71,7 @@ async def get_address_list(
         metadata = PaginationMetadata(
             total=total, offset=query.offset, limit=query.limit, sort_by=query.sort_by, sort_order=query.sort_order
         )
-    except DBException as e:
+    except DatabaseError as e:
         raise HTTPException(status_code=500, detail="Something went wrong while retrieving the address list") from e
 
     return GetAllAddressesResponse(
@@ -100,7 +100,7 @@ async def get_address_by_id(
     """
     try:
         address = await address_dao.get_by_id(address_id)
-    except DBException as e:
+    except DatabaseError as e:
         raise HTTPException(status_code=500, detail="Something went wrong while retrieving the address") from e
 
     if address is None:
@@ -130,9 +130,9 @@ async def create_address(
     """
     try:
         return await address_dao.create(**body.model_dump(by_alias=False))
-    except RelationshipNotFoundException as e:
+    except IntegrityError as e:
         raise HTTPException(status_code=400, detail="Shop not found") from e
-    except DBException as e:
+    except DatabaseError as e:
         raise HTTPException(status_code=500, detail="Something went wrong while creating the address") from e
 
 
@@ -160,11 +160,11 @@ async def update_address(
     """
     try:
         return await address_dao.update(address_id, **body.model_dump(by_alias=False))
-    except RelationshipNotFoundException as e:
+    except IntegrityError as e:
         raise HTTPException(status_code=400, detail="Shop not found") from e
-    except NotFoundException as e:
+    except NoResultFound as e:
         raise HTTPException(status_code=404, detail="Address not found") from e
-    except DBException as e:
+    except DatabaseError as e:
         raise HTTPException(status_code=500, detail="Something went wrong while updating the address") from e
 
 
@@ -191,7 +191,7 @@ async def delete_address(
         deleted = await address_dao.delete(address_id)
         if not deleted:
             raise HTTPException(status_code=404, detail="Address not found")
-    except NotFoundException as e:
+    except NoResultFound as e:
         raise HTTPException(status_code=404, detail="Address not found") from e
-    except DBException as e:
+    except DatabaseError as e:
         raise HTTPException(status_code=500, detail="Something went wrong while deleting the address") from e

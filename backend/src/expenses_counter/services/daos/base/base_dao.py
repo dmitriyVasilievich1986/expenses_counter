@@ -15,7 +15,7 @@ Type Variables:
 __all__ = ("BaseDAO",)
 
 from abc import ABC
-from typing import Any, Literal
+from typing import Any, Callable, Literal, TypeVar
 
 from loguru import logger
 from sqlalchemy import asc, desc, func, select, update
@@ -27,7 +27,7 @@ from sqlalchemy.sql import ColumnElement
 from expenses_counter.services.database import AsyncDatabaseClient
 from expenses_counter.services.database.models.base import Base
 
-from .error_handler import error_handler
+R = TypeVar("R")
 
 
 class BaseDAO[DatabaseModel: Base](ABC):
@@ -60,6 +60,27 @@ class BaseDAO[DatabaseModel: Base](ABC):
 
         """
         self.database_client = database_client
+
+    @staticmethod
+    async def error_handler(func: Callable[..., R]) -> Callable[..., R]:
+        """Decorator for handling database errors in async DAO methods.
+
+        This decorator wraps async methods to catch common database exceptions
+        and convert them into application-specific exceptions with appropriate logging.
+
+        Args:
+            func: The async function to be wrapped.
+
+        """
+
+        async def wrapper(self: "BaseDAO", *args: Any, **kwargs: Any) -> R:
+            try:
+                return await func(self, *args, **kwargs)
+            except Exception as e:
+                logger.error(f"Error in {func.__name__}", exc_info=True)
+                raise e
+
+        return wrapper
 
     async def _get_by_id_raw(self, session: AsyncSession, pk: int) -> DatabaseModel:
         """Retrieve a single database record by its primary key.
@@ -96,7 +117,7 @@ class BaseDAO[DatabaseModel: Base](ABC):
 
         Raises:
             NotFoundException: If the record is not found.
-            DBException: For general database errors.
+            DatabaseError: For general database errors.
 
         """
         async with self.database_client.session_factory() as session:
@@ -192,7 +213,7 @@ class BaseDAO[DatabaseModel: Base](ABC):
                 - The total count of matching records (before pagination)
 
         Raises:
-            DBException: For general database errors.
+            DatabaseError: For general database errors.
 
         """
         async with self.database_client.session_factory() as session:
@@ -232,7 +253,7 @@ class BaseDAO[DatabaseModel: Base](ABC):
 
         Raises:
             RelationshipNotFoundException: When a foreign key constraint is violated.
-            DBException: For general database errors.
+            DatabaseError: For general database errors.
 
         """
         async with self.database_client.session_factory() as session:
@@ -275,7 +296,7 @@ class BaseDAO[DatabaseModel: Base](ABC):
         Raises:
             NotFoundException: If the record is not found.
             RelationshipNotFoundException: When a foreign key constraint is violated.
-            DBException: For general database errors.
+            DatabaseError: For general database errors.
 
         """
         async with self.database_client.session_factory() as session:
@@ -319,7 +340,7 @@ class BaseDAO[DatabaseModel: Base](ABC):
 
         Raises:
             RelationshipNotFoundException: When foreign key constraints prevent deletion.
-            DBException: For general database errors.
+            DatabaseError: For general database errors.
 
         """
         async with self.database_client.session_factory() as session:

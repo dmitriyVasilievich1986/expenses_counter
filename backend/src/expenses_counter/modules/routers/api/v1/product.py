@@ -27,6 +27,7 @@ __all__ = ("router",)
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
+from sqlalchemy.exc import DatabaseError, IntegrityError, NoResultFound
 
 from expenses_counter.modules.middlewares.dependencies import get_product
 from expenses_counter.modules.routers.schemas.base.metadata import PaginationMetadata
@@ -41,7 +42,6 @@ from expenses_counter.modules.routers.schemas.responses.product import (
     SimpleProductGet,
 )
 from expenses_counter.services.daos import ProductDAO
-from expenses_counter.services.daos.base.exceptions import DBException, NotFoundException, RelationshipNotFoundException
 
 router = APIRouter(prefix="/product", tags=["Product"])
 
@@ -71,7 +71,7 @@ async def get_product_list(
         metadata = PaginationMetadata(
             total=total, offset=query.offset, limit=query.limit, sort_by=query.sort_by, sort_order=query.sort_order
         )
-    except DBException as e:
+    except DatabaseError as e:
         raise HTTPException(status_code=500, detail="Something went wrong while retrieving the product list") from e
 
     return GetAllProductsResponse(
@@ -100,7 +100,7 @@ async def get_product_by_id(
     """
     try:
         product = await product_dao.get_by_id(product_id)
-    except DBException as e:
+    except DatabaseError as e:
         raise HTTPException(status_code=500, detail="Something went wrong while retrieving the product") from e
 
     if product is None:
@@ -130,9 +130,9 @@ async def create_product(
     """
     try:
         return await product_dao.create(**body.model_dump(by_alias=False))
-    except RelationshipNotFoundException as e:
+    except IntegrityError as e:
         raise HTTPException(status_code=400, detail="Category not found") from e
-    except DBException as e:
+    except DatabaseError as e:
         raise HTTPException(status_code=500, detail="Something went wrong while creating the product") from e
 
 
@@ -160,11 +160,11 @@ async def update_product(
     """
     try:
         return await product_dao.update(product_id, **body.model_dump(by_alias=False))
-    except RelationshipNotFoundException as e:
+    except IntegrityError as e:
         raise HTTPException(status_code=400, detail="Category not found") from e
-    except NotFoundException as e:
+    except NoResultFound as e:
         raise HTTPException(status_code=404, detail="Product not found") from e
-    except DBException as e:
+    except DatabaseError as e:
         raise HTTPException(status_code=500, detail="Something went wrong while updating the product") from e
 
 
@@ -189,7 +189,7 @@ async def delete_product(
     """
     try:
         await product_dao.delete(product_id)
-    except NotFoundException as e:
+    except NoResultFound as e:
         raise HTTPException(status_code=404, detail="Product not found") from e
-    except DBException as e:
+    except DatabaseError as e:
         raise HTTPException(status_code=500, detail="Something went wrong while deleting the product") from e

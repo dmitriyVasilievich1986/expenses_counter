@@ -27,6 +27,7 @@ __all__ = ("router",)
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
+from sqlalchemy.exc import DatabaseError, IntegrityError, NoResultFound
 
 from expenses_counter.modules.middlewares.dependencies import get_shop
 from expenses_counter.modules.routers.schemas.base.metadata import PaginationMetadata
@@ -41,7 +42,6 @@ from expenses_counter.modules.routers.schemas.responses.shop import (
     SimpleShopGet,
 )
 from expenses_counter.services.daos import ShopDAO
-from expenses_counter.services.daos.base.exceptions import DBException, NotFoundException, RelationshipNotFoundException
 
 router = APIRouter(prefix="/shop", tags=["Shop"])
 
@@ -71,7 +71,7 @@ async def get_shop_list(
         metadata = PaginationMetadata(
             total=total, offset=query.offset, limit=query.limit, sort_by=query.sort_by, sort_order=query.sort_order
         )
-    except DBException as e:
+    except DatabaseError as e:
         raise HTTPException(status_code=500, detail="Something went wrong while retrieving the shop list") from e
 
     return GetAllShopsResponse(data=[SimpleShopGet.model_validate(shop) for shop in data], metadata=metadata)
@@ -98,7 +98,7 @@ async def get_shop_by_id(
     """
     try:
         shop = await shop_dao.get_by_id(shop_id)
-    except DBException as e:
+    except DatabaseError as e:
         raise HTTPException(status_code=500, detail="Something went wrong while retrieving the shop") from e
 
     if shop is None:
@@ -128,9 +128,9 @@ async def create_shop(
     """
     try:
         return await shop_dao.create(**body.model_dump(by_alias=False))
-    except RelationshipNotFoundException as e:
+    except IntegrityError as e:
         raise HTTPException(status_code=400, detail="Category not found") from e
-    except DBException as e:
+    except DatabaseError as e:
         raise HTTPException(status_code=500, detail="Something went wrong while creating the shop") from e
 
 
@@ -158,11 +158,11 @@ async def update_shop(
     """
     try:
         return await shop_dao.update(shop_id, **body.model_dump(by_alias=False))
-    except RelationshipNotFoundException as e:
+    except IntegrityError as e:
         raise HTTPException(status_code=400, detail="Category not found") from e
-    except NotFoundException as e:
+    except NoResultFound as e:
         raise HTTPException(status_code=404, detail="Shop not found") from e
-    except DBException as e:
+    except DatabaseError as e:
         raise HTTPException(status_code=500, detail="Something went wrong while updating the shop") from e
 
 
@@ -189,7 +189,7 @@ async def delete_shop(
         deleted = await shop_dao.delete(shop_id)
         if not deleted:
             raise HTTPException(status_code=404, detail="Shop not found")
-    except NotFoundException as e:
+    except NoResultFound as e:
         raise HTTPException(status_code=404, detail="Shop not found") from e
-    except DBException as e:
+    except DatabaseError as e:
         raise HTTPException(status_code=500, detail="Something went wrong while deleting the shop") from e

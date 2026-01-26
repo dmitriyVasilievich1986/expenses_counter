@@ -28,6 +28,7 @@ from typing import Annotated
 
 from dateutil.relativedelta import relativedelta
 from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query
+from sqlalchemy.exc import DatabaseError, IntegrityError, NoResultFound
 
 from expenses_counter.modules.middlewares.dependencies import get_transaction
 from expenses_counter.modules.routers.schemas.base.metadata import PaginationMetadata
@@ -44,7 +45,6 @@ from expenses_counter.modules.routers.schemas.responses.transaction import (
     SimpleTransactionGet,
 )
 from expenses_counter.services.daos import TransactionDAO
-from expenses_counter.services.daos.base.exceptions import DBException, NotFoundException, RelationshipNotFoundException
 from expenses_counter.services.database.models.transaction import Transaction
 
 router = APIRouter(prefix="/transaction", tags=["Transaction"])
@@ -70,7 +70,7 @@ async def get_transactions_by_date_range(
         metadata = PaginationMetadata(
             total=total, offset=None, limit=None, sort_by=query.sort_by, sort_order=query.sort_order
         )
-    except DBException as e:
+    except DatabaseError as e:
         raise HTTPException(status_code=500, detail="Something went wrong while retrieving the transaction list") from e
 
     return GetAllTransactionsResponse(
@@ -103,7 +103,7 @@ async def get_transaction_list(
         metadata = PaginationMetadata(
             total=total, offset=query.offset, limit=query.limit, sort_by=query.sort_by, sort_order=query.sort_order
         )
-    except DBException as e:
+    except DatabaseError as e:
         raise HTTPException(status_code=500, detail="Something went wrong while retrieving the transaction list") from e
 
     return GetAllTransactionsResponse(
@@ -132,7 +132,7 @@ async def get_transaction_by_id(
     """
     try:
         transaction = await transaction_dao.get_by_id(transaction_id)
-    except DBException as e:
+    except DatabaseError as e:
         raise HTTPException(status_code=500, detail="Something went wrong while retrieving the transaction") from e
 
     if transaction is None:
@@ -162,9 +162,9 @@ async def create_transaction(
     """
     try:
         return await transaction_dao.create(**body.model_dump(by_alias=False))
-    except RelationshipNotFoundException as e:
+    except IntegrityError as e:
         raise HTTPException(status_code=400, detail="Product or Address not found") from e
-    except DBException as e:
+    except DatabaseError as e:
         raise HTTPException(status_code=500, detail="Something went wrong while creating the transaction") from e
 
 
@@ -192,11 +192,11 @@ async def update_transaction(
     """
     try:
         return await transaction_dao.update(transaction_id, **body.model_dump(by_alias=False))
-    except RelationshipNotFoundException as e:
+    except IntegrityError as e:
         raise HTTPException(status_code=400, detail="Product or Address not found") from e
-    except NotFoundException as e:
+    except NoResultFound as e:
         raise HTTPException(status_code=404, detail="Transaction not found") from e
-    except DBException as e:
+    except DatabaseError as e:
         raise HTTPException(status_code=500, detail="Something went wrong while updating the transaction") from e
 
 
@@ -223,7 +223,7 @@ async def delete_transaction(
         deleted = await transaction_dao.delete(transaction_id)
         if not deleted:
             raise HTTPException(status_code=404, detail="Transaction not found")
-    except NotFoundException as e:
+    except NoResultFound as e:
         raise HTTPException(status_code=404, detail="Transaction not found") from e
-    except DBException as e:
+    except DatabaseError as e:
         raise HTTPException(status_code=500, detail="Something went wrong while deleting the transaction") from e

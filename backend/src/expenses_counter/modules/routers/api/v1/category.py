@@ -30,6 +30,7 @@ __all__ = ("router",)
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
+from sqlalchemy.exc import DatabaseError, IntegrityError, NoResultFound
 
 from expenses_counter.modules.middlewares.dependencies import get_category
 from expenses_counter.modules.routers.schemas.base.metadata import PaginationMetadata
@@ -44,7 +45,6 @@ from expenses_counter.modules.routers.schemas.responses.category import (
     SimpleCategoryGet,
 )
 from expenses_counter.services.daos import CategoryDAO
-from expenses_counter.services.daos.base.exceptions import DBException, NotFoundException, RelationshipNotFoundException
 
 router = APIRouter(prefix="/category", tags=["Category"])
 
@@ -88,7 +88,7 @@ async def get_category_list(
         metadata = PaginationMetadata(
             total=total, offset=query.offset, limit=query.limit, sort_by=query.sort_by, sort_order=query.sort_order
         )
-    except DBException as e:
+    except DatabaseError as e:
         raise HTTPException(status_code=500, detail="Something went wrong while retrieving the category list") from e
 
     return GetAllCategoriesResponse(
@@ -135,7 +135,7 @@ async def get_root_category_list(
         metadata = PaginationMetadata(
             total=total, offset=query.offset, limit=query.limit, sort_by=query.sort_by, sort_order=query.sort_order
         )
-    except DBException as e:
+    except DatabaseError as e:
         raise HTTPException(
             status_code=500, detail="Something went wrong while retrieving the category list by parent"
         ) from e
@@ -192,7 +192,7 @@ async def get_category_list_by_parent(
         metadata = PaginationMetadata(
             total=total, offset=query.offset, limit=query.limit, sort_by=query.sort_by, sort_order=query.sort_order
         )
-    except DBException as e:
+    except DatabaseError as e:
         raise HTTPException(
             status_code=500, detail="Something went wrong while retrieving the category list by parent"
         ) from e
@@ -233,7 +233,7 @@ async def get_category_by_id(
     """
     try:
         category = await category_dao.get_by_id(category_id)
-    except DBException as e:
+    except DatabaseError as e:
         raise HTTPException(status_code=500, detail="Something went wrong while retrieving the category") from e
 
     if category is None:
@@ -278,9 +278,9 @@ async def create_category(
     """
     try:
         payload = await category_dao.create(**body.model_dump(by_alias=False))
-    except RelationshipNotFoundException as e:
+    except IntegrityError as e:
         raise HTTPException(status_code=400, detail="Parent category not found") from e
-    except DBException as e:
+    except DatabaseError as e:
         raise HTTPException(status_code=500, detail="There was an error creating the category") from e
 
     return GetSingleCategoryResponse.model_validate(payload)
@@ -325,11 +325,11 @@ async def update_category(
     """
     try:
         payload = await category_dao.update(category_id, **body.model_dump(by_alias=False))
-    except NotFoundException as e:
+    except NoResultFound as e:
         raise HTTPException(status_code=404, detail="Category not found") from e
-    except RelationshipNotFoundException as e:
+    except IntegrityError as e:
         raise HTTPException(status_code=400, detail="Parent category not found") from e
-    except DBException as e:
+    except DatabaseError as e:
         raise HTTPException(status_code=500, detail="There was an error updating the category") from e
 
     return GetSingleCategoryResponse.model_validate(payload)
@@ -371,7 +371,7 @@ async def delete_category(
     """
     try:
         await category_dao.delete(category_id)
-    except NotFoundException as e:
+    except NoResultFound as e:
         raise HTTPException(status_code=404, detail="Category not found") from e
-    except DBException as e:
+    except DatabaseError as e:
         raise HTTPException(status_code=500, detail="There was an error deleting the category") from e
