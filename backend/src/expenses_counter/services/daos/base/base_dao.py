@@ -102,7 +102,7 @@ class BaseDAO[DatabaseModel: Base](ABC):
 
         return self._session
 
-    async def __aenter__(self) -> "BaseDAO":
+    async def __aenter__(self) -> Self:
         """Enter the async context manager, creating a new database session.
 
         Returns:
