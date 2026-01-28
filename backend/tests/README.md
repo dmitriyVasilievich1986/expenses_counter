@@ -92,6 +92,22 @@ cd backend
 uv run pytest -v
 ```
 
+### Run tests by marker
+```bash
+cd backend
+# Run only API tests
+uv run pytest -m api
+
+# Run only non-API tests (database, etc.)
+uv run pytest -m "not api"
+
+# Run async tests
+uv run pytest -m asyncio
+
+# Run integration tests
+uv run pytest -m integration
+```
+
 ## Writing Tests
 
 ### Basic Test Structure
@@ -194,6 +210,27 @@ Key settings:
 - `--cov=src/expenses_counter`: Measures coverage for the source code
 - `branch = true`: Includes branch coverage analysis
 - Coverage reports exclude tests, migrations, and alembic directories
+
+### Available Test Markers
+
+Tests can be marked with the following pytest markers:
+
+- **`@pytest.mark.api`**: API endpoint tests (using mocked dependencies)
+- **`@pytest.mark.asyncio`**: Async tests (automatically applied to async test functions)
+- **`@pytest.mark.integration`**: Integration tests (tests that use multiple components)
+- **`@pytest.mark.slow`**: Slow-running tests
+
+Use markers to run specific subsets of tests:
+```bash
+# Run only API tests
+uv run pytest -m api
+
+# Run all tests except slow ones
+uv run pytest -m "not slow"
+
+# Run integration tests
+uv run pytest -m integration
+```
 
 ## Examples
 
