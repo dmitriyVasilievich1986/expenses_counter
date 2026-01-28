@@ -34,9 +34,7 @@ class TestDatabaseSetup:
         """
         async for session in async_db_client.get_session():
             # Query SQLite master table to check table existence
-            result = await session.execute(
-                text("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
-            )
+            result = await session.execute(text("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"))
             tables = [row[0] for row in result.fetchall()]
 
             # Check that expected tables exist (with main_ prefix)
@@ -67,4 +65,3 @@ class TestDatabaseSetup:
 
         assert row is not None
         assert row[0] == 1
-

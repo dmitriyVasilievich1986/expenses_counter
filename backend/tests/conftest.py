@@ -162,7 +162,6 @@ async def test_database_with_migrations(
 @pytest_asyncio.fixture(scope="session")
 async def async_db_client(
     test_config: AppConfig,
-    test_database_with_migrations: Path,
 ) -> AsyncGenerator[AsyncDatabaseClient, None]:
     """Create and configure AsyncDatabaseClient for testing.
 
@@ -180,7 +179,7 @@ async def async_db_client(
 
     """
     # Clear any existing singleton instances
-    Singleton._instances.clear()
+    Singleton._instances.clear()  # noqa: SLF001
 
     # Create the database client
     client = AsyncDatabaseClient(app_config=test_config)
@@ -192,7 +191,7 @@ async def async_db_client(
 
     # Cleanup: close the client and clear singleton
     await client.close()
-    Singleton._instances.clear()
+    Singleton._instances.clear()  # noqa: SLF001
 
     # Clear settings storage
     storage = SettingsStorage()
@@ -232,5 +231,3 @@ async def db_session(async_db_client: AsyncDatabaseClient):
                 await session.close()
                 # Rollback the transaction
                 await transaction.rollback()
-
-
