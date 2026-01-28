@@ -4,14 +4,14 @@ This module tests all address API endpoints without making direct database calls
 It uses FastAPI's TestClient and mocks the AddressDAO dependency.
 """
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy.exc import DatabaseError, IntegrityError, NoResultFound
 
 from expenses_counter.modules.app import get_app
-from expenses_counter.modules.middlewares.dependencies import get_address
-from expenses_counter.services.daos.base.exceptions import DBException, NotFoundException, RelationshipNotFoundException
+from expenses_counter.modules.middlewares.dependencies.get_db import get_db
 
 
 @pytest.fixture
@@ -19,7 +19,7 @@ def mock_address_dao():
     """Create a mock AddressDAO for testing.
 
     Returns:
-        AsyncMock: Mocked AddressDAO instance.
+        AsyncMock: Mocked AddressDAO instance that works as a context manager.
 
     """
     dao = AsyncMock()
@@ -28,15 +28,49 @@ def mock_address_dao():
     dao.create = AsyncMock()
     dao.update = AsyncMock()
     dao.delete = AsyncMock()
+
+    # Make it work as a context manager
+    dao.__aenter__ = AsyncMock(return_value=dao)
+    dao.__aexit__ = AsyncMock(return_value=None)
+
     return dao
 
 
 @pytest.fixture
-def test_client(mock_address_dao, test_config):
+def mock_db_client():
+    """Create a mock AsyncDatabaseClient for testing.
+
+    Returns:
+        MagicMock: Mocked AsyncDatabaseClient instance.
+
+    """
+    return MagicMock()
+
+
+@pytest.fixture
+def mock_address_dao_class(mock_address_dao):
+    """Patch AddressDAO class to return our mock instance.
+
+    Args:
+        mock_address_dao: Mocked AddressDAO instance.
+
+    Yields:
+        Mock: Patched AddressDAO class.
+
+    """
+    with patch(
+        "expenses_counter.modules.routers.api.v1.address.AddressDAO", return_value=mock_address_dao
+    ) as mock_class:
+        yield mock_class
+
+
+@pytest.fixture
+def test_client(mock_address_dao_class, mock_db_client, test_config):  # noqa: ARG001
     """Create a test client with mocked dependencies.
 
     Args:
-        mock_address_dao: Mocked AddressDAO fixture.
+        mock_address_dao_class: Patched AddressDAO class fixture.
+        mock_db_client: Mocked AsyncDatabaseClient fixture.
         test_config: Test configuration fixture.
 
     Returns:
@@ -44,9 +78,14 @@ def test_client(mock_address_dao, test_config):
 
     """
     app = get_app(test_config)
-    app.dependency_overrides[get_address] = lambda: mock_address_dao
+
+    # Override the database dependency to return mock db client
+    app.dependency_overrides[get_db] = lambda: mock_db_client
+
     client = TestClient(app)
     yield client
+
+    # Clean up
     app.dependency_overrides.clear()
 
 
@@ -88,7 +127,7 @@ class TestGetAddressList:
     def test_get_address_list_db_error(self, test_client, mock_address_dao):
         """Test address list with database error."""
         # Arrange
-        mock_address_dao.get_all.side_effect = DBException("Database error")
+        mock_address_dao.get_all.side_effect = DatabaseError("SELECT *", None, Exception("Database error"))
 
         # Act
         response = test_client.get("/api/v1/address")
@@ -142,7 +181,7 @@ class TestGetAddressById:
     def test_get_address_by_id_db_error(self, test_client, mock_address_dao):
         """Test address retrieval with database error."""
         # Arrange
-        mock_address_dao.get_by_id.side_effect = DBException("Database error")
+        mock_address_dao.get_by_id.side_effect = DatabaseError("SELECT *", None, Exception("Database error"))
 
         # Act
         response = test_client.get("/api/v1/address/42")
@@ -187,7 +226,7 @@ class TestCreateAddress:
     def test_create_address_shop_not_found(self, test_client, mock_address_dao):
         """Test address creation with invalid shop ID."""
         # Arrange
-        mock_address_dao.create.side_effect = RelationshipNotFoundException("Shop not found")
+        mock_address_dao.create.side_effect = IntegrityError("INSERT INTO", None, Exception("Shop not found"))
 
         payload = {
             "localName": "New Address",
@@ -205,7 +244,7 @@ class TestCreateAddress:
     def test_create_address_db_error(self, test_client, mock_address_dao):
         """Test address creation with database error."""
         # Arrange
-        mock_address_dao.create.side_effect = DBException("Database error")
+        mock_address_dao.create.side_effect = DatabaseError("SELECT *", None, Exception("Database error"))
 
         payload = {
             "localName": "New Address",
@@ -258,7 +297,7 @@ class TestUpdateAddress:
     def test_update_address_not_found(self, test_client, mock_address_dao):
         """Test updating non-existent address."""
         # Arrange
-        mock_address_dao.update.side_effect = NotFoundException("Address not found")
+        mock_address_dao.update.side_effect = NoResultFound("Address not found")
 
         payload = {
             "localName": "Updated Address",
@@ -275,7 +314,7 @@ class TestUpdateAddress:
     def test_update_address_shop_not_found(self, test_client, mock_address_dao):
         """Test address update with invalid shop ID."""
         # Arrange
-        mock_address_dao.update.side_effect = RelationshipNotFoundException("Shop not found")
+        mock_address_dao.update.side_effect = IntegrityError("INSERT INTO", None, Exception("Shop not found"))
 
         payload = {
             "localName": "Updated Address",
@@ -310,7 +349,7 @@ class TestDeleteAddress:
     def test_delete_address_not_found(self, test_client, mock_address_dao):
         """Test deleting non-existent address."""
         # Arrange
-        mock_address_dao.delete.side_effect = NotFoundException("Address not found")
+        mock_address_dao.delete.side_effect = NoResultFound("Address not found")
 
         # Act
         response = test_client.delete("/api/v1/address/999")
@@ -321,7 +360,7 @@ class TestDeleteAddress:
     def test_delete_address_db_error(self, test_client, mock_address_dao):
         """Test address deletion with database error."""
         # Arrange
-        mock_address_dao.delete.side_effect = DBException("Database error")
+        mock_address_dao.delete.side_effect = DatabaseError("SELECT *", None, Exception("Database error"))
 
         # Act
         response = test_client.delete("/api/v1/address/42")

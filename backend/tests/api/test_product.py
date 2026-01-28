@@ -4,14 +4,14 @@ This module tests all product API endpoints without making direct database calls
 It uses FastAPI's TestClient and mocks the ProductDAO dependency.
 """
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy.exc import DatabaseError, IntegrityError, NoResultFound
 
 from expenses_counter.modules.app import get_app
-from expenses_counter.modules.middlewares.dependencies import get_product
-from expenses_counter.services.daos.base.exceptions import DBException, NotFoundException, RelationshipNotFoundException
+from expenses_counter.modules.middlewares.dependencies.get_db import get_db
 
 
 @pytest.fixture
@@ -19,7 +19,7 @@ def mock_product_dao():
     """Create a mock ProductDAO for testing.
 
     Returns:
-        AsyncMock: Mocked ProductDAO instance.
+        AsyncMock: Mocked ProductDAO instance that works as a context manager.
 
     """
     dao = AsyncMock()
@@ -28,15 +28,49 @@ def mock_product_dao():
     dao.create = AsyncMock()
     dao.update = AsyncMock()
     dao.delete = AsyncMock()
+
+    # Make it work as a context manager
+    dao.__aenter__ = AsyncMock(return_value=dao)
+    dao.__aexit__ = AsyncMock(return_value=None)
+
     return dao
 
 
 @pytest.fixture
-def test_client(mock_product_dao, test_config):
+def mock_db_client():
+    """Create a mock AsyncDatabaseClient for testing.
+
+    Returns:
+        MagicMock: Mocked AsyncDatabaseClient instance.
+
+    """
+    return MagicMock()
+
+
+@pytest.fixture
+def mock_product_dao_class(mock_product_dao):
+    """Patch ProductDAO class to return our mock instance.
+
+    Args:
+        mock_product_dao: Mocked ProductDAO instance.
+
+    Yields:
+        Mock: Patched ProductDAO class.
+
+    """
+    with patch(
+        "expenses_counter.modules.routers.api.v1.product.ProductDAO", return_value=mock_product_dao
+    ) as mock_class:
+        yield mock_class
+
+
+@pytest.fixture
+def test_client(mock_product_dao_class, mock_db_client, test_config):  # noqa: ARG001
     """Create a test client with mocked dependencies.
 
     Args:
-        mock_product_dao: Mocked ProductDAO fixture.
+        mock_product_dao_class: Patched ProductDAO class fixture.
+        mock_db_client: Mocked AsyncDatabaseClient fixture.
         test_config: Test configuration fixture.
 
     Returns:
@@ -44,9 +78,14 @@ def test_client(mock_product_dao, test_config):
 
     """
     app = get_app(test_config)
-    app.dependency_overrides[get_product] = lambda: mock_product_dao
+
+    # Override the database dependency to return mock db client
+    app.dependency_overrides[get_db] = lambda: mock_db_client
+
     client = TestClient(app)
     yield client
+
+    # Clean up
     app.dependency_overrides.clear()
 
 
@@ -86,7 +125,7 @@ class TestGetProductList:
     def test_get_product_list_db_error(self, test_client, mock_product_dao):
         """Test product list with database error."""
         # Arrange
-        mock_product_dao.get_all.side_effect = DBException("Database error")
+        mock_product_dao.get_all.side_effect = DatabaseError("SELECT *", None, Exception("Database error"))
 
         # Act
         response = test_client.get("/api/v1/product")
@@ -122,7 +161,7 @@ class TestGetProductById:
     def test_get_product_by_id_not_found(self, test_client, mock_product_dao):
         """Test retrieval of non-existent product."""
         # Arrange
-        mock_product_dao.get_by_id.return_value = None
+        mock_product_dao.get_by_id.side_effect = NoResultFound("Product not found")
 
         # Act
         response = test_client.get("/api/v1/product/999")
@@ -134,7 +173,7 @@ class TestGetProductById:
     def test_get_product_by_id_db_error(self, test_client, mock_product_dao):
         """Test product retrieval with database error."""
         # Arrange
-        mock_product_dao.get_by_id.side_effect = DBException("Database error")
+        mock_product_dao.get_by_id.side_effect = DatabaseError("SELECT *", None, Exception("Database error"))
 
         # Act
         response = test_client.get("/api/v1/product/42")
@@ -173,7 +212,7 @@ class TestCreateProduct:
     def test_create_product_category_not_found(self, test_client, mock_product_dao):
         """Test product creation with invalid category ID."""
         # Arrange
-        mock_product_dao.create.side_effect = RelationshipNotFoundException("Category not found")
+        mock_product_dao.create.side_effect = IntegrityError("INSERT INTO", None, Exception("Category not found"))
 
         payload = {
             "name": "New Product",
@@ -190,7 +229,7 @@ class TestCreateProduct:
     def test_create_product_db_error(self, test_client, mock_product_dao):
         """Test product creation with database error."""
         # Arrange
-        mock_product_dao.create.side_effect = DBException("Database error")
+        mock_product_dao.create.side_effect = DatabaseError("SELECT *", None, Exception("Database error"))
 
         payload = {
             "name": "New Product",
@@ -235,7 +274,7 @@ class TestUpdateProduct:
     def test_update_product_not_found(self, test_client, mock_product_dao):
         """Test updating non-existent product."""
         # Arrange
-        mock_product_dao.update.side_effect = NotFoundException("Product not found")
+        mock_product_dao.update.side_effect = NoResultFound("Product not found")
 
         payload = {
             "name": "Updated Product",
@@ -251,7 +290,7 @@ class TestUpdateProduct:
     def test_update_product_category_not_found(self, test_client, mock_product_dao):
         """Test product update with invalid category ID."""
         # Arrange
-        mock_product_dao.update.side_effect = RelationshipNotFoundException("Category not found")
+        mock_product_dao.update.side_effect = IntegrityError("INSERT INTO", None, Exception("Category not found"))
 
         payload = {
             "name": "Updated Product",
@@ -285,7 +324,7 @@ class TestDeleteProduct:
     def test_delete_product_not_found(self, test_client, mock_product_dao):
         """Test deleting non-existent product."""
         # Arrange
-        mock_product_dao.delete.side_effect = NotFoundException("Product not found")
+        mock_product_dao.delete.side_effect = NoResultFound("Product not found")
 
         # Act
         response = test_client.delete("/api/v1/product/999")
@@ -296,7 +335,7 @@ class TestDeleteProduct:
     def test_delete_product_db_error(self, test_client, mock_product_dao):
         """Test product deletion with database error."""
         # Arrange
-        mock_product_dao.delete.side_effect = DBException("Database error")
+        mock_product_dao.delete.side_effect = DatabaseError("SELECT *", None, Exception("Database error"))
 
         # Act
         response = test_client.delete("/api/v1/product/42")

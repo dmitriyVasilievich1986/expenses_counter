@@ -4,14 +4,14 @@ This module tests all shop API endpoints without making direct database calls.
 It uses FastAPI's TestClient and mocks the ShopDAO dependency.
 """
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy.exc import DatabaseError, IntegrityError, NoResultFound
 
 from expenses_counter.modules.app import get_app
-from expenses_counter.modules.middlewares.dependencies import get_shop
-from expenses_counter.services.daos.base.exceptions import DBException, NotFoundException, RelationshipNotFoundException
+from expenses_counter.modules.middlewares.dependencies.get_db import get_db
 
 
 @pytest.fixture
@@ -19,7 +19,7 @@ def mock_shop_dao():
     """Create a mock ShopDAO for testing.
 
     Returns:
-        AsyncMock: Mocked ShopDAO instance.
+        AsyncMock: Mocked ShopDAO instance that works as a context manager.
 
     """
     dao = AsyncMock()
@@ -28,15 +28,47 @@ def mock_shop_dao():
     dao.create = AsyncMock()
     dao.update = AsyncMock()
     dao.delete = AsyncMock()
+
+    # Make it work as a context manager
+    dao.__aenter__ = AsyncMock(return_value=dao)
+    dao.__aexit__ = AsyncMock(return_value=None)
+
     return dao
 
 
 @pytest.fixture
-def test_client(mock_shop_dao, test_config):
+def mock_db_client():
+    """Create a mock AsyncDatabaseClient for testing.
+
+    Returns:
+        MagicMock: Mocked AsyncDatabaseClient instance.
+
+    """
+    return MagicMock()
+
+
+@pytest.fixture
+def mock_shop_dao_class(mock_shop_dao):
+    """Patch ShopDAO class to return our mock instance.
+
+    Args:
+        mock_shop_dao: Mocked ShopDAO instance.
+
+    Yields:
+        Mock: Patched ShopDAO class.
+
+    """
+    with patch("expenses_counter.modules.routers.api.v1.shop.ShopDAO", return_value=mock_shop_dao) as mock_class:
+        yield mock_class
+
+
+@pytest.fixture
+def test_client(mock_shop_dao_class, mock_db_client, test_config):  # noqa: ARG001
     """Create a test client with mocked dependencies.
 
     Args:
-        mock_shop_dao: Mocked ShopDAO fixture.
+        mock_shop_dao_class: Patched ShopDAO class fixture.
+        mock_db_client: Mocked AsyncDatabaseClient fixture.
         test_config: Test configuration fixture.
 
     Returns:
@@ -44,9 +76,14 @@ def test_client(mock_shop_dao, test_config):
 
     """
     app = get_app(test_config)
-    app.dependency_overrides[get_shop] = lambda: mock_shop_dao
+
+    # Override the database dependency to return mock db client
+    app.dependency_overrides[get_db] = lambda: mock_db_client
+
     client = TestClient(app)
     yield client
+
+    # Clean up
     app.dependency_overrides.clear()
 
 
@@ -90,7 +127,7 @@ class TestGetShopList:
     def test_get_shop_list_db_error(self, test_client, mock_shop_dao):
         """Test shop list with database error."""
         # Arrange
-        mock_shop_dao.get_all.side_effect = DBException("Database error")
+        mock_shop_dao.get_all.side_effect = DatabaseError("SELECT *", None, Exception("Database error"))
 
         # Act
         response = test_client.get("/api/v1/shop")
@@ -138,7 +175,7 @@ class TestGetShopById:
     def test_get_shop_by_id_db_error(self, test_client, mock_shop_dao):
         """Test shop retrieval with database error."""
         # Arrange
-        mock_shop_dao.get_by_id.side_effect = DBException("Database error")
+        mock_shop_dao.get_by_id.side_effect = DatabaseError("SELECT *", None, Exception("Database error"))
 
         # Act
         response = test_client.get("/api/v1/shop/42")
@@ -179,7 +216,7 @@ class TestCreateShop:
     def test_create_shop_category_not_found(self, test_client, mock_shop_dao):
         """Test shop creation with invalid category ID."""
         # Arrange
-        mock_shop_dao.create.side_effect = RelationshipNotFoundException("Category not found")
+        mock_shop_dao.create.side_effect = IntegrityError("INSERT INTO", None, Exception("Category not found"))
 
         payload = {
             "name": "New Shop",
@@ -198,7 +235,7 @@ class TestCreateShop:
     def test_create_shop_db_error(self, test_client, mock_shop_dao):
         """Test shop creation with database error."""
         # Arrange
-        mock_shop_dao.create.side_effect = DBException("Database error")
+        mock_shop_dao.create.side_effect = DatabaseError("SELECT *", None, Exception("Database error"))
 
         payload = {
             "name": "New Shop",
@@ -246,7 +283,7 @@ class TestUpdateShop:
     def test_update_shop_not_found(self, test_client, mock_shop_dao):
         """Test updating non-existent shop."""
         # Arrange
-        mock_shop_dao.update.side_effect = NotFoundException("Shop not found")
+        mock_shop_dao.update.side_effect = NoResultFound("Shop not found")
 
         payload = {
             "name": "Updated Shop",
@@ -263,7 +300,7 @@ class TestUpdateShop:
     def test_update_shop_category_not_found(self, test_client, mock_shop_dao):
         """Test shop update with invalid category ID."""
         # Arrange
-        mock_shop_dao.update.side_effect = RelationshipNotFoundException("Category not found")
+        mock_shop_dao.update.side_effect = IntegrityError("INSERT INTO", None, Exception("Category not found"))
 
         payload = {
             "name": "Updated Shop",
@@ -299,7 +336,7 @@ class TestDeleteShop:
     def test_delete_shop_not_found(self, test_client, mock_shop_dao):
         """Test deleting non-existent shop."""
         # Arrange
-        mock_shop_dao.delete.side_effect = NotFoundException("Shop not found")
+        mock_shop_dao.delete.side_effect = NoResultFound("Shop not found")
 
         # Act
         response = test_client.delete("/api/v1/shop/999")
@@ -310,7 +347,7 @@ class TestDeleteShop:
     def test_delete_shop_db_error(self, test_client, mock_shop_dao):
         """Test shop deletion with database error."""
         # Arrange
-        mock_shop_dao.delete.side_effect = DBException("Database error")
+        mock_shop_dao.delete.side_effect = DatabaseError("SELECT *", None, Exception("Database error"))
 
         # Act
         response = test_client.delete("/api/v1/shop/42")

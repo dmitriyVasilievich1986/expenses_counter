@@ -5,14 +5,14 @@ It uses FastAPI's TestClient and mocks the TransactionDAO dependency.
 """
 
 from datetime import datetime
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy.exc import DatabaseError, IntegrityError, NoResultFound
 
 from expenses_counter.modules.app import get_app
-from expenses_counter.modules.middlewares.dependencies import get_transaction
-from expenses_counter.services.daos.base.exceptions import DBException, NotFoundException, RelationshipNotFoundException
+from expenses_counter.modules.middlewares.dependencies.get_db import get_db
 
 
 @pytest.fixture
@@ -20,7 +20,7 @@ def mock_transaction_dao():
     """Create a mock TransactionDAO for testing.
 
     Returns:
-        AsyncMock: Mocked TransactionDAO instance.
+        AsyncMock: Mocked TransactionDAO instance that works as a context manager.
 
     """
     dao = AsyncMock()
@@ -29,15 +29,49 @@ def mock_transaction_dao():
     dao.create = AsyncMock()
     dao.update = AsyncMock()
     dao.delete = AsyncMock()
+
+    # Make it work as a context manager
+    dao.__aenter__ = AsyncMock(return_value=dao)
+    dao.__aexit__ = AsyncMock(return_value=None)
+
     return dao
 
 
 @pytest.fixture
-def test_client(mock_transaction_dao, test_config):
+def mock_db_client():
+    """Create a mock AsyncDatabaseClient for testing.
+
+    Returns:
+        MagicMock: Mocked AsyncDatabaseClient instance.
+
+    """
+    return MagicMock()
+
+
+@pytest.fixture
+def mock_transaction_dao_class(mock_transaction_dao):
+    """Patch TransactionDAO class to return our mock instance.
+
+    Args:
+        mock_transaction_dao: Mocked TransactionDAO instance.
+
+    Yields:
+        Mock: Patched TransactionDAO class.
+
+    """
+    with patch(
+        "expenses_counter.modules.routers.api.v1.transaction.TransactionDAO", return_value=mock_transaction_dao
+    ) as mock_class:
+        yield mock_class
+
+
+@pytest.fixture
+def test_client(mock_transaction_dao_class, mock_db_client, test_config):  # noqa: ARG001
     """Create a test client with mocked dependencies.
 
     Args:
-        mock_transaction_dao: Mocked TransactionDAO fixture.
+        mock_transaction_dao_class: Patched TransactionDAO class fixture.
+        mock_db_client: Mocked AsyncDatabaseClient fixture.
         test_config: Test configuration fixture.
 
     Returns:
@@ -45,9 +79,14 @@ def test_client(mock_transaction_dao, test_config):
 
     """
     app = get_app(test_config)
-    app.dependency_overrides[get_transaction] = lambda: mock_transaction_dao
+
+    # Override the database dependency to return mock db client
+    app.dependency_overrides[get_db] = lambda: mock_db_client
+
     client = TestClient(app)
     yield client
+
+    # Clean up
     app.dependency_overrides.clear()
 
 
@@ -112,7 +151,7 @@ class TestGetTransactionsByDateRange:
     def test_get_transactions_by_date_range_db_error(self, test_client, mock_transaction_dao):
         """Test transactions by date range with database error."""
         # Arrange
-        mock_transaction_dao.get_all.side_effect = DBException("Database error")
+        mock_transaction_dao.get_all.side_effect = DatabaseError("SELECT *", None, Exception("Database error"))
 
         payload = {
             "date": "2024-01-15",
@@ -182,7 +221,7 @@ class TestGetTransactionList:
     def test_get_transaction_list_db_error(self, test_client, mock_transaction_dao):
         """Test transaction list with database error."""
         # Arrange
-        mock_transaction_dao.get_all.side_effect = DBException("Database error")
+        mock_transaction_dao.get_all.side_effect = DatabaseError("SELECT *", None, Exception("Database error"))
 
         # Act
         response = test_client.get("/api/v1/transaction")
@@ -246,7 +285,7 @@ class TestGetTransactionById:
     def test_get_transaction_by_id_db_error(self, test_client, mock_transaction_dao):
         """Test transaction retrieval with database error."""
         # Arrange
-        mock_transaction_dao.get_by_id.side_effect = DBException("Database error")
+        mock_transaction_dao.get_by_id.side_effect = DatabaseError("SELECT *", None, Exception("Database error"))
 
         # Act
         response = test_client.get("/api/v1/transaction/42")
@@ -304,7 +343,9 @@ class TestCreateTransaction:
     def test_create_transaction_relationship_not_found(self, test_client, mock_transaction_dao):
         """Test transaction creation with invalid product or address ID."""
         # Arrange
-        mock_transaction_dao.create.side_effect = RelationshipNotFoundException("Product or Address not found")
+        mock_transaction_dao.create.side_effect = IntegrityError(
+            "INSERT INTO", None, Exception("Product or Address not found")
+        )
 
         payload = {
             "date": "2024-01-15",
@@ -324,7 +365,7 @@ class TestCreateTransaction:
     def test_create_transaction_db_error(self, test_client, mock_transaction_dao):
         """Test transaction creation with database error."""
         # Arrange
-        mock_transaction_dao.create.side_effect = DBException("Database error")
+        mock_transaction_dao.create.side_effect = DatabaseError("SELECT *", None, Exception("Database error"))
 
         payload = {
             "date": "2024-01-15",
@@ -392,7 +433,7 @@ class TestUpdateTransaction:
     def test_update_transaction_not_found(self, test_client, mock_transaction_dao):
         """Test updating non-existent transaction."""
         # Arrange
-        mock_transaction_dao.update.side_effect = NotFoundException("Transaction not found")
+        mock_transaction_dao.update.side_effect = NoResultFound("Transaction not found")
 
         payload = {
             "date": "2024-01-16",
@@ -411,7 +452,9 @@ class TestUpdateTransaction:
     def test_update_transaction_relationship_not_found(self, test_client, mock_transaction_dao):
         """Test transaction update with invalid product or address ID."""
         # Arrange
-        mock_transaction_dao.update.side_effect = RelationshipNotFoundException("Product or Address not found")
+        mock_transaction_dao.update.side_effect = IntegrityError(
+            "INSERT INTO", None, Exception("Product or Address not found")
+        )
 
         payload = {
             "date": "2024-01-16",
@@ -448,7 +491,7 @@ class TestDeleteTransaction:
     def test_delete_transaction_not_found(self, test_client, mock_transaction_dao):
         """Test deleting non-existent transaction."""
         # Arrange
-        mock_transaction_dao.delete.side_effect = NotFoundException("Transaction not found")
+        mock_transaction_dao.delete.side_effect = NoResultFound("Transaction not found")
 
         # Act
         response = test_client.delete("/api/v1/transaction/999")
@@ -459,7 +502,7 @@ class TestDeleteTransaction:
     def test_delete_transaction_db_error(self, test_client, mock_transaction_dao):
         """Test transaction deletion with database error."""
         # Arrange
-        mock_transaction_dao.delete.side_effect = DBException("Database error")
+        mock_transaction_dao.delete.side_effect = DatabaseError("SELECT *", None, Exception("Database error"))
 
         # Act
         response = test_client.delete("/api/v1/transaction/42")
