@@ -188,7 +188,6 @@ addopts = [
     "--cov=src/expenses_counter",
     "--cov-report=term-missing",
     "--cov-report=html",
-    "--cov-report=xml",
 ]
 markers = [
     "asyncio: mark test as an async test",

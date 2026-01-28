@@ -35,16 +35,6 @@ jobs:
         working-directory: ./backend
         run: uv run pytest
 
-      - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v5
-        with:
-          files: ./backend/coverage.xml
-          flags: backend
-          name: backend-coverage
-          fail_ci_if_error: false
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
       - name: Upload coverage HTML report
         uses: actions/upload-artifact@v4
         if: always()
@@ -52,12 +42,3 @@ jobs:
           name: coverage-report
           path: backend/htmlcov/
           retention-days: 7
-
-      - name: Comment coverage on PR
-        uses: py-cov-action/python-coverage-comment-action@v3
-        if: github.event_name == 'pull_request'
-        with:
-          GITHUB_TOKEN: ${{ github.token }}
-          COVERAGE_PATH: backend/coverage.xml
-          MINIMUM_GREEN: 80
-          MINIMUM_ORANGE: 60
