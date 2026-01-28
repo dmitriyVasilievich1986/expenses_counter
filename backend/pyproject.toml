@@ -41,6 +41,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "httpx>=0.28.1",
     "ipykernel>=7.1.0",
     "pandas>=2.3.3",
     "psycopg2-binary>=2.9.11",
@@ -193,6 +194,7 @@ markers = [
     "asyncio: mark test as an async test",
     "slow: mark test as slow running",
     "integration: mark test as integration test",
+    "api: mark test as an API endpoint test",
 ]
 
 [tool.coverage.run]
