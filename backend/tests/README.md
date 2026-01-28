@@ -221,6 +221,34 @@ The test database is created fresh for each test session. If you see these error
 - Check that cleanup is running (the fixture should remove the test DB file)
 - Manually delete any orphaned test DB files in `/tmp`
 
+## Continuous Integration
+
+Tests are automatically run on every pull request to `master` and `development` branches via GitHub Actions.
+
+### Workflow: `test-backend`
+
+The workflow (`.github/workflows/test_backend.yml`) performs the following:
+
+1. **Sets up Python 3.13** with uv package manager
+2. **Installs dependencies** using `uv sync`
+3. **Runs tests with coverage** using `uv run pytest`
+4. **Uploads coverage reports** to Codecov (optional, requires CODECOV_TOKEN secret)
+5. **Archives HTML coverage report** as a workflow artifact (available for 7 days)
+6. **Comments coverage summary** on the pull request
+
+The workflow only runs when backend files or the workflow file itself are modified, making CI more efficient.
+
+### Setting Up Codecov (Optional)
+
+To enable Codecov integration:
+
+1. Sign up at [codecov.io](https://codecov.io) and link your repository
+2. Get your Codecov token from the repository settings
+3. Add the token as a GitHub secret named `CODECOV_TOKEN`
+4. Coverage reports will automatically be uploaded and tracked
+
+If you don't set up Codecov, the workflow will still run successfully and generate coverage artifacts.
+
 ## Best Practices
 
 1. **Use `db_session` by default**: It provides automatic cleanup and test isolation.
