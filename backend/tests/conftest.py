@@ -162,6 +162,7 @@ async def test_database_with_migrations(
 @pytest_asyncio.fixture(scope="session")
 async def async_db_client(
     test_config: AppConfig,
+    test_database_with_migrations: Path,  # noqa: ARG001
 ) -> AsyncGenerator[AsyncDatabaseClient, None]:
     """Create and configure AsyncDatabaseClient for testing.
 
