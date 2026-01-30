@@ -328,7 +328,7 @@ class TestGetCategoryById:
 
         """
         # Arrange
-        mock_category_dao.get_by_id.return_value = None
+        mock_category_dao.get_by_id.side_effect = NoResultFound("Category not found")
 
         # Act
         response = test_client.get("/api/v1/category/999")

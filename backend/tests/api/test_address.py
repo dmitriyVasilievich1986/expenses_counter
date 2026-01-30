@@ -169,7 +169,7 @@ class TestGetAddressById:
     def test_get_address_by_id_not_found(self, test_client, mock_address_dao):
         """Test retrieval of non-existent address."""
         # Arrange
-        mock_address_dao.get_by_id.return_value = None
+        mock_address_dao.get_by_id.side_effect = NoResultFound("Address not found")
 
         # Act
         response = test_client.get("/api/v1/address/999")
