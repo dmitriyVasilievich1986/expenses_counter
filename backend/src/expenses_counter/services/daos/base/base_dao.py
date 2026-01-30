@@ -225,34 +225,40 @@ class BaseDAO[DatabaseModel: Base](ABC):
         return await self.get_by_id(obj.id)
 
     @error_handler
-    async def update(self, pk: int, **kwargs: Any) -> DatabaseModel:
+    async def update(self, pk: int, pk_column_name: str | None = None, **kwargs: Any) -> DatabaseModel:
         """Update an existing record by its primary key.
 
         Args:
             pk: The primary key (ID) of the record to update.
+            pk_column_name: The name of the primary key column to use.
             **kwargs: Field values to update.
 
         Returns:
             The updated database model instance with all relationships loaded.
 
         """
-        await self.session.execute(update(self.database_model).where(self.database_model.id == pk).values(**kwargs))
+        pk_column_name = pk_column_name or self.pk_column_name
+        await self.session.execute(
+            update(self.database_model).where(getattr(self.database_model, pk_column_name) == pk).values(**kwargs)
+        )
         await self.session.commit()
 
         return await self.get_by_id(pk)
 
     @error_handler
-    async def delete(self, pk: int) -> bool:
+    async def delete(self, pk: int, pk_column_name: str | None = None) -> bool:
         """Delete a record by its primary key.
 
         Args:
             pk: The primary key (ID) of the record to delete.
+            pk_column_name: The name of the primary key column to use.
 
         Returns:
             True if the deletion was successful.
 
         """
-        instance = await self.get_by_id(pk)
+        pk_column_name = pk_column_name or self.pk_column_name
+        instance = await self.get_by_id(pk, pk_column_name)
         await self.session.delete(instance)
         await self.session.commit()
         return True
