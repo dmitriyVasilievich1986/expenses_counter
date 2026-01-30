@@ -109,7 +109,7 @@ class BaseDAO[DatabaseModel: Base](ABC):
             The DAO instance with an active session.
 
         """
-        self._session = self.database_client.session_factory()
+        self._session = await self.database_client.get_session()
         return self
 
     async def __aexit__(
