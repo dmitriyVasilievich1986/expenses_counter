@@ -104,14 +104,11 @@ async def get_address_by_id(
     """
     try:
         async with AddressDAO(database_client=db) as address_dao:
-            address = await address_dao.get_by_id(address_id)
+            return await address_dao.get_by_id(address_id)
+    except NoResultFound as e:
+        raise HTTPException(status_code=404, detail="Address not found") from e
     except DatabaseError as e:
         raise HTTPException(status_code=500, detail="Something went wrong while retrieving the address") from e
-
-    if address is None:
-        raise HTTPException(status_code=404, detail="Address not found")
-
-    return address
 
 
 @router.post("", response_model=GetSingleAddressResponse)
@@ -199,9 +196,7 @@ async def delete_address(
     """
     try:
         async with AddressDAO(database_client=db) as address_dao:
-            deleted = await address_dao.delete(address_id)
-        if not deleted:
-            raise HTTPException(status_code=404, detail="Address not found")
+            await address_dao.delete(address_id)
     except NoResultFound as e:
         raise HTTPException(status_code=404, detail="Address not found") from e
     except DatabaseError as e:

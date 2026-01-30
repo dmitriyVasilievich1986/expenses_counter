@@ -211,11 +211,10 @@ async def get_category_by_id(
     try:
         async with CategoryDAO(database_client=db) as category_dao:
             category = await category_dao.get_by_id(category_id)
+    except NoResultFound as e:
+        raise HTTPException(status_code=404, detail="Category not found") from e
     except DatabaseError as e:
         raise HTTPException(status_code=500, detail="Something went wrong while retrieving the category") from e
-
-    if category is None:
-        raise HTTPException(status_code=404, detail="Category not found")
 
     return GetSingleCategoryResponse.model_validate(category)
 

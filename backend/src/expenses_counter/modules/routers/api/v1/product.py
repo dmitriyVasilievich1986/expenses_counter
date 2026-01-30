@@ -104,13 +104,11 @@ async def get_product_by_id(
     """
     try:
         async with ProductDAO(database_client=db) as product_dao:
-            product = await product_dao.get_by_id(product_id)
+            return await product_dao.get_by_id(product_id)
     except NoResultFound as e:
         raise HTTPException(status_code=404, detail="Product not found") from e
     except DatabaseError as e:
         raise HTTPException(status_code=500, detail="Something went wrong while retrieving the product") from e
-
-    return product
 
 
 @router.post("", response_model=GetSingleProductResponse)
