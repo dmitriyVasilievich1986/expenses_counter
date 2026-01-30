@@ -64,7 +64,7 @@ class CategoryDAO(BaseDAO[Category]):
             stmt = stmt.options(*map(selectinload, self.select_in_options_single))
 
         result = await self.session.execute(stmt)
-        return result.scalar()
+        return result.scalar_one()
 
     @BaseDAO.error_handler
     async def get_all_by_parent(
