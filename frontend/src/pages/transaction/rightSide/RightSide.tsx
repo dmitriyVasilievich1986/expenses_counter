@@ -18,8 +18,16 @@ export function RightSide() {
   );
 
   return (
-    <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
-      <Box sx={{ width: '90%' }}>
+    <Box
+      sx={{
+        mt: 2,
+        display: 'flex',
+        justifyContent: 'center',
+        overflowY: 'auto',
+        maxHeight: '90vh',
+      }}
+    >
+      <Box sx={{ width: '90%', height: 'fit-content' }}>
         {Object.keys(transactionsByAddress).map((addressId) => (
           <TransactionsStack
             key={addressId}
@@ -27,6 +35,7 @@ export function RightSide() {
             onClick={() => navigate(`/transaction/${addressId}`)}
           />
         ))}
+        <Box sx={{ height: '1rem' }} />
       </Box>
     </Box>
   );
