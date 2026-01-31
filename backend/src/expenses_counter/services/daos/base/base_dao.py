@@ -204,8 +204,8 @@ class BaseDAO[DatabaseModel: Base](ABC):
         if filters:
             stmt = stmt.where(*filters)
 
-        result = await self.session.execute(stmt)
         total = await self.get_total(filters)
+        result = await self.session.execute(stmt)
         return result.scalars().all(), total
 
     @error_handler
