@@ -1,7 +1,9 @@
-import Autocomplete from '@mui/material/Autocomplete';
+import KeyboardDoubleArrowRightIcon from '@mui/icons-material/KeyboardDoubleArrowRight';
+import Autocomplete, { type AutocompleteRenderInputParams } from '@mui/material/Autocomplete';
 import CircularProgress from '@mui/material/CircularProgress';
 import TextField from '@mui/material/TextField';
 import { useEffect } from 'react';
+import { useNavigate } from 'react-router';
 
 import { useMainStore } from '@store/main';
 
@@ -12,9 +14,11 @@ export function AsyncInput<I>(props: {
   getItems: () => Promise<I[]>;
   label: string;
   nameColumn?: keyof I;
+  link?: string;
 }) {
   const nameColumn = (props.nameColumn ?? 'name') as keyof I;
   const isLoading = useMainStore((state) => state.isLoading);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (props.value === null) {
@@ -28,6 +32,25 @@ export function AsyncInput<I>(props: {
 
   const handleOpen = async () => {
     await props.getItems();
+  };
+
+  const EndAdornment = (params: AutocompleteRenderInputParams) => {
+    if (isLoading) {
+      return <CircularProgress color="inherit" size={20} />;
+    }
+    return (
+      <>
+        {props.link && (
+          <KeyboardDoubleArrowRightIcon
+            onClick={() =>
+              navigate(`${props.link}/${(props.value as unknown as { id: number }).id}`)
+            }
+            sx={{ cursor: 'pointer' }}
+          />
+        )}
+        {params.InputProps.endAdornment}
+      </>
+    );
   };
 
   if (props.value === null) return null;
@@ -47,12 +70,7 @@ export function AsyncInput<I>(props: {
           slotProps={{
             input: {
               ...params.InputProps,
-              endAdornment: (
-                <>
-                  {isLoading ? <CircularProgress color="inherit" size={20} /> : null}
-                  {params.InputProps.endAdornment}
-                </>
-              ),
+              endAdornment: <EndAdornment {...params} />,
             },
           }}
         />
