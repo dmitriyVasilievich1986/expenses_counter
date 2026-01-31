@@ -22,7 +22,7 @@ export function TransactionsStack(props: { items: TransactionType[]; onClick: ()
       </Divider>
       <Grid container spacing={2}>
         {props.items.map((item) => (
-          <Grid size={{ md: 3, lg: 6 }} key={item.id}>
+          <Grid size={{ md: 6, lg: 12, sm: 12 }} key={item.id}>
             <Card
               title={item.product.name}
               isSelected={currentTransaction?.id === item.id}
