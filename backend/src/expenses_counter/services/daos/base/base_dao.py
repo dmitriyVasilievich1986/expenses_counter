@@ -14,6 +14,7 @@ Type Variables:
 
 __all__ = ("BaseDAO",)
 
+import socket
 from abc import ABC
 from functools import wraps
 from types import TracebackType
@@ -21,6 +22,7 @@ from typing import Any, Callable, Literal, Self, TypeVar
 
 from loguru import logger
 from sqlalchemy import asc, desc, func, select, update
+from sqlalchemy.exc import DatabaseError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import load_only, selectinload
 from sqlalchemy.orm.attributes import InstrumentedAttribute
@@ -80,9 +82,11 @@ class BaseDAO[DatabaseModel: Base](ABC):
         async def wrapper(self: "BaseDAO", *args: Any, **kwargs: Any) -> R:
             try:
                 return await func(self, *args, **kwargs)
-            except Exception as e:
-                logger.error(f"Error in {func.__name__}", exc_info=True)
-                raise e
+            except (ConnectionRefusedError, socket.gaierror) as e:
+                logger.exception("Database connection refused")
+                raise DatabaseError("Database connection refused", None, e) from e
+            except DatabaseError:
+                logger.exception("Database error")
 
         return wrapper
 
