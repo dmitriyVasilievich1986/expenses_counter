@@ -2,8 +2,6 @@
 
 __all__ = ("AddressDAO",)
 
-from sqlalchemy import select
-from sqlalchemy.orm import selectinload
 
 from expenses_counter.services.daos.base import BaseDAO
 from expenses_counter.services.database.models.address import Address
@@ -21,6 +19,7 @@ class AddressDAO(BaseDAO[Address]):
     get_all_columns = (Address.id, Address.local_name, Address.address)
     select_in_options_single = (Address.shop,)
 
+    @BaseDAO.error_handler
     async def get_by_address(self, address: str) -> Address:
         """Get address by address string.
 
@@ -34,11 +33,4 @@ class AddressDAO(BaseDAO[Address]):
             ValueError: If the address is not found in the database
 
         """
-        stmt = select(Address).where(Address.address == address)
-
-        if self.select_in_options_single:
-            stmt = stmt.options(*map(selectinload, self.select_in_options_single))
-
-        async with self.database_client.session_factory() as session:
-            result = await session.execute(stmt)
-            return result.scalar()
+        return await self.get_by_id(address, pk_column_name="address")

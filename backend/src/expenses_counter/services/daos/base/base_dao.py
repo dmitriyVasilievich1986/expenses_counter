@@ -14,12 +14,15 @@ Type Variables:
 
 __all__ = ("BaseDAO",)
 
+import socket
 from abc import ABC
-from typing import Any, Generic, Literal, Type, TypeVar
+from functools import wraps
+from types import TracebackType
+from typing import Any, Callable, Literal, Self, TypeVar
 
 from loguru import logger
-from pydantic import BaseModel
 from sqlalchemy import asc, desc, func, select, update
+from sqlalchemy.exc import DatabaseError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import load_only, selectinload
 from sqlalchemy.orm.attributes import InstrumentedAttribute
@@ -28,107 +31,165 @@ from sqlalchemy.sql import ColumnElement
 from expenses_counter.services.database import AsyncDatabaseClient
 from expenses_counter.services.database.models.base import Base
 
-from .error_handler import error_handler
-
-B = TypeVar("B", bound=Type[Base])
-R = TypeVar("R", bound=Type[BaseModel])
+R = TypeVar("R")
 
 
-class BaseDAO(ABC, Generic[B]):
+class BaseDAO[DatabaseModel: Base](ABC):
     """Abstract base class for Data Access Objects.
 
-    This class provides common CRUD (Create, Read, Update, Delete) operations
-    for database models. It handles database sessions, error handling, and
-    provides both raw and decorated methods for database operations.
+    This class provides a generic interface for CRUD operations on database models,
+    with support for async context management, error handling, and flexible querying.
 
     Attributes:
         database_model: The SQLAlchemy model class this DAO operates on.
-        database_client: The database client instance for managing connections.
-
-    Type Parameters:
-        B: The SQLAlchemy Base model type this DAO operates on.
+        get_all_columns: Optional tuple of columns to load when fetching all records.
+        select_in_options_single: Optional tuple of relationships to eager load for single record queries.
+        select_in_options_all: Optional tuple of relationships to eager load for multiple record queries.
 
     """
 
-    database_model: type[B]
+    pk_column_name: str = "id"
+    database_model: type[DatabaseModel]
     get_all_columns: tuple[InstrumentedAttribute, ...] | None = None
     select_in_options_single: tuple[InstrumentedAttribute, ...] | None = None
     select_in_options_all: tuple[InstrumentedAttribute, ...] | None = None
 
-    def __init__(self, database_client: AsyncDatabaseClient, **_: Any) -> None:
-        """Initialize the BaseDAO with a database client.
+    def __init__(self, database_client: AsyncDatabaseClient, session: AsyncSession | None = None, **_: Any) -> None:
+        """Initialize the DAO with a database client and optional session.
 
         Args:
-            database_client: The database client used for database operations.
-            **_: Additional keyword arguments (reserved for subclass use).
+            database_client: The async database client for creating sessions.
+            session: Optional pre-existing async session to use.
+            **_: Additional keyword arguments (ignored).
 
         """
         self.database_client = database_client
+        self._session = session
 
-    async def _get_by_id_raw(self, session: AsyncSession, pk: int) -> B:
-        """Retrieve a single database record by its primary key.
-
-        This is a raw method that works within an existing session context.
+    @staticmethod
+    def error_handler(func: Callable[..., R]) -> Callable[..., R]:
+        """Decorator for handling and logging errors in DAO methods.
 
         Args:
-            session: The active database session.
-            pk: The primary key of the record to retrieve.
+            func: The async function to wrap with error handling.
+
+        Returns:
+            The wrapped function with error handling and logging.
+
+        """
+
+        @wraps(func)
+        async def wrapper(self: "BaseDAO", *args: Any, **kwargs: Any) -> R:
+            try:
+                return await func(self, *args, **kwargs)
+            except (ConnectionRefusedError, socket.gaierror) as e:
+                logger.exception("Database connection refused")
+                raise DatabaseError("Database connection refused", None, e) from e
+            except DatabaseError:
+                logger.exception("Database error")
+
+        return wrapper
+
+    @property
+    def session(self) -> AsyncSession:
+        """Get the current async database session.
+
+        Returns:
+            The active AsyncSession instance.
+
+        Raises:
+            ValueError: If no session has been set.
+
+        """
+        if self._session is None:
+            raise ValueError("Session is not set")
+
+        return self._session
+
+    async def __aenter__(self) -> Self:
+        """Enter the async context manager, creating a new database session.
+
+        Returns:
+            The DAO instance with an active session.
+
+        """
+        self._session = self.database_client.session_factory()
+        return self
+
+    async def __aexit__(
+        self, exc_type: type[BaseException] | None, exc_value: BaseException | None, traceback: TracebackType | None
+    ) -> None:
+        """Exit the async context manager, closing the database session.
+
+        Args:
+            exc_type: The type of exception raised, if any.
+            exc_value: The exception instance raised, if any.
+            traceback: The traceback object, if any.
+
+        """
+        await self.session.aclose()
+
+    @error_handler
+    async def get_by_id(self, pk: int, pk_column_name: str | None = None) -> DatabaseModel:
+        """Retrieve a single record by its primary key.
+
+        Args:
+            pk: The primary key (ID) of the record to retrieve.
+            pk_column_name: The name of the primary key column to use.
 
         Returns:
             The database model instance, or None if not found.
 
         """
-        stmt = select(self.database_model).where(self.database_model.id == pk)
+        pk_column_name = pk_column_name or self.pk_column_name
+        stmt = select(self.database_model).where(getattr(self.database_model, pk_column_name) == pk)
 
         if self.select_in_options_single:
             stmt = stmt.options(*map(selectinload, self.select_in_options_single))
 
-        result = await session.execute(stmt)
-        return result.scalar()
+        result = await self.session.execute(stmt)
+        return result.scalar_one()
 
     @error_handler
-    async def get_by_id(self, pk: int) -> B:
-        """Retrieve a single database record by its primary key.
-
-        This method manages its own session and includes error handling.
+    async def get_total(self, filters: list[ColumnElement[bool]] | None) -> int:
+        """Get the total count of records matching the given filters.
 
         Args:
-            pk: The primary key of the record to retrieve.
+            filters: Optional list of SQLAlchemy filter expressions to apply.
 
         Returns:
-            The database model instance.
-
-        Raises:
-            NotFoundException: If the record is not found.
-            DBException: For general database errors.
+            The total count of matching records.
 
         """
-        async with self.database_client.session_factory() as session:
-            return await self._get_by_id_raw(session, pk)
+        stmt = select(func.count()).select_from(self.database_model)
+        if filters:
+            stmt = stmt.where(*filters)
 
-    async def _get_all_raw(
+        result = await self.session.execute(stmt)
+        return result.scalar_one()
+
+    @error_handler
+    async def get_all(
         self,
-        session: AsyncSession,
-        limit: int | None,
-        offset: int | None,
-        sort_by: str,
-        sort_order: Literal["asc", "desc"],
-        filters: list[ColumnElement[bool]] | None,
-    ) -> list[B]:
-        """Retrieve multiple database records with pagination, sorting, and filtering.
-
-        This is a raw method that works within an existing session context.
+        limit: int | None = 100,
+        offset: int | None = 0,
+        sort_by: str = "id",
+        sort_order: Literal["asc", "desc"] = "asc",
+        filters: list[ColumnElement[bool]] | None = None,
+    ) -> tuple[list[DatabaseModel], int]:
+        """Retrieve all records with pagination, sorting, and filtering.
 
         Args:
-            session: The active database session.
-            limit: Maximum number of records to return.
-            offset: Number of records to skip for pagination.
-            sort_by: The column name to sort by.
-            sort_order: Sort direction, either "asc" or "desc".
-            filters: Optional list of SQLAlchemy filter expressions.
+            limit: Maximum number of records to return (default: 100).
+            offset: Number of records to skip (default: 0).
+            sort_by: Column name to sort by (default: "id").
+            sort_order: Sort direction, either "asc" or "desc" (default: "asc").
+            filters: Optional list of SQLAlchemy filter expressions to apply.
 
         Returns:
-            A list of database model instances.
+            A tuple containing:
+                - List of database model instances matching the criteria.
+                - Total count of records matching the filters (ignoring pagination).
 
         """
         order_func = asc if sort_order == "asc" else desc
@@ -147,186 +208,61 @@ class BaseDAO(ABC, Generic[B]):
         if filters:
             stmt = stmt.where(*filters)
 
-        result = await session.execute(stmt)
-        return result.scalars().all()
-
-    async def _get_all_count_raw(self, session: AsyncSession, filters: list[ColumnElement[bool]] | None) -> int:
-        """Count the total number of records matching the given filters.
-
-        This is a raw method that works within an existing session context.
-
-        Args:
-            session: The active database session.
-            filters: Optional list of SQLAlchemy filter expressions.
-
-        Returns:
-            The total count of matching records.
-
-        """
-        stmt = select(func.count()).select_from(self.database_model)
-        if filters:
-            stmt = stmt.where(*filters)
-
-        result = await session.execute(stmt)
-        return result.scalar_one()
+        total = await self.get_total(filters)
+        result = await self.session.execute(stmt)
+        return result.scalars().all(), total
 
     @error_handler
-    async def get_all(
-        self,
-        limit: int | None = 100,
-        offset: int | None = 0,
-        sort_by: str = "id",
-        sort_order: Literal["asc", "desc"] = "asc",
-        filters: list[ColumnElement[bool]] | None = None,
-    ) -> tuple[list[B], int]:
-        """Retrieve multiple database records with pagination, sorting, and filtering.
-
-        This method manages its own session and includes error handling.
+    async def create(self, **kwargs) -> DatabaseModel:
+        """Create a new record in the database.
 
         Args:
-            limit: Maximum number of records to return. Defaults to 100.
-            offset: Number of records to skip for pagination. Defaults to 0.
-            sort_by: The column name to sort by. Defaults to "id".
-            sort_order: Sort direction, either "asc" or "desc". Defaults to "asc".
-            filters: Optional list of SQLAlchemy filter expressions. Defaults to None.
-
-        Returns:
-            A tuple containing:
-                - A list of database model instances
-                - The total count of matching records (before pagination)
-
-        Raises:
-            DBException: For general database errors.
-
-        """
-        async with self.database_client.session_factory() as session:
-            payload = await self._get_all_raw(session, limit, offset, sort_by, sort_order, filters)
-            total = await self._get_all_count_raw(session, filters)
-            return payload, total
-
-    async def _create_raw(self, session: AsyncSession, **kwargs) -> B:
-        """Create a new database record.
-
-        This is a raw method that works within an existing session context.
-
-        Args:
-            session: The active database session.
             **kwargs: Field values for the new record.
 
         Returns:
-            The newly created database model instance.
+            The created database model instance with all relationships loaded.
 
         """
         obj = self.database_model(**kwargs)
-        session.add(obj)
-        await session.commit()
-        return await self._get_by_id_raw(session, obj.id)
+        self.session.add(obj)
+        await self.session.commit()
+        return await self.get_by_id(obj.id)
 
     @error_handler
-    async def create(self, **kwargs) -> B:
-        """Create a new database record.
-
-        This method manages its own session and includes error handling.
+    async def update(self, pk: int, pk_column_name: str | None = None, **kwargs: Any) -> DatabaseModel:
+        """Update an existing record by its primary key.
 
         Args:
-            **kwargs: Field values for the new record.
-
-        Returns:
-            The newly created database model instance.
-
-        Raises:
-            RelationshipNotFoundException: When a foreign key constraint is violated.
-            DBException: For general database errors.
-
-        """
-        async with self.database_client.session_factory() as session:
-            payload = await self._create_raw(session, **kwargs)
-            logger.debug(f"Instance created: {payload.id}")
-            return payload
-
-    async def _update_raw(self, session: AsyncSession, pk: int, **kwargs: Any) -> B:
-        """Update an existing database record.
-
-        This is a raw method that works within an existing session context.
-
-        Args:
-            session: The active database session.
-            pk: The primary key of the record to update.
+            pk: The primary key (ID) of the record to update.
+            pk_column_name: The name of the primary key column to use.
             **kwargs: Field values to update.
 
         Returns:
-            The updated database model instance.
+            The updated database model instance with all relationships loaded.
 
         """
-        await session.execute(update(self.database_model).where(self.database_model.id == pk).values(**kwargs))
-        await session.commit()
+        pk_column_name = pk_column_name or self.pk_column_name
+        await self.session.execute(
+            update(self.database_model).where(getattr(self.database_model, pk_column_name) == pk).values(**kwargs)
+        )
+        await self.session.commit()
 
-        return await self._get_by_id_raw(session, pk)
+        return await self.get_by_id(pk)
 
     @error_handler
-    async def update(self, pk: int, **kwargs: Any) -> B:
-        """Update an existing database record.
-
-        This method manages its own session and includes error handling.
+    async def delete(self, pk: int, pk_column_name: str | None = None) -> bool:
+        """Delete a record by its primary key.
 
         Args:
-            pk: The primary key of the record to update.
-            **kwargs: Field values to update.
+            pk: The primary key (ID) of the record to delete.
+            pk_column_name: The name of the primary key column to use.
 
         Returns:
-            The updated database model instance.
-
-        Raises:
-            NotFoundException: If the record is not found.
-            RelationshipNotFoundException: When a foreign key constraint is violated.
-            DBException: For general database errors.
+            True if the deletion was successful.
 
         """
-        async with self.database_client.session_factory() as session:
-            payload = await self._update_raw(session, pk, **kwargs)
-            logger.debug(f"Instance updated: {payload.id}")
-            return payload
-
-    async def _delete_raw(self, session: AsyncSession, pk: int) -> bool:
-        """Delete a database record by its primary key.
-
-        This is a raw method that works within an existing session context.
-
-        Args:
-            session: The active database session.
-            pk: The primary key of the record to delete.
-
-        Returns:
-            True if the record was deleted, False if not found.
-
-        """
-        if (instance := await self._get_by_id_raw(session, pk)) is None:
-            logger.debug(f"Instance not found: {pk}")
-            return False
-
-        await session.delete(instance)
-        await session.commit()
-        logger.debug(f"Instance deleted: {pk}")
+        pk_column_name = pk_column_name or self.pk_column_name
+        instance = await self.get_by_id(pk, pk_column_name)
+        await self.session.delete(instance)
+        await self.session.commit()
         return True
-
-    @error_handler
-    async def delete(self, pk: int) -> bool:
-        """Delete a database record by its primary key.
-
-        This method manages its own session and includes error handling.
-
-        Args:
-            pk: The primary key of the record to delete.
-
-        Returns:
-            True if the record was deleted, False if not found.
-
-        Raises:
-            RelationshipNotFoundException: When foreign key constraints prevent deletion.
-            DBException: For general database errors.
-
-        """
-        async with self.database_client.session_factory() as session:
-            payload = await self._delete_raw(session, pk)
-            logger.debug(f"Instance deleted: {pk}")
-            return payload

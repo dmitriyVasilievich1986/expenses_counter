@@ -4,14 +4,14 @@ This module tests all category API endpoints without making direct database call
 It uses FastAPI's TestClient and mocks the CategoryDAO dependency.
 """
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy.exc import DatabaseError, IntegrityError, NoResultFound
 
 from expenses_counter.modules.app import get_app
-from expenses_counter.modules.middlewares.dependencies import get_category
-from expenses_counter.services.daos.base.exceptions import DBException, NotFoundException, RelationshipNotFoundException
+from expenses_counter.modules.middlewares.dependencies.get_db import get_db
 
 
 @pytest.fixture
@@ -19,26 +19,59 @@ def mock_category_dao():
     """Create a mock CategoryDAO for testing.
 
     Returns:
-        AsyncMock: Mocked CategoryDAO instance.
+        AsyncMock: Mocked CategoryDAO instance that works as a context manager.
 
     """
     dao = AsyncMock()
     # Set up default return values
     dao.get_all = AsyncMock(return_value=([], 0))
-    dao.get_all_by_parent = AsyncMock(return_value=([], 0))
     dao.get_by_id = AsyncMock(return_value=None)
     dao.create = AsyncMock()
     dao.update = AsyncMock()
     dao.delete = AsyncMock()
+
+    # Make it work as a context manager
+    dao.__aenter__ = AsyncMock(return_value=dao)
+    dao.__aexit__ = AsyncMock(return_value=None)
+
     return dao
 
 
 @pytest.fixture
-def test_client(mock_category_dao, test_config):
+def mock_db_client():
+    """Create a mock AsyncDatabaseClient for testing.
+
+    Returns:
+        MagicMock: Mocked AsyncDatabaseClient instance.
+
+    """
+    return MagicMock()
+
+
+@pytest.fixture
+def mock_category_dao_class(mock_category_dao):
+    """Patch CategoryDAO class to return our mock instance.
+
+    Args:
+        mock_category_dao: Mocked CategoryDAO instance.
+
+    Yields:
+        Mock: Patched CategoryDAO class.
+
+    """
+    with patch(
+        "expenses_counter.modules.routers.api.v1.category.CategoryDAO", return_value=mock_category_dao
+    ) as mock_class:
+        yield mock_class
+
+
+@pytest.fixture
+def test_client(mock_category_dao_class, mock_db_client, test_config):  # noqa: ARG001
     """Create a test client with mocked dependencies.
 
     Args:
-        mock_category_dao: Mocked CategoryDAO fixture.
+        mock_category_dao_class: Patched CategoryDAO class fixture.
+        mock_db_client: Mocked AsyncDatabaseClient fixture.
         test_config: Test configuration fixture.
 
     Returns:
@@ -47,8 +80,8 @@ def test_client(mock_category_dao, test_config):
     """
     app = get_app(test_config)
 
-    # Override the dependency
-    app.dependency_overrides[get_category] = lambda: mock_category_dao
+    # Override the database dependency to return mock db client
+    app.dependency_overrides[get_db] = lambda: mock_db_client
 
     client = TestClient(app)
     yield client
@@ -131,7 +164,7 @@ class TestGetCategoryList:
 
         """
         # Arrange
-        mock_category_dao.get_all.side_effect = DBException("Database error")
+        mock_category_dao.get_all.side_effect = DatabaseError("SELECT *", None, Exception("Database error"))
 
         # Act
         response = test_client.get("/api/v1/category")
@@ -163,7 +196,7 @@ class TestGetRootCategoryList:
         mock_category2.name = "Root Category 2"
 
         mock_categories = [mock_category1, mock_category2]
-        mock_category_dao.get_all_by_parent.return_value = (mock_categories, 2)
+        mock_category_dao.get_all.return_value = (mock_categories, 2)
 
         # Act
         response = test_client.get("/api/v1/category/parent")
@@ -173,9 +206,14 @@ class TestGetRootCategoryList:
         data = response.json()
         assert len(data["data"]) == 2
         assert data["metadata"]["total"] == 2
-        mock_category_dao.get_all_by_parent.assert_called_once_with(
-            None, limit=100, offset=0, sort_by="id", sort_order="asc"
-        )
+        # Verify get_all was called with filters for parent_id == None
+        mock_category_dao.get_all.assert_called_once()
+        call_kwargs = mock_category_dao.get_all.call_args.kwargs
+        assert call_kwargs["limit"] == 100
+        assert call_kwargs["offset"] == 0
+        assert call_kwargs["sort_by"] == "id"
+        assert call_kwargs["sort_order"] == "asc"
+        assert "filters" in call_kwargs
 
     def test_get_root_category_list_db_error(self, test_client, mock_category_dao):
         """Test root category list with database error.
@@ -186,7 +224,7 @@ class TestGetRootCategoryList:
 
         """
         # Arrange
-        mock_category_dao.get_all_by_parent.side_effect = DBException("Database error")
+        mock_category_dao.get_all.side_effect = DatabaseError("SELECT *", None, Exception("Database error"))
 
         # Act
         response = test_client.get("/api/v1/category/parent")
@@ -219,7 +257,7 @@ class TestGetCategoryListByParent:
         mock_category2.name = "Child Category 2"
 
         mock_categories = [mock_category1, mock_category2]
-        mock_category_dao.get_all_by_parent.return_value = (mock_categories, 2)
+        mock_category_dao.get_all.return_value = (mock_categories, 2)
 
         # Act
         response = test_client.get(f"/api/v1/category/parent/{parent_id}")
@@ -228,9 +266,14 @@ class TestGetCategoryListByParent:
         assert response.status_code == 200
         data = response.json()
         assert len(data["data"]) == 2
-        mock_category_dao.get_all_by_parent.assert_called_once_with(
-            parent_id, limit=100, offset=0, sort_by="id", sort_order="asc"
-        )
+        # Verify get_all was called with filters for parent_id == parent_id
+        mock_category_dao.get_all.assert_called_once()
+        call_kwargs = mock_category_dao.get_all.call_args.kwargs
+        assert call_kwargs["limit"] == 100
+        assert call_kwargs["offset"] == 0
+        assert call_kwargs["sort_by"] == "id"
+        assert call_kwargs["sort_order"] == "asc"
+        assert "filters" in call_kwargs
 
     def test_get_category_list_by_parent_empty(self, test_client, mock_category_dao):
         """Test retrieval of categories by parent with no children.
@@ -241,7 +284,7 @@ class TestGetCategoryListByParent:
 
         """
         # Arrange
-        mock_category_dao.get_all_by_parent.return_value = ([], 0)
+        mock_category_dao.get_all.return_value = ([], 0)
 
         # Act
         response = test_client.get("/api/v1/category/parent/999")
@@ -294,7 +337,7 @@ class TestGetCategoryById:
 
         """
         # Arrange
-        mock_category_dao.get_by_id.return_value = None
+        mock_category_dao.get_by_id.side_effect = NoResultFound("Category not found")
 
         # Act
         response = test_client.get("/api/v1/category/999")
@@ -312,7 +355,7 @@ class TestGetCategoryById:
 
         """
         # Arrange
-        mock_category_dao.get_by_id.side_effect = DBException("Database error")
+        mock_category_dao.get_by_id.side_effect = DatabaseError("SELECT *", None, Exception("Database error"))
 
         # Act
         response = test_client.get("/api/v1/category/42")
@@ -408,7 +451,7 @@ class TestCreateCategory:
 
         """
         # Arrange
-        mock_category_dao.create.side_effect = RelationshipNotFoundException("Parent not found")
+        mock_category_dao.create.side_effect = IntegrityError("INSERT INTO", None, Exception("Parent not found"))
 
         payload = {
             "name": "New Category",
@@ -431,7 +474,7 @@ class TestCreateCategory:
 
         """
         # Arrange
-        mock_category_dao.create.side_effect = DBException("Database error")
+        mock_category_dao.create.side_effect = DatabaseError("SELECT *", None, Exception("Database error"))
 
         payload = {"name": "New Category"}
 
@@ -506,7 +549,7 @@ class TestUpdateCategory:
 
         """
         # Arrange
-        mock_category_dao.update.side_effect = NotFoundException("Category not found")
+        mock_category_dao.update.side_effect = NoResultFound("Category not found")
 
         payload = {"name": "Updated Category"}
 
@@ -526,7 +569,7 @@ class TestUpdateCategory:
 
         """
         # Arrange
-        mock_category_dao.update.side_effect = RelationshipNotFoundException("Parent not found")
+        mock_category_dao.update.side_effect = IntegrityError("INSERT INTO", None, Exception("Parent not found"))
 
         payload = {
             "name": "Updated Category",
@@ -549,7 +592,7 @@ class TestUpdateCategory:
 
         """
         # Arrange
-        mock_category_dao.update.side_effect = DBException("Database error")
+        mock_category_dao.update.side_effect = DatabaseError("SELECT *", None, Exception("Database error"))
 
         payload = {"name": "Updated Category"}
 
@@ -594,7 +637,7 @@ class TestDeleteCategory:
 
         """
         # Arrange
-        mock_category_dao.delete.side_effect = NotFoundException("Category not found")
+        mock_category_dao.delete.side_effect = NoResultFound("Category not found")
 
         # Act
         response = test_client.delete("/api/v1/category/999")
@@ -612,7 +655,7 @@ class TestDeleteCategory:
 
         """
         # Arrange
-        mock_category_dao.delete.side_effect = DBException("Database error")
+        mock_category_dao.delete.side_effect = DatabaseError("SELECT *", None, Exception("Database error"))
 
         # Act
         response = test_client.delete("/api/v1/category/42")

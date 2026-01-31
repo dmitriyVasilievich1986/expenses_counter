@@ -27,8 +27,9 @@ __all__ = ("router",)
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
+from sqlalchemy.exc import DatabaseError, IntegrityError, NoResultFound
 
-from expenses_counter.modules.middlewares.dependencies import get_address
+from expenses_counter.modules.middlewares.dependencies.get_db import get_db
 from expenses_counter.modules.routers.schemas.base.metadata import PaginationMetadata
 from expenses_counter.modules.routers.schemas.requests.address import (
     GetAllAddressesQuery,
@@ -41,37 +42,39 @@ from expenses_counter.modules.routers.schemas.responses.address import (
     SimpleAddressGet,
 )
 from expenses_counter.services.daos import AddressDAO
-from expenses_counter.services.daos.base.exceptions import DBException, NotFoundException, RelationshipNotFoundException
+from expenses_counter.services.database import AsyncDatabaseClient
 
 router = APIRouter(prefix="/address", tags=["Address"])
 
 
 @router.get("", response_model=GetAllAddressesResponse)
 async def get_address_list(
-    address_dao: Annotated[AddressDAO, Depends(get_address)],
+    db: Annotated[AsyncDatabaseClient, Depends(get_db)],
     query: Annotated[GetAllAddressesQuery, Query(description="Pagination and sorting parameters")],
 ):
     """Retrieve all addresses with pagination and sorting.
 
     Args:
-        address_dao: The address DAO instance.
+        db: The database client instance for creating DAO connections.
+            Injected via FastAPI dependency injection from get_db.
         query: Pagination and sorting parameters including limit, offset, sort_by, and sort_order.
 
     Returns:
         GetAllAddressesResponse containing a list of addresses and pagination metadata.
 
     Raises:
-        HTTPException: If retrieval fails, returns a 500 Internal Server Error.
+        HTTPException: 500 Internal Server Error if database operation fails.
 
     """
     try:
-        data, total = await address_dao.get_all(
-            limit=query.limit, offset=query.offset, sort_by=query.sort_by, sort_order=query.sort_order
-        )
+        async with AddressDAO(database_client=db) as address_dao:
+            data, total = await address_dao.get_all(
+                limit=query.limit, offset=query.offset, sort_by=query.sort_by, sort_order=query.sort_order
+            )
         metadata = PaginationMetadata(
             total=total, offset=query.offset, limit=query.limit, sort_by=query.sort_by, sort_order=query.sort_order
         )
-    except DBException as e:
+    except DatabaseError as e:
         raise HTTPException(status_code=500, detail="Something went wrong while retrieving the address list") from e
 
     return GetAllAddressesResponse(
@@ -82,57 +85,58 @@ async def get_address_list(
 @router.get("/{address_id}", response_model=GetSingleAddressResponse)
 async def get_address_by_id(
     address_id: Annotated[int, Path(description="The unique identifier of the address to retrieve")],
-    address_dao: Annotated[AddressDAO, Depends(get_address)],
+    db: Annotated[AsyncDatabaseClient, Depends(get_db)],
 ):
     """Retrieve an address by its ID.
 
     Args:
         address_id: The unique identifier of the address to retrieve.
-        address_dao: The address DAO instance.
+        db: The database client instance for creating DAO connections.
+            Injected via FastAPI dependency injection from get_db.
 
     Returns:
         GetSingleAddressResponse containing the address details.
 
     Raises:
-        HTTPException: If the address is not found, returns a 404 Not Found error.
-            If retrieval fails, returns a 500 Internal Server Error.
+        HTTPException: 404 Not Found if the address is not found.
+            500 Internal Server Error if database operation fails.
 
     """
     try:
-        address = await address_dao.get_by_id(address_id)
-    except DBException as e:
+        async with AddressDAO(database_client=db) as address_dao:
+            return await address_dao.get_by_id(address_id)
+    except NoResultFound as e:
+        raise HTTPException(status_code=404, detail="Address not found") from e
+    except DatabaseError as e:
         raise HTTPException(status_code=500, detail="Something went wrong while retrieving the address") from e
-
-    if address is None:
-        raise HTTPException(status_code=404, detail="Address not found")
-
-    return address
 
 
 @router.post("", response_model=GetSingleAddressResponse)
 async def create_address(
     body: PostAddressBody,
-    address_dao: Annotated[AddressDAO, Depends(get_address)],
+    db: Annotated[AsyncDatabaseClient, Depends(get_db)],
 ):
     """Create a new address.
 
     Args:
         body: The address data to create including local_name, address, and shop_id.
-        address_dao: The address DAO instance.
+        db: The database client instance for creating DAO connections.
+            Injected via FastAPI dependency injection from get_db.
 
     Returns:
         GetSingleAddressResponse containing the newly created address.
 
     Raises:
-        HTTPException: If the referenced shop is not found, returns a 400 Bad Request error.
-            If creation fails, returns a 500 Internal Server Error.
+        HTTPException: 400 Bad Request if the referenced shop is not found (IntegrityError).
+            500 Internal Server Error if database operation fails.
 
     """
     try:
-        return await address_dao.create(**body.model_dump(by_alias=False))
-    except RelationshipNotFoundException as e:
+        async with AddressDAO(database_client=db) as address_dao:
+            return await address_dao.create(**body.model_dump(by_alias=False))
+    except IntegrityError as e:
         raise HTTPException(status_code=400, detail="Shop not found") from e
-    except DBException as e:
+    except DatabaseError as e:
         raise HTTPException(status_code=500, detail="Something went wrong while creating the address") from e
 
 
@@ -140,58 +144,60 @@ async def create_address(
 async def update_address(
     address_id: Annotated[int, Path(description="The unique identifier of the address to update")],
     body: PutAddressBody,
-    address_dao: Annotated[AddressDAO, Depends(get_address)],
+    db: Annotated[AsyncDatabaseClient, Depends(get_db)],
 ):
     """Update an existing address by replacing all its fields.
 
     Args:
         address_id: The unique identifier of the address to update.
         body: The complete address data to replace the existing address.
-        address_dao: The address DAO instance.
+        db: The database client instance for creating DAO connections.
+            Injected via FastAPI dependency injection from get_db.
 
     Returns:
         GetSingleAddressResponse containing the updated address.
 
     Raises:
-        HTTPException: If the referenced shop is not found, returns a 400 Bad Request error.
-            If the address is not found, returns a 404 Not Found error.
-            If update fails, returns a 500 Internal Server Error.
+        HTTPException: 400 Bad Request if the referenced shop is not found (IntegrityError).
+            404 Not Found if the address is not found (NoResultFound).
+            500 Internal Server Error if database operation fails.
 
     """
     try:
-        return await address_dao.update(address_id, **body.model_dump(by_alias=False))
-    except RelationshipNotFoundException as e:
+        async with AddressDAO(database_client=db) as address_dao:
+            return await address_dao.update(address_id, **body.model_dump(by_alias=False))
+    except IntegrityError as e:
         raise HTTPException(status_code=400, detail="Shop not found") from e
-    except NotFoundException as e:
+    except NoResultFound as e:
         raise HTTPException(status_code=404, detail="Address not found") from e
-    except DBException as e:
+    except DatabaseError as e:
         raise HTTPException(status_code=500, detail="Something went wrong while updating the address") from e
 
 
 @router.delete("/{address_id}", status_code=204)
 async def delete_address(
     address_id: Annotated[int, Path(description="The unique identifier of the address to delete")],
-    address_dao: Annotated[AddressDAO, Depends(get_address)],
+    db: Annotated[AsyncDatabaseClient, Depends(get_db)],
 ):
     """Delete an address by its ID.
 
     Args:
         address_id: The unique identifier of the address to delete.
-        address_dao: The address DAO instance.
+        db: The database client instance for creating DAO connections.
+            Injected via FastAPI dependency injection from get_db.
 
     Returns:
         None (204 No Content status code).
 
     Raises:
-        HTTPException: If the address is not found, returns a 404 Not Found error.
-            If deletion fails, returns a 500 Internal Server Error.
+        HTTPException: 404 Not Found if the address is not found (NoResultFound).
+            500 Internal Server Error if database operation fails.
 
     """
     try:
-        deleted = await address_dao.delete(address_id)
-        if not deleted:
-            raise HTTPException(status_code=404, detail="Address not found")
-    except NotFoundException as e:
+        async with AddressDAO(database_client=db) as address_dao:
+            await address_dao.delete(address_id)
+    except NoResultFound as e:
         raise HTTPException(status_code=404, detail="Address not found") from e
-    except DBException as e:
+    except DatabaseError as e:
         raise HTTPException(status_code=500, detail="Something went wrong while deleting the address") from e
