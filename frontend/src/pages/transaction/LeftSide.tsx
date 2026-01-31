@@ -48,6 +48,13 @@ export function LeftSide() {
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <DateCalendar
+        sx={{
+          height: 'max-content',
+          maxHeight: 'max-content',
+          '& .MuiDayCalendar-slideTransition': {
+            minHeight: '290px',
+          },
+        }}
         value={currentDate}
         onChange={handleDateChange}
         onMonthChange={handleMonthChange}
