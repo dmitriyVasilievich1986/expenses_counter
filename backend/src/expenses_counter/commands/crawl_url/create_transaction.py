@@ -81,7 +81,7 @@ class CreateTransactionCommand(BaseCommand):
                 try:
                     return await category_dao.get_by_id(category_id)
                 except NoResultFound:
-                    pass
+                    logger.warning(f"Category {category_id} not found")
 
             all_categories, _ = await category_dao.get_all()
             if len(all_categories) == 0:
