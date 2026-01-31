@@ -7,6 +7,8 @@ from datetime import datetime
 
 from bs4 import BeautifulSoup
 
+from .table_parser import TableParser
+
 
 class HTMLParser:
     """Parser for extracting date and address information from receipt HTML.
@@ -24,6 +26,7 @@ class HTMLParser:
     _date: datetime | None = None
     _address: str | None = None
     _shop_name: str | None = None
+    _total_price: float | None = None
 
     def __init__(self, html: str) -> None:
         """Initialize HTMLParser with receipt HTML content.
@@ -122,3 +125,24 @@ class HTMLParser:
 
         self._shop_name = str(shop_name_span.text).strip()
         return self._shop_name
+
+    @property
+    def total_price(self) -> float:
+        """Extract total price from receipt HTML.
+
+        Looks for a span element with id "totalAmountLabel" and returns its text
+        content as the total price. The result is cached after first access.
+
+        Returns:
+            Float containing the total price
+
+        """
+        if self._total_price is not None:
+            return self._total_price
+
+        total_price_span = self.bs.find("span", id="totalAmountLabel")
+        if total_price_span is None:
+            raise ValueError("Total price span not found")
+
+        self._total_price = TableParser.convert_float(total_price_span.text.strip())
+        return self._total_price
