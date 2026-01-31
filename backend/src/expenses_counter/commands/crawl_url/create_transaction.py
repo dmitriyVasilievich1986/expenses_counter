@@ -191,6 +191,15 @@ class CreateTransactionCommand(BaseCommand):
             raise e
 
         try:
+            _ = self.html_parser.total_price
+        except ValueError as e:
+            logger.error(f"Error parsing total price: {e}")
+            raise ValueError("HTML parser is empty") from e
+        except Exception as e:
+            logger.error(f"Error parsing total price: {e}")
+            raise e
+
+        try:
             category = await self._get_category(self.default_category_id)
             self.default_category_id = category.id
         except ValueError as e:
