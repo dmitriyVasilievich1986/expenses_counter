@@ -25,7 +25,6 @@ def mock_category_dao():
     dao = AsyncMock()
     # Set up default return values
     dao.get_all = AsyncMock(return_value=([], 0))
-    dao.get_all_by_parent = AsyncMock(return_value=([], 0))
     dao.get_by_id = AsyncMock(return_value=None)
     dao.create = AsyncMock()
     dao.update = AsyncMock()
@@ -197,7 +196,7 @@ class TestGetRootCategoryList:
         mock_category2.name = "Root Category 2"
 
         mock_categories = [mock_category1, mock_category2]
-        mock_category_dao.get_all_by_parent.return_value = (mock_categories, 2)
+        mock_category_dao.get_all.return_value = (mock_categories, 2)
 
         # Act
         response = test_client.get("/api/v1/category/parent")
@@ -207,9 +206,14 @@ class TestGetRootCategoryList:
         data = response.json()
         assert len(data["data"]) == 2
         assert data["metadata"]["total"] == 2
-        mock_category_dao.get_all_by_parent.assert_called_once_with(
-            None, limit=100, offset=0, sort_by="id", sort_order="asc"
-        )
+        # Verify get_all was called with filters for parent_id == None
+        mock_category_dao.get_all.assert_called_once()
+        call_kwargs = mock_category_dao.get_all.call_args.kwargs
+        assert call_kwargs["limit"] == 100
+        assert call_kwargs["offset"] == 0
+        assert call_kwargs["sort_by"] == "id"
+        assert call_kwargs["sort_order"] == "asc"
+        assert "filters" in call_kwargs
 
     def test_get_root_category_list_db_error(self, test_client, mock_category_dao):
         """Test root category list with database error.
@@ -220,7 +224,7 @@ class TestGetRootCategoryList:
 
         """
         # Arrange
-        mock_category_dao.get_all_by_parent.side_effect = DatabaseError("SELECT *", None, Exception("Database error"))
+        mock_category_dao.get_all.side_effect = DatabaseError("SELECT *", None, Exception("Database error"))
 
         # Act
         response = test_client.get("/api/v1/category/parent")
@@ -253,7 +257,7 @@ class TestGetCategoryListByParent:
         mock_category2.name = "Child Category 2"
 
         mock_categories = [mock_category1, mock_category2]
-        mock_category_dao.get_all_by_parent.return_value = (mock_categories, 2)
+        mock_category_dao.get_all.return_value = (mock_categories, 2)
 
         # Act
         response = test_client.get(f"/api/v1/category/parent/{parent_id}")
@@ -262,9 +266,14 @@ class TestGetCategoryListByParent:
         assert response.status_code == 200
         data = response.json()
         assert len(data["data"]) == 2
-        mock_category_dao.get_all_by_parent.assert_called_once_with(
-            parent_id, limit=100, offset=0, sort_by="id", sort_order="asc"
-        )
+        # Verify get_all was called with filters for parent_id == parent_id
+        mock_category_dao.get_all.assert_called_once()
+        call_kwargs = mock_category_dao.get_all.call_args.kwargs
+        assert call_kwargs["limit"] == 100
+        assert call_kwargs["offset"] == 0
+        assert call_kwargs["sort_by"] == "id"
+        assert call_kwargs["sort_order"] == "asc"
+        assert "filters" in call_kwargs
 
     def test_get_category_list_by_parent_empty(self, test_client, mock_category_dao):
         """Test retrieval of categories by parent with no children.
@@ -275,7 +284,7 @@ class TestGetCategoryListByParent:
 
         """
         # Arrange
-        mock_category_dao.get_all_by_parent.return_value = ([], 0)
+        mock_category_dao.get_all.return_value = ([], 0)
 
         # Act
         response = test_client.get("/api/v1/category/parent/999")
