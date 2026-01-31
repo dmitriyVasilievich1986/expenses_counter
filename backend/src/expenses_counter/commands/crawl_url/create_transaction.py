@@ -3,6 +3,7 @@
 __all__ = ("CreateTransactionCommand",)
 
 from loguru import logger
+from sqlalchemy.exc import NoResultFound
 
 from expenses_counter.commands.base import BaseCommand
 from expenses_counter.config import AppConfig
@@ -71,15 +72,17 @@ class CreateTransactionCommand(BaseCommand):
             ValueError: If no categories exist in the database
 
         """
-        category_dao = CategoryDAO(database_client=self.db_client)
-        if not category_id or (category := await category_dao.get_by_id(category_id)) is None:
-            all_categories = await category_dao.get_all()
+        async with CategoryDAO(database_client=self.db_client) as category_dao:
+            if category_id:
+                try:
+                    return await category_dao.get_by_id(category_id)
+                except NoResultFound:
+                    pass
+
+            all_categories, _ = await category_dao.get_all()
             if len(all_categories) == 0:
                 raise ValueError("No categories found")
-            category = all_categories[0]
-
-        logger.debug(f"Using category: {category.id}, name: {category.full_name}")
-        return category
+            return all_categories[0]
 
     async def _get_or_create_product(self, name: str) -> Product:
         """Get existing product by name or create a new one.
@@ -95,11 +98,11 @@ class CreateTransactionCommand(BaseCommand):
             during command initialization.
 
         """
-        product_dao = ProductDAO(database_client=self.db_client)
-        if (product := await product_dao.get_by_name(name)) is None:
-            product = await product_dao.create(name=name, category_id=self.default_category_id)
-
-        return product
+        async with ProductDAO(database_client=self.db_client) as product_dao:
+            try:
+                return await product_dao.get_by_name(name)
+            except NoResultFound:
+                return await product_dao.create(name=name, category_id=self.default_category_id)
 
     async def _get_address(self, address: str) -> Address:
         """Get address by address string.
@@ -114,11 +117,8 @@ class CreateTransactionCommand(BaseCommand):
             ValueError: If the address is not found in the database
 
         """
-        address_dao = AddressDAO(database_client=self.db_client)
-        if (address := await address_dao.get_by_address(address)) is None:
-            raise ValueError("Address not found")
-
-        return address
+        async with AddressDAO(database_client=self.db_client) as address_dao:
+            return await address_dao.get_by_address(address)
 
     async def execute(self) -> None:
         """Execute transaction creation from parsed receipt data.
@@ -135,18 +135,18 @@ class CreateTransactionCommand(BaseCommand):
 
         """
         address = await self._get_address(self.html_parser.address)
-        transaction_dao = TransactionDAO(database_client=self.db_client)
 
-        for i, row in self.table_parser.iterrows():
-            logger.info(f"Processing row {i + 1} of {len(self.table_parser)}")
-            product = await self._get_or_create_product(row["name"])
-            await transaction_dao.create(
-                date=self.html_parser.date,
-                product_id=product.id,
-                address_id=address.id,
-                count=row["quantity"],
-                price=row["unit_price"],
-            )
+        async with TransactionDAO(database_client=self.db_client) as transaction_dao:
+            for i, row in self.table_parser.iterrows():
+                logger.info(f"Processing row {i + 1} of {len(self.table_parser)}")
+                product = await self._get_or_create_product(row["name"])
+                await transaction_dao.create(
+                    date=self.html_parser.date,
+                    product_id=product.id,
+                    address_id=address.id,
+                    count=row["quantity"],
+                    price=row["unit_price"],
+                )
 
     async def validate(self) -> None:
         """Validate parsed receipt data before transaction creation.
@@ -180,6 +180,9 @@ class CreateTransactionCommand(BaseCommand):
 
         try:
             _ = self.html_parser.address
+        except NoResultFound as e:
+            logger.error("Address not found")
+            raise ValueError("Address not found") from e
         except ValueError as e:
             logger.error(f"Error parsing address: {e}")
             raise ValueError("HTML parser is empty") from e
