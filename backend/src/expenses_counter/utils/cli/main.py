@@ -4,6 +4,8 @@ import uvicorn
 from expenses_counter import __version__ as app_version
 from expenses_counter.config import AppConfig
 
+from .crawler import crawler
+
 
 @click.group(help="CLI for managing the Expenses Counter.")
 @click.version_option(app_version, "-v", "--version", message=f"Expenses Counter, version {app_version}")
@@ -62,3 +64,6 @@ def run(host: str, port: int, reload: bool) -> None:
         reload=reload,
         factory=True,
     )
+
+
+main.add_command(crawler)
