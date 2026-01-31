@@ -1,6 +1,7 @@
 import TextField from '@mui/material/TextField';
-import { useMainStore } from '@store/main';
 import { useMemo, useState } from 'react';
+
+import { useMainStore } from '@store/main';
 
 export function Input(props: { label: string; name: string; defaultValue?: string | null }) {
   const [value, setValue] = useState<string>(props.defaultValue ?? '');
