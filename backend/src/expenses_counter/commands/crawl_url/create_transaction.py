@@ -2,6 +2,7 @@
 
 __all__ = ("CreateTransactionCommand",)
 
+import pandas as pd
 from loguru import logger
 from sqlalchemy.exc import NoResultFound
 
@@ -47,6 +48,9 @@ class CreateTransactionCommand(BaseCommand):
         self.html_parser = html_parser
         self.table_parser = table_parser
         self.default_category_id = default_category_id
+        pd.options.display.max_columns = None
+        pd.options.display.max_rows = None
+        pd.options.display.width = None
 
     async def initialize(self) -> None:
         """Initialize command resources.
@@ -147,6 +151,15 @@ class CreateTransactionCommand(BaseCommand):
                     count=row["quantity"],
                     price=row["unit_price"],
                 )
+
+        message = f"""
+        Transaction creation completed.
+        Transaction date: {self.html_parser.date}
+        Transaction address: {self.html_parser.address}
+        Table: \n{self.table_parser}
+        Total price: {self.html_parser.total_price}
+        """
+        logger.info(message)
 
     async def validate(self) -> None:
         """Validate parsed receipt data before transaction creation.
