@@ -20,11 +20,10 @@ export function RightSide() {
   return (
     <Box
       sx={{
-        mt: 2,
         display: 'flex',
         justifyContent: 'center',
         overflowY: 'auto',
-        maxHeight: '90vh',
+        maxHeight: 'calc(100vh - 64px)',
       }}
     >
       <Box sx={{ width: '90%', height: 'fit-content' }}>
