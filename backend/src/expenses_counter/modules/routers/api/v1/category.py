@@ -46,6 +46,7 @@ from expenses_counter.modules.routers.schemas.responses.category import (
 )
 from expenses_counter.services.daos import CategoryDAO
 from expenses_counter.services.database import AsyncDatabaseClient
+from expenses_counter.services.database.models.category import Category
 
 router = APIRouter(prefix="/category", tags=["Category"])
 
@@ -105,8 +106,12 @@ async def get_root_category_list(
     """
     try:
         async with CategoryDAO(database_client=db) as category_dao:
-            data, total = await category_dao.get_all_by_parent(
-                None, limit=query.limit, offset=query.offset, sort_by=query.sort_by, sort_order=query.sort_order
+            data, total = await category_dao.get_all(
+                limit=query.limit,
+                offset=query.offset,
+                sort_by=query.sort_by,
+                sort_order=query.sort_order,
+                filters=[Category.parent_id is None],
             )
         metadata = PaginationMetadata(
             total=total, offset=query.offset, limit=query.limit, sort_by=query.sort_by, sort_order=query.sort_order
@@ -163,8 +168,12 @@ async def get_category_list_by_parent(
     """
     try:
         async with CategoryDAO(database_client=db) as category_dao:
-            data, total = await category_dao.get_all_by_parent(
-                parent_id, limit=query.limit, offset=query.offset, sort_by=query.sort_by, sort_order=query.sort_order
+            data, total = await category_dao.get_all(
+                limit=query.limit,
+                offset=query.offset,
+                sort_by=query.sort_by,
+                sort_order=query.sort_order,
+                filters=[Category.parent_id == parent_id],
             )
         metadata = PaginationMetadata(
             total=total, offset=query.offset, limit=query.limit, sort_by=query.sort_by, sort_order=query.sort_order

@@ -10,11 +10,9 @@ Classes:
 
 __all__ = ("CategoryDAO",)
 
-from typing import Literal
 
-from sqlalchemy import asc, desc, select
-from sqlalchemy.orm import load_only, selectinload
-from sqlalchemy.sql import ColumnElement
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from expenses_counter.services.daos.base import BaseDAO
 from expenses_counter.services.database.models.category import Category
@@ -65,53 +63,3 @@ class CategoryDAO(BaseDAO[Category]):
 
         result = await self.session.execute(stmt)
         return result.scalar_one()
-
-    @BaseDAO.error_handler
-    async def get_all_by_parent(
-        self,
-        parent_id: int | None,
-        limit: int = 100,
-        offset: int = 0,
-        sort_by: str = "id",
-        sort_order: Literal["asc", "desc"] = "asc",
-        filters: list[ColumnElement[bool]] | None = None,
-    ) -> tuple[list[Category], int]:
-        """Retrieve all categories that belong to a specific parent category.
-
-        This method filters categories by their parent_id, allowing retrieval of
-        direct children of a given parent category. Passing None as parent_id
-        retrieves all top-level categories (those without a parent).
-
-        Args:
-            parent_id: The ID of the parent category to filter by, or None for top-level categories.
-            limit: Maximum number of records to return. Defaults to 100.
-            offset: Number of records to skip for pagination. Defaults to 0.
-            sort_by: The column name to sort by. Defaults to "id".
-            sort_order: Sort direction, either "asc" or "desc". Defaults to "asc".
-            filters: Optional list of additional SQLAlchemy filter expressions.
-
-        Returns:
-            A tuple containing:
-                - A list of Category model instances matching the criteria.
-                - The total count of matching records (ignoring limit/offset).
-
-        """
-        filters = [*(filters or []), Category.parent_id == parent_id]
-
-        order_func = asc if sort_order == "asc" else desc
-        stmt = select(self.database_model).order_by(order_func(getattr(self.database_model, sort_by))).where(*filters)
-
-        if self.get_all_columns:
-            stmt = stmt.options(load_only(*self.get_all_columns))
-
-        if self.select_in_options_all:
-            stmt = stmt.options(*map(selectinload, self.select_in_options_all))
-
-        if limit:
-            stmt = stmt.limit(limit)
-        if offset:
-            stmt = stmt.offset(offset)
-
-        result = await self.session.execute(stmt)
-        total = await self.get_total(filters)
-        return result.scalars().all(), total
