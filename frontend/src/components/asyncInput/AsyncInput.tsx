@@ -1,6 +1,7 @@
 import KeyboardDoubleArrowRightIcon from '@mui/icons-material/KeyboardDoubleArrowRight';
 import Autocomplete, { type AutocompleteRenderInputParams } from '@mui/material/Autocomplete';
 import CircularProgress from '@mui/material/CircularProgress';
+import Fab from '@mui/material/Fab';
 import TextField from '@mui/material/TextField';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router';
@@ -43,10 +44,9 @@ export function AsyncInput<I extends object>(props: {
     return (
       <>
         {props.link && valueId && (
-          <KeyboardDoubleArrowRightIcon
-            onClick={() => navigate(`${props.link}/${valueId}`)}
-            sx={{ cursor: 'pointer' }}
-          />
+          <Fab color="primary" size="small" onClick={() => navigate(`${props.link}/${valueId}`)}>
+            <KeyboardDoubleArrowRightIcon />
+          </Fab>
         )}
         {params.InputProps.endAdornment}
       </>
