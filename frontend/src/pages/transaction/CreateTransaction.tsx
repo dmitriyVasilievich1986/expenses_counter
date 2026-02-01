@@ -78,6 +78,7 @@ export function CreateTransaction() {
               items={products}
               getItems={getProducts}
               label="Product"
+              link="/product"
             />
             <Input
               label="Product price"

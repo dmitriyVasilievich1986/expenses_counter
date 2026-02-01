@@ -6,13 +6,13 @@ import { useNavigate, useParams } from 'react-router';
 import { AsyncInput } from '@components/asyncInput';
 import { Input } from '@components/input';
 import { SubmitButton } from '@components/submitButton';
+import { useCategoryAPIClient } from '@services/apiClient';
 import { useProductAPIClient } from '@services/apiClient/product/client';
 import type { ProductPostRequest } from '@services/apiClient/product/types';
 import type { CategorySimpleType } from '@store/category';
+import { useCategoryStore } from '@store/category';
 import { useMainStore } from '@store/main';
 import { useProductStore } from '@store/product';
-import { useCategoryAPIClient } from '@services/apiClient';
-import { useCategoryStore } from '@store/category';
 
 export function CreateProductForm() {
   const navigate = useNavigate();

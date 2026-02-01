@@ -4,9 +4,10 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { PickersDay } from '@mui/x-date-pickers/PickersDay';
+import dayjs from 'dayjs';
 import _ from 'lodash';
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router';
+import { useEffect, useMemo } from 'react';
+import { useNavigate, useSearchParams } from 'react-router';
 
 import { useTransactionAPIClient } from '../../services/apiClient/transaction';
 import { useTransactionStore } from '../../store/transaction';
@@ -14,9 +15,15 @@ import { useTransactionStore } from '../../store/transaction';
 import type { Dayjs } from 'dayjs';
 
 export function LeftSide() {
-  const { transactions, currentDate, setCurrentDate } = useTransactionStore();
+  const { transactions } = useTransactionStore();
   const { getTransactions } = useTransactionAPIClient();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const currentDate = useMemo(() => {
+    const dateParam = searchParams.get('date');
+    return dateParam ? dayjs(dateParam) : dayjs();
+  }, [searchParams]);
 
   useEffect(() => {
     if (transactions === null) {
@@ -32,8 +39,8 @@ export function LeftSide() {
 
   const handleDateChange = (date: Dayjs | null) => {
     if (date) {
-      setCurrentDate(date);
-      navigate('/transaction');
+      setSearchParams({ date: date.format('YYYY-MM-DD') });
+      navigate(`/transaction?date=${date.format('YYYY-MM-DD')}`);
     }
   };
 
@@ -48,6 +55,13 @@ export function LeftSide() {
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <DateCalendar
+        sx={{
+          height: 'max-content',
+          maxHeight: 'max-content',
+          '& .MuiDayCalendar-slideTransition': {
+            minHeight: '290px',
+          },
+        }}
         value={currentDate}
         onChange={handleDateChange}
         onMonthChange={handleMonthChange}

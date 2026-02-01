@@ -19,23 +19,35 @@ export function Card(props: {
       <CardHeader
         avatar={
           props.icon ? (
-            <img src={props.icon} style={{ width: '30px', height: '30px' }} />
+            <img src={props.icon} style={{ width: '24px', height: '24px' }} />
           ) : (
-            <StorefrontIcon />
+            <StorefrontIcon sx={{ fontSize: '24px' }} />
           )
         }
-        sx={{ overflow: 'hidden' }}
+        sx={{
+          overflow: 'hidden',
+          padding: '8px 12px',
+        }}
         slotProps={{
           title: {
-            variant: 'h6',
-            gutterBottom: true,
+            variant: 'body2',
+            gutterBottom: false,
             sx: {
               textOverflow: 'ellipsis',
               overflow: 'hidden',
               whiteSpace: 'nowrap',
+              lineHeight: 1.3,
+              fontSize: '0.875rem',
+              fontWeight: 500,
             },
           },
-          subheader: { variant: 'caption' },
+          subheader: {
+            variant: 'caption',
+            sx: {
+              lineHeight: 1.2,
+              fontSize: '0.7rem',
+            },
+          },
         }}
         title={props.title}
         subheader={props.description}

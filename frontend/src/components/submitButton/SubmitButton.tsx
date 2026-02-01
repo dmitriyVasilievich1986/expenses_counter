@@ -1,6 +1,7 @@
-import CircularProgress from '@mui/material/CircularProgress';
-import { useMainStore } from '@store/main';
 import Button from '@mui/material/Button';
+import CircularProgress from '@mui/material/CircularProgress';
+
+import { useMainStore } from '@store/main';
 
 export function SubmitButton(props: {
   disabled?: boolean;
