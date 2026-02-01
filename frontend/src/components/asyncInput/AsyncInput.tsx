@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router';
 
 import { useMainStore } from '@store/main';
 
-export function AsyncInput<I>(props: {
+export function AsyncInput<I extends object>(props: {
   value: I | null;
   onChange: (value: I) => void;
   items: I[] | null;
@@ -38,13 +38,13 @@ export function AsyncInput<I>(props: {
     if (isLoading) {
       return <CircularProgress color="inherit" size={20} />;
     }
+    const valueId =
+      props.value && 'id' in props.value ? (props.value as unknown as { id: string }).id : null;
     return (
       <>
-        {props.link && (
+        {props.link && valueId && (
           <KeyboardDoubleArrowRightIcon
-            onClick={() =>
-              navigate(`${props.link}/${(props.value as unknown as { id: number }).id}`)
-            }
+            onClick={() => navigate(`${props.link}/${valueId}`)}
             sx={{ cursor: 'pointer' }}
           />
         )}
