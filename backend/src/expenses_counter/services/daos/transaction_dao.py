@@ -36,7 +36,7 @@ class TransactionDAO(BaseDAO[Transaction]):
         return result.all()
 
     @BaseDAO.error_handler
-    async def get_most_poular_products(self, limit: int = 10) -> list[Product]:
+    async def get_most_popular_products(self, limit: int = 10) -> list[Product]:
         """Get the most popular products.
 
         Args:

@@ -76,7 +76,7 @@ async def get_most_popular_products(
     """
     try:
         async with TransactionDAO(database_client=db) as transaction_dao:
-            return await transaction_dao.get_most_poular_products(limit=query.limit)
+            return await transaction_dao.get_most_popular_products(limit=query.limit)
     except DatabaseError as e:
         raise HTTPException(
             status_code=500, detail="Something went wrong while retrieving the most popular products"
