@@ -23,9 +23,9 @@ def main():
 
     uvicorn.run(
         app,
-        host="0.0.0.0",
-        port=config.app_port,
-        log_level=config.app_log_level.lower(),
+        host=config.info.api_info.host,
+        port=config.info.api_info.app_port,
+        log_level=config.info.api_info.log_level.lower(),
     )
 
 
