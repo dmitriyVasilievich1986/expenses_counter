@@ -17,6 +17,7 @@ class APIInfo(BaseModel):
     logging level for application logs.
 
     Attributes:
+        host: The host of the application. Defaults to "0.0.0.0".
         app_port: The TCP port number on which the API server listens for
             incoming connections. This is a required field.
         debug: Whether to run the application in debug mode. Debug mode
@@ -35,6 +36,7 @@ class APIInfo(BaseModel):
 
     """
 
+    host: str = Field("0.0.0.0", description="The host of the application")
     app_port: int = Field(..., description="The port of the application")
     debug: bool = Field(False, description="The debug mode of the application")
     log_level: str = Field("INFO", description="The log level of the application")
