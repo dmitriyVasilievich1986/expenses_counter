@@ -42,5 +42,5 @@ def downgrade():
         sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
         sa.Column("actual_price", sa.Numeric(precision=10, scale=2), nullable=False, server_default="0"),
         sa.Column("full_price", sa.Numeric(precision=10, scale=2), nullable=True, server_default="0"),
-        sa.PrimaryKeyConstraint("id"),
+        sa.PrimaryKeyConstraint("id", name="main_price_pkey"),
     )
