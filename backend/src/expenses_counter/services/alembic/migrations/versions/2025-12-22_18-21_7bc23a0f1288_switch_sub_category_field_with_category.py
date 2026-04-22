@@ -33,19 +33,25 @@ def upgrade():
     This simplifies the data model by using categories directly instead of
     requiring subcategories.
     """
-    op.drop_constraint("main_shop_sub_category_id_fkey", "main_shop", type_="foreignkey")
-    op.drop_column("main_shop", "sub_category_id")
-    op.add_column("main_shop", sa.Column("category_id", sa.BigInteger(), nullable=True))
-    op.create_foreign_key(
-        "main_shop_category_id_fkey", "main_shop", "main_category", ["category_id"], ["id"], ondelete="CASCADE"
-    )
+    with op.batch_alter_table("main_shop") as batch_op:
+        batch_op.drop_constraint("main_shop_sub_category_id_fkey", type_="foreignkey")
+        batch_op.drop_column("sub_category_id")
+        batch_op.add_column(
+            sa.Column("category_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=True)
+        )
+        batch_op.create_foreign_key(
+            "main_shop_category_id_fkey", "main_category", ["category_id"], ["id"], ondelete="CASCADE"
+        )
 
-    op.drop_constraint("main_product_sub_category_id_fkey", "main_product", type_="foreignkey")
-    op.drop_column("main_product", "sub_category_id")
-    op.add_column("main_product", sa.Column("category_id", sa.BigInteger(), nullable=True))
-    op.create_foreign_key(
-        "main_product_category_id_fkey", "main_product", "main_category", ["category_id"], ["id"], ondelete="CASCADE"
-    )
+    with op.batch_alter_table("main_product") as batch_op:
+        batch_op.drop_constraint("main_product_sub_category_id_fkey", type_="foreignkey")
+        batch_op.drop_column("sub_category_id")
+        batch_op.add_column(
+            sa.Column("category_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=True)
+        )
+        batch_op.create_foreign_key(
+            "main_product_category_id_fkey", "main_category", ["category_id"], ["id"], ondelete="CASCADE"
+        )
 
 
 def downgrade():
@@ -64,26 +70,22 @@ def downgrade():
     Note: This will result in data loss as category references cannot be
     automatically converted back to subcategory references.
     """
-    op.drop_constraint("main_shop_category_id_fkey", "main_shop", type_="foreignkey")
-    op.drop_column("main_shop", "category_id")
-    op.add_column("main_shop", sa.Column("sub_category_id", sa.BigInteger(), nullable=True))
-    op.create_foreign_key(
-        "main_shop_sub_category_id_fkey",
-        "main_shop",
-        "main_subcategory",
-        ["sub_category_id"],
-        ["id"],
-        ondelete="CASCADE",
-    )
+    with op.batch_alter_table("main_shop") as batch_op:
+        batch_op.drop_constraint("main_shop_category_id_fkey", type_="foreignkey")
+        batch_op.drop_column("category_id")
+        batch_op.add_column(
+            sa.Column("sub_category_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=True)
+        )
+        batch_op.create_foreign_key(
+            "main_shop_sub_category_id_fkey", "main_subcategory", ["sub_category_id"], ["id"], ondelete="CASCADE"
+        )
 
-    op.drop_constraint("main_product_category_id_fkey", "main_product", type_="foreignkey")
-    op.drop_column("main_product", "category_id")
-    op.add_column("main_product", sa.Column("sub_category_id", sa.BigInteger(), nullable=True))
-    op.create_foreign_key(
-        "main_product_sub_category_id_fkey",
-        "main_product",
-        "main_subcategory",
-        ["sub_category_id"],
-        ["id"],
-        ondelete="CASCADE",
-    )
+    with op.batch_alter_table("main_product") as batch_op:
+        batch_op.drop_constraint("main_product_category_id_fkey", type_="foreignkey")
+        batch_op.drop_column("category_id")
+        batch_op.add_column(
+            sa.Column("sub_category_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=True)
+        )
+        batch_op.create_foreign_key(
+            "main_product_sub_category_id_fkey", "main_subcategory", ["sub_category_id"], ["id"], ondelete="CASCADE"
+        )

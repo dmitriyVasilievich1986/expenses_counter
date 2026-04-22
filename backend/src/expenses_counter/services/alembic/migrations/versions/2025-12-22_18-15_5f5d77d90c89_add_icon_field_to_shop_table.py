@@ -22,7 +22,8 @@ def upgrade():
     Adds a nullable icon column (String, max 150 characters) to main_shop table.
     This field likely stores a file path or identifier for the shop's icon/logo.
     """
-    op.add_column("main_shop", sa.Column("icon", sa.String(length=150), nullable=True))
+    with op.batch_alter_table("main_shop") as batch_op:
+        batch_op.add_column(sa.Column("icon", sa.String(length=150), nullable=True))
 
 
 def downgrade():
@@ -30,4 +31,5 @@ def downgrade():
 
     Drops the icon column from main_shop table.
     """
-    op.drop_column("main_shop", "icon")
+    with op.batch_alter_table("main_shop") as batch_op:
+        batch_op.drop_column("icon")

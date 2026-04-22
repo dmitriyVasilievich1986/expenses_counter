@@ -23,7 +23,8 @@ def upgrade():
     main_shopaddress table. This field likely stores a localized or custom
     name for the specific shop location/address.
     """
-    op.add_column("main_shopaddress", sa.Column("local_name", sa.String(length=150), nullable=False))
+    with op.batch_alter_table("main_shopaddress") as batch_op:
+        batch_op.add_column(sa.Column("local_name", sa.String(length=150), nullable=False))
 
 
 def downgrade():
@@ -31,4 +32,5 @@ def downgrade():
 
     Drops the local_name column from main_shopaddress table.
     """
-    op.drop_column("main_shopaddress", "local_name")
+    with op.batch_alter_table("main_shopaddress") as batch_op:
+        batch_op.drop_column("local_name")

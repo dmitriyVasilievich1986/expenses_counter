@@ -24,9 +24,8 @@ def upgrade():
     the quantity of items purchased in each transaction, supporting decimal
     quantities (e.g., 1.5 kg of produce).
     """
-    op.add_column(
-        "main_transaction", sa.Column("count", sa.Numeric(precision=10, scale=3), nullable=False, server_default="0")
-    )
+    with op.batch_alter_table("main_transaction") as batch_op:
+        batch_op.add_column(sa.Column("count", sa.Numeric(precision=10, scale=3), nullable=False, server_default="0"))
 
 
 def downgrade():
@@ -34,4 +33,5 @@ def downgrade():
 
     Drops the count column from main_transaction table.
     """
-    op.drop_column("main_transaction", "count")
+    with op.batch_alter_table("main_transaction") as batch_op:
+        batch_op.drop_column("count")

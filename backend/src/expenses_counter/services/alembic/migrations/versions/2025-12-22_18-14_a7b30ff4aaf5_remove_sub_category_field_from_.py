@@ -23,7 +23,8 @@ def upgrade():
     This is likely because subcategory information can be derived from
     the product relationship instead of being stored redundantly.
     """
-    op.drop_column("main_transaction", "sub_category_id")
+    with op.batch_alter_table("main_transaction") as batch_op:
+        batch_op.drop_column("sub_category_id")
 
 
 def downgrade():
@@ -32,12 +33,10 @@ def downgrade():
     Re-adds the nullable sub_category_id foreign key column to main_transaction
     and recreates the foreign key constraint to main_subcategory table.
     """
-    op.add_column("main_transaction", sa.Column("sub_category_id", sa.BigInteger(), nullable=True))
-    op.create_foreign_key(
-        "main_transaction_sub_category_id_fkey",
-        "main_transaction",
-        "main_subcategory",
-        ["sub_category_id"],
-        ["id"],
-        ondelete="CASCADE",
-    )
+    with op.batch_alter_table("main_transaction") as batch_op:
+        batch_op.add_column(
+            sa.Column("sub_category_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=True)
+        )
+        batch_op.create_foreign_key(
+            "main_transaction_sub_category_id_fkey", "main_subcategory", ["sub_category_id"], ["id"], ondelete="CASCADE"
+        )

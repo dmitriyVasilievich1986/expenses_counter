@@ -23,7 +23,8 @@ def upgrade():
     Note: The icon field was already nullable in a previous migration, so this
     may be ensuring the constraint is properly set.
     """
-    op.alter_column("main_shop", "icon", nullable=True)
+    with op.batch_alter_table("main_shop") as batch_op:
+        batch_op.alter_column("icon", nullable=True)
 
 
 def downgrade():
@@ -32,4 +33,5 @@ def downgrade():
     Changes the icon column in main_shop table to require a value (NOT NULL).
     Note: This downgrade may fail if there are existing shops with NULL icons.
     """
-    op.alter_column("main_shop", "icon", nullable=False)
+    with op.batch_alter_table("main_shop") as batch_op:
+        batch_op.alter_column("icon", nullable=False)

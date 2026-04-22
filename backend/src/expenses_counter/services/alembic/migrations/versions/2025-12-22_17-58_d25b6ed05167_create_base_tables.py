@@ -32,56 +32,60 @@ def upgrade():
     # Create main_category table
     op.create_table(
         "main_category",
-        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
+        sa.Column("id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), autoincrement=True, nullable=False),
         sa.Column("name", sa.String(length=150), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
-        sa.PrimaryKeyConstraint("id"),
+        sa.PrimaryKeyConstraint("id", name="main_category_pkey"),
     )
 
     # Create main_price table
     op.create_table(
         "main_price",
-        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
+        sa.Column("id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), autoincrement=True, nullable=False),
         sa.Column("actual_price", sa.Numeric(precision=10, scale=2), nullable=False, server_default="0"),
         sa.Column("full_price", sa.Numeric(precision=10, scale=2), nullable=True, server_default="0"),
-        sa.Column("date", sa.Date(), nullable=False),
-        sa.PrimaryKeyConstraint("id"),
+        sa.Column("date", sa.Date(), nullable=False, quote=True),
+        sa.PrimaryKeyConstraint("id", name="main_price_pkey"),
     )
 
     # Create main_shop table
     op.create_table(
         "main_shop",
-        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
+        sa.Column("id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), autoincrement=True, nullable=False),
         sa.Column("address", sa.String(length=150), nullable=True),
         sa.Column("name", sa.String(length=150), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
-        sa.PrimaryKeyConstraint("id"),
+        sa.PrimaryKeyConstraint("id", name="main_shop_pkey"),
     )
 
     # Create main_subcategory table (depends on main_category)
     op.create_table(
         "main_subcategory",
-        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
+        sa.Column("id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), autoincrement=True, nullable=False),
         sa.Column("name", sa.String(length=150), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
-        sa.Column("category_id", sa.BigInteger(), nullable=False),
-        sa.ForeignKeyConstraint(["category_id"], ["main_category.id"], ondelete="CASCADE"),
-        sa.PrimaryKeyConstraint("id"),
+        sa.Column("category_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=False),
+        sa.ForeignKeyConstraint(
+            ["category_id"], ["main_category.id"], ondelete="CASCADE", name="main_subcategory_category_id_fkey"
+        ),
+        sa.PrimaryKeyConstraint("id", name="main_subcategory_pkey"),
     )
 
     # Create main_product table (depends on main_price, main_shop, main_subcategory)
     op.create_table(
         "main_product",
-        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
+        sa.Column("id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), autoincrement=True, nullable=False),
         sa.Column("name", sa.String(length=150), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
-        sa.Column("price_id", sa.BigInteger(), nullable=False),
-        sa.Column("shop_id", sa.BigInteger(), nullable=False),
-        sa.Column("sub_category_id", sa.BigInteger(), nullable=False),
-        sa.ForeignKeyConstraint(["price_id"], ["main_price.id"], ondelete="CASCADE"),
-        sa.ForeignKeyConstraint(["shop_id"], ["main_shop.id"], ondelete="CASCADE"),
-        sa.ForeignKeyConstraint(["sub_category_id"], ["main_subcategory.id"], ondelete="CASCADE"),
-        sa.PrimaryKeyConstraint("id"),
+        sa.Column("price_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=False),
+        sa.Column("shop_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=False),
+        sa.Column("sub_category_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=False),
+        sa.ForeignKeyConstraint(["price_id"], ["main_price.id"], ondelete="CASCADE", name="main_product_price_id_fkey"),
+        sa.ForeignKeyConstraint(["shop_id"], ["main_shop.id"], ondelete="CASCADE", name="main_product_shop_id_fkey"),
+        sa.ForeignKeyConstraint(
+            ["sub_category_id"], ["main_subcategory.id"], ondelete="CASCADE", name="main_product_sub_category_id_fkey"
+        ),
+        sa.PrimaryKeyConstraint("id", name="main_product_pkey"),
     )
 
 

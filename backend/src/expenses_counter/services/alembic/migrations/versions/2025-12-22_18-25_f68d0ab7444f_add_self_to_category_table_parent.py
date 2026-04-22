@@ -29,10 +29,11 @@ def upgrade():
     - Parent-child category relationships
     - Category trees of arbitrary depth
     """
-    op.add_column("main_category", sa.Column("parent_id", sa.BigInteger(), nullable=True))
-    op.create_foreign_key(
-        "main_category_parent_id_fkey", "main_category", "main_category", ["parent_id"], ["id"], ondelete="CASCADE"
-    )
+    with op.batch_alter_table("main_category") as batch_op:
+        batch_op.add_column(sa.Column("parent_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=True))
+        batch_op.create_foreign_key(
+            "main_category_parent_id_fkey", "main_category", ["parent_id"], ["id"], ondelete="CASCADE"
+        )
 
 
 def downgrade():
@@ -42,5 +43,6 @@ def downgrade():
     main_category table, eliminating the hierarchical structure and flattening
     all categories to a single level.
     """
-    op.drop_constraint("main_category_parent_id_fkey", "main_category", type_="foreignkey")
-    op.drop_column("main_category", "parent_id")
+    with op.batch_alter_table("main_category") as batch_op:
+        batch_op.drop_constraint("main_category_parent_id_fkey", type_="foreignkey")
+        batch_op.drop_column("parent_id")

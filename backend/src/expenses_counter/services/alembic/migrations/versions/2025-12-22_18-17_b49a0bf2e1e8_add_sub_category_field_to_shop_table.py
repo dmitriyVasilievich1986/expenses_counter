@@ -23,15 +23,13 @@ def upgrade():
     allowing shops to be associated with subcategories. This enables
     categorization of shops (e.g., grocery store, electronics, etc.).
     """
-    op.add_column("main_shop", sa.Column("sub_category_id", sa.BigInteger(), nullable=True))
-    op.create_foreign_key(
-        "main_shop_sub_category_id_fkey",
-        "main_shop",
-        "main_subcategory",
-        ["sub_category_id"],
-        ["id"],
-        ondelete="CASCADE",
-    )
+    with op.batch_alter_table("main_shop") as batch_op:
+        batch_op.add_column(
+            sa.Column("sub_category_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=True)
+        )
+        batch_op.create_foreign_key(
+            "main_shop_sub_category_id_fkey", "main_subcategory", ["sub_category_id"], ["id"], ondelete="CASCADE"
+        )
 
 
 def downgrade():
@@ -40,5 +38,6 @@ def downgrade():
     Drops the foreign key constraint and removes the sub_category_id column
     from the main_shop table.
     """
-    op.drop_constraint("main_shop_sub_category_id_fkey", "main_shop", type_="foreignkey")
-    op.drop_column("main_shop", "sub_category_id")
+    with op.batch_alter_table("main_shop") as batch_op:
+        batch_op.drop_constraint("main_shop_sub_category_id_fkey", type_="foreignkey")
+        batch_op.drop_column("sub_category_id")

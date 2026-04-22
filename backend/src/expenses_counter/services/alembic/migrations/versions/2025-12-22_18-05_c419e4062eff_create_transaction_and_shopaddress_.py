@@ -30,45 +30,61 @@ def upgrade():
     transaction table, allowing products to exist independently of specific purchases.
     """
     # Remove field date from main_price
-    op.drop_column("main_price", "date")
+    with op.batch_alter_table("main_price") as batch_op:
+        batch_op.drop_column("date")
 
     # Remove foreign key constraints and columns from main_product
-    op.drop_constraint("main_product_price_id_fkey", "main_product", type_="foreignkey")
-    op.drop_column("main_product", "price_id")
+    with op.batch_alter_table("main_product") as batch_op:
+        batch_op.drop_constraint("main_product_price_id_fkey", type_="foreignkey")
+        batch_op.drop_column("price_id")
 
-    op.drop_constraint("main_product_shop_id_fkey", "main_product", type_="foreignkey")
-    op.drop_column("main_product", "shop_id")
+        batch_op.drop_constraint("main_product_shop_id_fkey", type_="foreignkey")
+        batch_op.drop_column("shop_id")
 
-    op.drop_constraint("main_product_sub_category_id_fkey", "main_product", type_="foreignkey")
-    op.drop_column("main_product", "sub_category_id")
+        batch_op.drop_constraint("main_product_sub_category_id_fkey", type_="foreignkey")
+        batch_op.drop_column("sub_category_id")
 
     # Remove field address from main_shop
-    op.drop_column("main_shop", "address")
+    with op.batch_alter_table("main_shop") as batch_op:
+        batch_op.drop_column("address")
 
     # Create main_transaction table
     op.create_table(
         "main_transaction",
-        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
-        sa.Column("date", sa.Date(), nullable=False),
-        sa.Column("price_id", sa.BigInteger(), nullable=False),
-        sa.Column("product_id", sa.BigInteger(), nullable=False),
-        sa.Column("shop_id", sa.BigInteger(), nullable=False),
-        sa.Column("sub_category_id", sa.BigInteger(), nullable=False),
-        sa.ForeignKeyConstraint(["price_id"], ["main_price.id"], ondelete="CASCADE"),
-        sa.ForeignKeyConstraint(["product_id"], ["main_product.id"], ondelete="CASCADE"),
-        sa.ForeignKeyConstraint(["shop_id"], ["main_shop.id"], ondelete="CASCADE"),
-        sa.ForeignKeyConstraint(["sub_category_id"], ["main_subcategory.id"], ondelete="CASCADE"),
-        sa.PrimaryKeyConstraint("id"),
+        sa.Column("id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), autoincrement=True, nullable=False),
+        sa.Column("date", sa.Date(), nullable=False, quote=True),
+        sa.Column("price_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=False),
+        sa.Column("product_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=False),
+        sa.Column("shop_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=False),
+        sa.Column("sub_category_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=False),
+        sa.ForeignKeyConstraint(
+            ["price_id"], ["main_price.id"], ondelete="CASCADE", name="main_transaction_price_id_fkey"
+        ),
+        sa.ForeignKeyConstraint(
+            ["product_id"], ["main_product.id"], ondelete="CASCADE", name="main_transaction_product_id_fkey"
+        ),
+        sa.ForeignKeyConstraint(
+            ["shop_id"], ["main_shop.id"], ondelete="CASCADE", name="main_transaction_shop_id_fkey"
+        ),
+        sa.ForeignKeyConstraint(
+            ["sub_category_id"],
+            ["main_subcategory.id"],
+            ondelete="CASCADE",
+            name="main_transaction_sub_category_id_fkey",
+        ),
+        sa.PrimaryKeyConstraint("id", name="main_transaction_pkey"),
     )
 
     # Create main_shopaddress table
     op.create_table(
         "main_shopaddress",
-        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
+        sa.Column("id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), autoincrement=True, nullable=False),
         sa.Column("address", sa.String(length=150), nullable=False),
-        sa.Column("shop_id", sa.BigInteger(), nullable=False),
-        sa.ForeignKeyConstraint(["shop_id"], ["main_shop.id"], ondelete="CASCADE"),
-        sa.PrimaryKeyConstraint("id"),
+        sa.Column("shop_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=False),
+        sa.ForeignKeyConstraint(
+            ["shop_id"], ["main_shop.id"], ondelete="CASCADE", name="main_shopaddress_shop_id_fkey"
+        ),
+        sa.PrimaryKeyConstraint("id", name="main_shopaddress_pkey"),
     )
 
 
@@ -89,28 +105,24 @@ def downgrade():
     op.drop_table("main_transaction")
 
     # Re-add address column to main_shop
-    op.add_column("main_shop", sa.Column("address", sa.String(length=150), nullable=True))
+    with op.batch_alter_table("main_shop") as batch_op:
+        batch_op.add_column(sa.Column("address", sa.String(length=150), nullable=True))
 
     # Re-add foreign key columns to main_product
-    op.add_column("main_product", sa.Column("sub_category_id", sa.BigInteger(), nullable=False))
-    op.create_foreign_key(
-        "main_product_sub_category_id_fkey",
-        "main_product",
-        "main_subcategory",
-        ["sub_category_id"],
-        ["id"],
-        ondelete="CASCADE",
-    )
-
-    op.add_column("main_product", sa.Column("shop_id", sa.BigInteger(), nullable=False))
-    op.create_foreign_key(
-        "main_product_shop_id_fkey", "main_product", "main_shop", ["shop_id"], ["id"], ondelete="CASCADE"
-    )
-
-    op.add_column("main_product", sa.Column("price_id", sa.BigInteger(), nullable=False))
-    op.create_foreign_key(
-        "main_product_price_id_fkey", "main_product", "main_price", ["price_id"], ["id"], ondelete="CASCADE"
-    )
+    with op.batch_alter_table("main_product") as batch_op:
+        batch_op.add_column(
+            sa.Column("sub_category_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=False)
+        )
+        batch_op.create_foreign_key(
+            "main_product_sub_category_id_fkey", "main_subcategory", ["sub_category_id"], ["id"], ondelete="CASCADE"
+        )
+        batch_op.add_column(sa.Column("shop_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=False))
+        batch_op.create_foreign_key("main_product_shop_id_fkey", "main_shop", ["shop_id"], ["id"], ondelete="CASCADE")
+        batch_op.add_column(sa.Column("price_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=False))
+        batch_op.create_foreign_key(
+            "main_product_price_id_fkey", "main_price", ["price_id"], ["id"], ondelete="CASCADE"
+        )
 
     # Re-add date column to main_price
-    op.add_column("main_price", sa.Column("date", sa.Date(), nullable=False))
+    with op.batch_alter_table("main_price") as batch_op:
+        batch_op.add_column(sa.Column("date", sa.Date(), nullable=False, quote=True))
