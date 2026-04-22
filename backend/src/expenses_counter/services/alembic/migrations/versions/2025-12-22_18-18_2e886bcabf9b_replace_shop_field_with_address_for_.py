@@ -27,17 +27,13 @@ def upgrade():
     This allows transactions to be associated with specific shop locations
     rather than just the shop brand/chain.
     """
-    op.drop_constraint("main_transaction_shop_id_fkey", "main_transaction", type_="foreignkey")
-    op.drop_column("main_transaction", "shop_id")
-    op.add_column("main_transaction", sa.Column("address_id", sa.BigInteger(), nullable=False))
-    op.create_foreign_key(
-        "main_transaction_address_id_fkey",
-        "main_transaction",
-        "main_shopaddress",
-        ["address_id"],
-        ["id"],
-        ondelete="CASCADE",
-    )
+    with op.batch_alter_table("main_transaction") as batch_op:
+        batch_op.drop_constraint("main_transaction_shop_id_fkey", type_="foreignkey")
+        batch_op.drop_column("shop_id")
+        batch_op.add_column(sa.Column("address_id", sa.BigInteger(), nullable=False))
+        batch_op.create_foreign_key(
+            "main_transaction_address_id_fkey", "main_shopaddress", ["address_id"], ["id"], ondelete="CASCADE"
+        )
 
 
 def downgrade():
@@ -50,9 +46,10 @@ def downgrade():
     Note: This will result in data loss as address-specific information
     cannot be automatically converted back to shop references.
     """
-    op.drop_constraint("main_transaction_address_id_fkey", "main_transaction", type_="foreignkey")
-    op.drop_column("main_transaction", "address_id")
-    op.add_column("main_transaction", sa.Column("shop_id", sa.BigInteger(), nullable=False))
-    op.create_foreign_key(
-        "main_transaction_shop_id_fkey", "main_transaction", "main_shop", ["shop_id"], ["id"], ondelete="CASCADE"
-    )
+    with op.batch_alter_table("main_transaction") as batch_op:
+        batch_op.drop_constraint("main_transaction_address_id_fkey", type_="foreignkey")
+        batch_op.drop_column("address_id")
+        batch_op.add_column(sa.Column("shop_id", sa.BigInteger(), nullable=False))
+        batch_op.create_foreign_key(
+            "main_transaction_shop_id_fkey", "main_shop", ["shop_id"], ["id"], ondelete="CASCADE"
+        )
