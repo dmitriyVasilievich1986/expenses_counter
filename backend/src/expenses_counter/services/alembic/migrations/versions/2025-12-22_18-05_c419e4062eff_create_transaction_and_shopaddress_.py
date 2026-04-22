@@ -116,12 +116,8 @@ def downgrade():
         batch_op.create_foreign_key(
             "main_product_sub_category_id_fkey", "main_subcategory", ["sub_category_id"], ["id"], ondelete="CASCADE"
         )
-
-    with op.batch_alter_table("main_product") as batch_op:
         batch_op.add_column(sa.Column("shop_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=False))
         batch_op.create_foreign_key("main_product_shop_id_fkey", "main_shop", ["shop_id"], ["id"], ondelete="CASCADE")
-
-    with op.batch_alter_table("main_product") as batch_op:
         batch_op.add_column(sa.Column("price_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=False))
         batch_op.create_foreign_key(
             "main_product_price_id_fkey", "main_price", ["price_id"], ["id"], ondelete="CASCADE"
