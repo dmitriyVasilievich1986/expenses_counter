@@ -30,7 +30,9 @@ def upgrade():
     with op.batch_alter_table("main_transaction") as batch_op:
         batch_op.drop_constraint("main_transaction_shop_id_fkey", type_="foreignkey")
         batch_op.drop_column("shop_id")
-        batch_op.add_column(sa.Column("address_id", sa.BigInteger(), nullable=False))
+        batch_op.add_column(
+            sa.Column("address_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=False)
+        )
         batch_op.create_foreign_key(
             "main_transaction_address_id_fkey", "main_shopaddress", ["address_id"], ["id"], ondelete="CASCADE"
         )
@@ -49,7 +51,7 @@ def downgrade():
     with op.batch_alter_table("main_transaction") as batch_op:
         batch_op.drop_constraint("main_transaction_address_id_fkey", type_="foreignkey")
         batch_op.drop_column("address_id")
-        batch_op.add_column(sa.Column("shop_id", sa.BigInteger(), nullable=False))
+        batch_op.add_column(sa.Column("shop_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=False))
         batch_op.create_foreign_key(
             "main_transaction_shop_id_fkey", "main_shop", ["shop_id"], ["id"], ondelete="CASCADE"
         )

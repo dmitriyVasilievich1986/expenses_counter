@@ -34,7 +34,9 @@ def downgrade():
     and recreates the foreign key constraint to main_subcategory table.
     """
     with op.batch_alter_table("main_transaction") as batch_op:
-        batch_op.add_column(sa.Column("sub_category_id", sa.BigInteger(), nullable=True))
+        batch_op.add_column(
+            sa.Column("sub_category_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=True)
+        )
         batch_op.create_foreign_key(
             "main_transaction_sub_category_id_fkey", "main_subcategory", ["sub_category_id"], ["id"], ondelete="CASCADE"
         )

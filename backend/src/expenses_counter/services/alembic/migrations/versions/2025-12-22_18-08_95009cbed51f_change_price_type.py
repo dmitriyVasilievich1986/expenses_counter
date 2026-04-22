@@ -60,7 +60,7 @@ def downgrade():
 
     # Re-add the price_id foreign key column
     with op.batch_alter_table("main_transaction") as batch_op:
-        batch_op.add_column(sa.Column("price_id", sa.BigInteger(), nullable=False))
+        batch_op.add_column(sa.Column("price_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=False))
 
     # Re-create the foreign key constraint
     with op.batch_alter_table("main_transaction") as batch_op:

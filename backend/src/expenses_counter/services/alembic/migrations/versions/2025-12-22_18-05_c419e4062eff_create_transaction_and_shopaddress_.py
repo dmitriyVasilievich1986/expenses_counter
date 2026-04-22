@@ -51,12 +51,12 @@ def upgrade():
     # Create main_transaction table
     op.create_table(
         "main_transaction",
-        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
+        sa.Column("id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), autoincrement=True, nullable=False),
         sa.Column("date", sa.Date(), nullable=False, quote=True),
-        sa.Column("price_id", sa.BigInteger(), nullable=False),
-        sa.Column("product_id", sa.BigInteger(), nullable=False),
-        sa.Column("shop_id", sa.BigInteger(), nullable=False),
-        sa.Column("sub_category_id", sa.BigInteger(), nullable=False),
+        sa.Column("price_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=False),
+        sa.Column("product_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=False),
+        sa.Column("shop_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=False),
+        sa.Column("sub_category_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=False),
         sa.ForeignKeyConstraint(
             ["price_id"], ["main_price.id"], ondelete="CASCADE", name="main_transaction_price_id_fkey"
         ),
@@ -78,9 +78,9 @@ def upgrade():
     # Create main_shopaddress table
     op.create_table(
         "main_shopaddress",
-        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
+        sa.Column("id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), autoincrement=True, nullable=False),
         sa.Column("address", sa.String(length=150), nullable=False),
-        sa.Column("shop_id", sa.BigInteger(), nullable=False),
+        sa.Column("shop_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=False),
         sa.ForeignKeyConstraint(
             ["shop_id"], ["main_shop.id"], ondelete="CASCADE", name="main_shopaddress_shop_id_fkey"
         ),
@@ -110,17 +110,19 @@ def downgrade():
 
     # Re-add foreign key columns to main_product
     with op.batch_alter_table("main_product") as batch_op:
-        batch_op.add_column(sa.Column("sub_category_id", sa.BigInteger(), nullable=False))
+        batch_op.add_column(
+            sa.Column("sub_category_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=False)
+        )
         batch_op.create_foreign_key(
             "main_product_sub_category_id_fkey", "main_subcategory", ["sub_category_id"], ["id"], ondelete="CASCADE"
         )
 
     with op.batch_alter_table("main_product") as batch_op:
-        batch_op.add_column(sa.Column("shop_id", sa.BigInteger(), nullable=False))
+        batch_op.add_column(sa.Column("shop_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=False))
         batch_op.create_foreign_key("main_product_shop_id_fkey", "main_shop", ["shop_id"], ["id"], ondelete="CASCADE")
 
     with op.batch_alter_table("main_product") as batch_op:
-        batch_op.add_column(sa.Column("price_id", sa.BigInteger(), nullable=False))
+        batch_op.add_column(sa.Column("price_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=False))
         batch_op.create_foreign_key(
             "main_product_price_id_fkey", "main_price", ["price_id"], ["id"], ondelete="CASCADE"
         )
