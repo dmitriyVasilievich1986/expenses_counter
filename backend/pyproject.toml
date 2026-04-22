@@ -22,7 +22,6 @@ dependencies = [
     "alembic>=1.17.2",
     "asyncpg>=0.31.0",
     "beautifulsoup4>=4.14.3",
-    "click>=8.3.0",
     "django>=5.2.7",
     "djangorestframework>=3.16.1",
     "fastapi>=0.120.4",
@@ -41,6 +40,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "asyncclick>=8.3.0.7",
     "httpx>=0.28.1",
     "ipykernel>=7.1.0",
     "pandas>=2.3.3",
