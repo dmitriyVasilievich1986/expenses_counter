@@ -405,6 +405,7 @@ source = { editable = "." }
 dependencies = [
     { name = "aiosqlite" },
     { name = "alembic" },
+    { name = "asyncclick" },
     { name = "asyncpg" },
     { name = "beautifulsoup4" },
     { name = "django" },
@@ -425,7 +426,6 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
-    { name = "asyncclick" },
     { name = "httpx" },
     { name = "ipykernel" },
     { name = "pandas" },
@@ -440,6 +440,7 @@ dev = [
 requires-dist = [
     { name = "aiosqlite", specifier = ">=0.21.0" },
     { name = "alembic", specifier = ">=1.17.2" },
+    { name = "asyncclick", specifier = ">=8.3.0.7" },
     { name = "asyncpg", specifier = ">=0.31.0" },
     { name = "beautifulsoup4", specifier = ">=4.14.3" },
     { name = "django", specifier = ">=5.2.7" },
@@ -460,7 +461,6 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "asyncclick", specifier = ">=8.3.0.7" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "ipykernel", specifier = ">=7.1.0" },
     { name = "pandas", specifier = ">=2.3.3" },

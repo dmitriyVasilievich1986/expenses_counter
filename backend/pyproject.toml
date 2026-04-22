@@ -20,6 +20,7 @@ requires-python = ">=3.13"
 dependencies = [
     "aiosqlite>=0.21.0",
     "alembic>=1.17.2",
+    "asyncclick>=8.3.0.7",
     "asyncpg>=0.31.0",
     "beautifulsoup4>=4.14.3",
     "django>=5.2.7",
@@ -40,7 +41,6 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "asyncclick>=8.3.0.7",
     "httpx>=0.28.1",
     "ipykernel>=7.1.0",
     "pandas>=2.3.3",
