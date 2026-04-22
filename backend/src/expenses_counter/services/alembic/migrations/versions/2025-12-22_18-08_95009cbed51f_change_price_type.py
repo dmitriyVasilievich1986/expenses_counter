@@ -31,13 +31,7 @@ def upgrade():
     # Drop the foreign key constraint first
     with op.batch_alter_table("main_transaction") as batch_op:
         batch_op.drop_constraint("main_transaction_price_id_fkey", type_="foreignkey")
-
-    # Drop the old price_id column
-    with op.batch_alter_table("main_transaction") as batch_op:
         batch_op.drop_column("price_id")
-
-    # Add the new price column as a decimal field
-    with op.batch_alter_table("main_transaction") as batch_op:
         batch_op.add_column(
             sa.Column("price", sa.Numeric(precision=10, scale=2), nullable=False, server_default="0"),
         )
@@ -57,13 +51,7 @@ def downgrade():
     # Drop the decimal price column
     with op.batch_alter_table("main_transaction") as batch_op:
         batch_op.drop_column("price")
-
-    # Re-add the price_id foreign key column
-    with op.batch_alter_table("main_transaction") as batch_op:
         batch_op.add_column(sa.Column("price_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=False))
-
-    # Re-create the foreign key constraint
-    with op.batch_alter_table("main_transaction") as batch_op:
         batch_op.create_foreign_key(
             "main_transaction_price_id_fkey", "main_price", ["price_id"], ["id"], ondelete="CASCADE"
         )
