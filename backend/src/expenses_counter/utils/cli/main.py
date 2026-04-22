@@ -40,7 +40,7 @@ async def show_config(ctx: click.Context) -> None:
 @click.option("--host", default="0.0.0.0", help="Host to bind the server to.")
 @click.option("--port", default=3000, help="Port to bind the server to.")
 @click.option("--reload", is_flag=True, help="Enable auto-reload for development.")
-async def run(host: str, port: int, reload: bool) -> None:
+def run(host: str, port: int, reload: bool) -> None:
     """Start the Expenses Counter web server using Uvicorn.
 
     Launches the FastAPI application server with the specified configuration.
@@ -57,15 +57,13 @@ async def run(host: str, port: int, reload: bool) -> None:
 
     """
     click.echo(f"Starting Expenses Counter on {host}:{port} (reload={reload})")
-    config = uvicorn.Config(
+    uvicorn.run(
         "expenses_counter.modules.app:get_app",
         host=host,
         port=port,
         reload=reload,
         factory=True,
     )
-    server = uvicorn.Server(config)
-    await server.serve()
 
 
 main.add_command(crawler)
