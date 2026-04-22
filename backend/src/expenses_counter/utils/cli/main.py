@@ -1,4 +1,4 @@
-import click
+import asyncclick as click
 import uvicorn
 
 from expenses_counter import __version__ as app_version
@@ -10,7 +10,7 @@ from .crawler import crawler
 @click.group(help="CLI for managing the Expenses Counter.")
 @click.version_option(app_version, "-v", "--version", message=f"Expenses Counter, version {app_version}")
 @click.pass_context
-def main(ctx: click.Context) -> None:
+async def main(ctx: click.Context) -> None:
     """Initialize the main CLI group for the Expenses Counter.
 
     This function serves as the root command group for all CLI operations.
@@ -28,15 +28,15 @@ def main(ctx: click.Context) -> None:
     ctx.obj["config"] = AppConfig.get_or_create()
 
 
-@main.command(help="Run the Expenses Counter application server.")
+@main.command(help="Show the Expenses Counter application configuration.")
 @click.pass_context
-def show_config(ctx: click.Context) -> None:
+async def show_config(ctx: click.Context) -> None:
     """Show the Expenses Counter application configuration."""
     config: AppConfig = ctx.obj["config"]
     click.echo(config.model_dump_json(indent=2))
 
 
-@main.command(help="Run the Expenses Counter application server.")
+@main.command(help="Start the Expenses Counter application server.")
 @click.option("--host", default="0.0.0.0", help="Host to bind the server to.")
 @click.option("--port", default=3000, help="Port to bind the server to.")
 @click.option("--reload", is_flag=True, help="Enable auto-reload for development.")
