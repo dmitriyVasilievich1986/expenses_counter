@@ -10,12 +10,12 @@ from typing import AsyncGenerator
 
 import pytest
 import pytest_asyncio
-from sqlalchemy import text
+from alembic import command as alembic_command
+from alembic.config import Config as AlembicConfig
 
 from expenses_counter.config import AppConfig
 from expenses_counter.config.base.storage import SettingsStorage
 from expenses_counter.services.database import AsyncDatabaseClient
-from expenses_counter.services.database.models.base import mapper_registry
 from expenses_counter.utils import Singleton
 
 
@@ -107,54 +107,44 @@ def test_config(test_db_path: Path) -> AppConfig:
 
 @pytest_asyncio.fixture(scope="session")
 async def test_database_with_migrations(
-    test_config: AppConfig,
+    test_config: AppConfig,  # noqa: ARG001
     test_db_path: Path,
 ) -> AsyncGenerator[Path, None]:
-    """Create test database and apply schema.
+    """Create test database and apply schema via Alembic migrations.
 
     This fixture:
     1. Creates a fresh test database using SQLite
-    2. Creates all tables from SQLAlchemy models
+    2. Runs Alembic ``upgrade head`` to apply all migrations
     3. Yields the database path for tests to use
     4. Cleans up after all tests complete
 
-    Note: This fixture creates tables directly from SQLAlchemy metadata
-    rather than running Alembic migrations. This is simpler and more
-    reliable for testing, as it avoids event loop conflicts.
+    Alembic is run in a worker thread so its internal ``asyncio.run()`` call
+    does not conflict with the already-running pytest-asyncio event loop.
+    The migration env.py picks up the test database URL automatically via
+    ``AppConfig.get_or_create()``, which reads from the singleton
+    ``SettingsStorage`` populated by the ``test_config`` fixture.
 
     Args:
-        test_config: Test configuration with database settings.
+        test_config: Test configuration with database settings (stored in
+            SettingsStorage so Alembic env.py can find it).
         test_db_path: Path to the test database file.
 
     Yields:
-        Path: Path to the test database with schema applied.
+        Path: Path to the test database with all migrations applied.
 
     """
-    from sqlalchemy.ext.asyncio import create_async_engine
+    _alembic_ini = Path(__file__).parent.parent / "src" / "expenses_counter" / "services" / "alembic" / "alembic.ini"
 
-    # Create engine
-    engine = create_async_engine(
-        test_config.services.database.url,
-        echo=test_config.info.api_info.debug,
-        future=True,
-    )
+    def _run_migrations() -> None:
+        cfg = AlembicConfig(str(_alembic_ini))
+        alembic_command.upgrade(cfg, "head")
 
     try:
-        # Create all tables from metadata
-        async with engine.begin() as conn:
-            await conn.run_sync(mapper_registry.metadata.create_all)
-
-        # Verify database is accessible
-        async with engine.connect() as conn:
-            await conn.execute(text("SELECT 1"))
+        await asyncio.to_thread(_run_migrations)
 
         yield test_db_path
 
     finally:
-        # Cleanup: dispose engine and drop database
-        await engine.dispose()
-
-        # Drop test database by removing the file
         if test_db_path.exists():
             test_db_path.unlink()
 
