@@ -2,34 +2,33 @@
 
 __all__ = ("ProductDAO",)
 
+from sqlalchemy.sql import ColumnElement
+
 from expenses_counter.services.daos.base import BaseDAO
 from expenses_counter.services.database.models.product import Product
 
 
 class ProductDAO(BaseDAO[Product]):
-    """Data Access Object for Product entities.
-
-    This DAO implements CRUD operations for Product entities, interacting with
-    the database through the provided database client. It extends BaseDAO with
-    product-specific implementations.
-    """
+    """Data access for ``Product`` rows with optional ``category`` eager load."""
 
     database_model = Product
     get_all_columns = (Product.id, Product.name, Product.description, Product.category_id)
     select_in_options_single = (Product.category,)
 
-    @BaseDAO.error_handler
-    async def get_by_name(self, name: str) -> Product:
-        """Get product by name.
+    async def get_by_name(self, name: str, filters: list[ColumnElement[bool]] | None = None) -> Product:
+        """Load one product row by its ``name`` column value.
 
         Args:
-            name: Product name to look up
+            name (str): Value of the ``name`` column to match.
+            filters (list[ColumnElement[bool]] | None, optional): Extra WHERE
+                clauses merged with ``base_filters``. Defaults to None.
 
         Returns:
-            Product object matching the provided name
-
-        Raises:
-            ValueError: If the product is not found in the database
+            Product: The matching ORM instance.
 
         """
-        return await self.get_by_id(name, pk_column_name="name")
+        if self.session is not None:
+            return await self._get_by_pk_raw(self.session, name, "name", filters)
+
+        async with self.database_client.session_factory() as session:
+            return await self._get_by_pk_raw(session, name, "name", filters)
