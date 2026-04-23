@@ -16,22 +16,36 @@ if TYPE_CHECKING:
 
 
 class Transaction(Base):
-    """SQLAlchemy model representing a Transaction entity.
+    """SQLAlchemy model representing a single purchase line on a receipt.
 
-    Transactions represent financial transactions associated with products and addresses.
-    Each transaction belongs to a specific product and address and contains information
-    about the date, count, and price of the transaction.
+    A transaction ties a product, quantity, and price to the address (shop
+    location) where the purchase occurred.
+
+    Attributes:
+        id: Primary key identifier for the transaction line.
+        date: Calendar date when the purchase was made.
+        count: Quantity or amount purchased (stored with up to three decimal places).
+        price: Monetary value for this line (stored with up to two decimal places).
+        product_id: Foreign key to the purchased product.
+        product: Related Product entity.
+        address_id: Foreign key to the shop address where the purchase occurred.
+        address: Related Address entity.
+
     """
 
     __tablename__ = "main_transaction"
 
-    id: int = Column[int](Integer, primary_key=True, autoincrement=True)
-    date: datetime.date = Column[datetime.date](Date, nullable=False)
-    count: float = Column[float](Numeric[float](precision=10, scale=3, asdecimal=True), nullable=False, default=0)
-    price: float = Column[float](Numeric[float](precision=10, scale=2, asdecimal=True), nullable=False, default=0)
+    id: Column[int] = Column[int](Integer, primary_key=True, autoincrement=True)
+    date: Column[datetime.date] = Column[datetime.date](Date, nullable=False)
+    count: Column[float] = Column[float](
+        Numeric[float](precision=10, scale=3, asdecimal=True), nullable=False, default=0
+    )
+    price: Column[float] = Column[float](
+        Numeric[float](precision=10, scale=2, asdecimal=True), nullable=False, default=0
+    )
 
-    product_id: int = Column[int](ForeignKey("main_product.id"), nullable=False)
+    product_id: Column[int] = Column[int](ForeignKey("main_product.id"), nullable=False)
     product: Mapped["Product"] = relationship("Product", back_populates="transactions")
 
-    address_id: int = Column[int](ForeignKey("main_shopaddress.id"), nullable=False)
+    address_id: Column[int] = Column[int](ForeignKey("main_shopaddress.id"), nullable=False)
     address: Mapped["Address"] = relationship("Address", back_populates="transactions")
