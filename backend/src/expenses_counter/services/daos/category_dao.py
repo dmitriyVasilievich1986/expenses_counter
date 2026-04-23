@@ -1,65 +1,56 @@
-"""Category Data Access Object (DAO) module.
-
-This module provides the CategoryDAO class for managing category-related database operations.
-It extends the BaseDAO with category-specific functionality, including support for hierarchical
-category relationships with parent categories loaded recursively.
-
-Classes:
-    CategoryDAO: Data access object for Category model operations with hierarchical support.
-"""
+"""Async DAO for category rows with hierarchical parent loading."""
 
 __all__ = ("CategoryDAO",)
 
 
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+from sqlalchemy.sql import ColumnElement
 
 from expenses_counter.services.daos.base import BaseDAO
 from expenses_counter.services.database.models.category import Category
 
 
 class CategoryDAO(BaseDAO[Category]):
-    """Data Access Object for Category model operations.
-
-    This DAO extends BaseDAO to provide category-specific database operations,
-    with special handling for hierarchical category relationships. It supports
-    loading parent categories recursively to build complete category hierarchies.
-
-    Attributes:
-        database_model: The Category SQLAlchemy model class.
-
-    """
+    """Data access for ``Category`` with unlimited-depth ``parent`` eager load."""
 
     database_model = Category
     get_all_columns = (Category.id, Category.name)
 
-    @BaseDAO.error_handler
-    async def get_by_id(self, pk: int, pk_column_name: str | None = None) -> Category:
-        """Retrieve a single category by ID with all parent levels loaded recursively.
-
-        This method overrides the base implementation to eagerly load the entire
-        parent category hierarchy with unlimited recursion depth. This ensures
-        that the complete category path from root to the requested category
-        is available without additional queries.
+    async def _get_by_pk_raw(
+        self,
+        session: AsyncSession,
+        pk: int | str,
+        pk_column_name: str,
+        filters: list[ColumnElement[bool]] | None = None,
+    ) -> Category:
+        """Load one category by primary key with full ancestor chain loaded.
 
         Args:
-            pk: The primary key of the category to retrieve.
-            pk_column_name: The name of the primary key column to use.
+            session (AsyncSession): Active async session.
+            pk (int | str): Primary key value.
+            pk_column_name (str): Attribute name of the PK column on the model.
+            filters (list[ColumnElement[bool]] | None, optional): Extra WHERE
+                clauses merged with ``base_filters``. Defaults to None.
 
         Returns:
-            The Category model instance with all parent relationships loaded,
-            or None if not found.
+            Category: The matching ORM instance with ``parent`` populated
+                recursively.
 
         """
-        pk_column_name = pk_column_name or self.pk_column_name
         # Load all parent levels recursively (unlimited depth)
         stmt = (
             select(Category)
             .options(selectinload(Category.parent, recursion_depth=-1))
             .where(getattr(Category, pk_column_name) == pk)
         )
+
+        if c_filters := self.concat_filters(filters):
+            stmt = stmt.where(*c_filters)
+
         if self.select_in_options_single:
             stmt = stmt.options(*map(selectinload, self.select_in_options_single))
 
-        result = await self.session.execute(stmt)
+        result = await session.execute(stmt)
         return result.scalar_one()
