@@ -5,12 +5,19 @@ __all__ = ("AsyncDatabaseClient",)
 from typing import AsyncGenerator
 
 from loguru import logger
-from sqlalchemy import text
+from sqlalchemy import event, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncEngine, AsyncSession, create_async_engine
+from sqlalchemy.pool import ConnectionPoolEntry
 
 from expenses_counter.config import AppConfig
 from expenses_counter.utils import Singleton
+
+
+def _set_sqlite_pragma(dbapi_connection: object, _connection_record: ConnectionPoolEntry) -> None:
+    cursor = dbapi_connection.cursor()  # type: ignore[union-attr]
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
 
 
 class AsyncDatabaseClient(metaclass=Singleton):
@@ -50,6 +57,8 @@ class AsyncDatabaseClient(metaclass=Singleton):
             echo=app_config.info.api_info.debug,
             future=True,
         )
+        if app_config.services.database.provider.startswith("sqlite"):
+            event.listen(self._engine.sync_engine, "connect", _set_sqlite_pragma)
         self._session_factory = async_sessionmaker[AsyncSession](
             self._engine,
             class_=AsyncSession,
