@@ -3,6 +3,8 @@
 __all__ = ("AddressDAO",)
 
 
+from sqlalchemy.sql import ColumnElement
+
 from expenses_counter.services.daos.base import BaseDAO
 from expenses_counter.services.database.models.address import Address
 
@@ -19,18 +21,20 @@ class AddressDAO(BaseDAO[Address]):
     get_all_columns = (Address.id, Address.local_name, Address.address)
     select_in_options_single = (Address.shop,)
 
-    @BaseDAO.error_handler
-    async def get_by_address(self, address: str) -> Address:
-        """Get address by address string.
+    async def get_by_address(self, address: str, filters: list[ColumnElement[bool]] | None = None) -> Address:
+        """Load one address row by its ``address`` column value.
 
         Args:
-            address: Address string to look up
+            address (str): Value of the ``address`` column to match.
+            filters (list[ColumnElement[bool]] | None, optional): Extra WHERE
+                clauses merged with ``base_filters``. Defaults to None.
 
         Returns:
-            Address object matching the provided address string
-
-        Raises:
-            ValueError: If the address is not found in the database
+            Address: The matching ORM instance.
 
         """
-        return await self.get_by_id(address, pk_column_name="address")
+        if self.session is not None:
+            return await self._get_by_pk_raw(self.session, address, "address", filters)
+
+        async with self.database_client.session_factory() as session:
+            return await self._get_by_pk_raw(session, address, "address", filters)
