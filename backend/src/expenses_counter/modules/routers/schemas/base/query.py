@@ -11,7 +11,7 @@ class BaseQueryModel(BaseModel):
 
     model_config = ConfigDict(
         alias_generator=to_camel,
-        serialize_by_alias=True,
+        serialize_by_alias=False,
         validate_by_alias=True,
         populate_by_name=True,
     )
