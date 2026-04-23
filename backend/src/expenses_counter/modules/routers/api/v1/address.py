@@ -19,7 +19,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, status
 from loguru import logger
-from sqlalchemy.exc import DatabaseError, IntegrityError, NoResultFound
+from sqlalchemy.exc import IntegrityError, NoResultFound, SQLAlchemyError
 
 from expenses_counter.modules.middlewares.dependencies.daos.get_address import get_address
 from expenses_counter.modules.routers.schemas.base.metadata import PaginationMetadata
@@ -60,7 +60,7 @@ async def get_address_list(
     try:
         data, total = await address_dao.get_all(**query.model_dump())
         metadata = PaginationMetadata(total=total, **query.model_dump())
-    except DatabaseError as e:
+    except SQLAlchemyError as e:
         logger.exception("Something went wrong while retrieving the address list", exc_info=e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -95,7 +95,7 @@ async def get_address_by_local_name(
     except NoResultFound as e:
         logger.warning("Address not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Address not found") from e
-    except DatabaseError as e:
+    except SQLAlchemyError as e:
         logger.exception("Something went wrong while retrieving the address", exc_info=e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -126,7 +126,7 @@ async def get_address_by_id(
     except NoResultFound as e:
         logger.warning("Address not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Address not found") from e
-    except DatabaseError as e:
+    except SQLAlchemyError as e:
         logger.exception("Something went wrong while retrieving the address", exc_info=e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -158,7 +158,7 @@ async def create_address(
     except IntegrityError as e:
         logger.exception("Related object not found", exc_info=e)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Related object not found") from e
-    except DatabaseError as e:
+    except SQLAlchemyError as e:
         logger.exception("Something went wrong while creating the address", exc_info=e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Something went wrong while creating the address"
@@ -187,14 +187,16 @@ async def update_address(
 
     """
     try:
-        return await address_dao.update(address_id, **body.model_dump())
+        r = await address_dao.update(address_id, **body.model_dump())
+        logger.info(f"Updated address: {r}")
+        return GetSingleAddressResponse.model_validate(r)
     except IntegrityError as e:
         logger.exception("Related object not found", exc_info=e)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Related object not found") from e
     except NoResultFound as e:
         logger.warning("Address not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Address not found") from e
-    except DatabaseError as e:
+    except SQLAlchemyError as e:
         logger.exception("Something went wrong while updating the address", exc_info=e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Something went wrong while updating the address"
@@ -230,7 +232,7 @@ async def patch_address(
     except NoResultFound as e:
         logger.warning("Address not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Address not found") from e
-    except DatabaseError as e:
+    except SQLAlchemyError as e:
         logger.exception("Something went wrong while updating the address", exc_info=e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Something went wrong while updating the address"
@@ -260,7 +262,7 @@ async def delete_address(
     except NoResultFound as e:
         logger.warning("Address not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Address not found") from e
-    except DatabaseError as e:
+    except SQLAlchemyError as e:
         logger.exception("Something went wrong while deleting the address", exc_info=e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Something went wrong while deleting the address"
