@@ -34,11 +34,11 @@ router = APIRouter()
 )
 async def health_check(
     db: Annotated[AsyncDatabaseClient, Depends(get_db)],
-):
-    """Perform a health check on the service by verifying connectivity to Redis cache and message clients.
+) -> HealthResponse:
+    """Perform a health check on the service by verifying connectivity to the database.
 
     Raises:
-        HTTPException: If any Redis connection check fails, returns a 503 Service Unavailable error.
+        HTTPException: If the database connection check fails, returns a 503 Service Unavailable error.
 
     Returns:
         HealthResponse: Indicates the service is healthy if all checks pass.

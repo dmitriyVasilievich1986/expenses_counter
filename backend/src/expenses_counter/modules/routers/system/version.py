@@ -17,7 +17,7 @@ router = APIRouter()
     status_code=status.HTTP_200_OK,
     summary="Service Version",
 )
-async def get_version():
+async def get_version() -> VersionResponse:
     """Asynchronously retrieves the current service version.
 
     Returns:
