@@ -23,6 +23,7 @@ from expenses_counter.modules.middlewares.dependencies.daos import get_shop
 from expenses_counter.modules.routers.schemas.base.metadata import PaginationMetadata
 from expenses_counter.modules.routers.schemas.requests.shop import (
     GetAllShopsQuery,
+    PatchShopBody,
     PostShopBody,
     PutShopBody,
 )
@@ -166,6 +167,44 @@ async def update_shop(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Something went wrong while updating the shop",
+        ) from e
+
+
+@router.patch("/{shop_id}", response_model=GetSingleShopResponse, status_code=status.HTTP_200_OK)
+async def patch_shop(
+    shop_id: Annotated[int, Path(description="The unique identifier of the shop to update")],
+    body: Annotated[PatchShopBody, Body(description="The shop data to update")],
+    shop_dao: Annotated[ShopDAO, Depends(get_shop)],
+) -> GetSingleShopResponse:
+    """Patch an existing shop by primary key.
+
+    Args:
+        shop_id (int): Shop primary key.
+        body (PatchShopBody): Partial update payload for the shop.
+        shop_dao (ShopDAO): Shop data access object.
+
+    Returns:
+        GetSingleShopResponse: The updated shop payload.
+
+    Raises:
+        HTTPException: 400 if a referenced entity violates integrity (e.g. invalid category).
+        HTTPException: 404 if no shop exists for ``shop_id``.
+        HTTPException: 500 if a database error occurs while patching the shop.
+
+    """
+    try:
+        return await shop_dao.update(shop_id, **body.model_dump(exclude_unset=True))
+    except IntegrityError as e:
+        logger.exception("Related object not found", exc_info=e)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Related object not found") from e
+    except NoResultFound as e:
+        logger.warning("Shop not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Shop not found") from e
+    except SQLAlchemyError as e:
+        logger.exception("Something went wrong while patching the shop", exc_info=e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Something went wrong while patching the shop",
         ) from e
 
 
