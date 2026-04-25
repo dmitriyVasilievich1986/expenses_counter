@@ -4,14 +4,14 @@ This module tests all category API endpoints without making direct database call
 It uses FastAPI's TestClient and mocks the CategoryDAO dependency.
 """
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.exc import DatabaseError, IntegrityError, NoResultFound
 
 from expenses_counter.modules.app import get_app
-from expenses_counter.modules.middlewares.dependencies.get_db import get_db
+from expenses_counter.modules.middlewares.dependencies.daos import get_category
 
 
 @pytest.fixture
@@ -25,7 +25,7 @@ def mock_category_dao():
     dao = AsyncMock()
     # Set up default return values
     dao.get_all = AsyncMock(return_value=([], 0))
-    dao.get_by_id = AsyncMock(return_value=None)
+    dao.get_by_pk = AsyncMock(return_value=None)
     dao.create = AsyncMock()
     dao.update = AsyncMock()
     dao.delete = AsyncMock()
@@ -38,40 +38,11 @@ def mock_category_dao():
 
 
 @pytest.fixture
-def mock_db_client():
-    """Create a mock AsyncDatabaseClient for testing.
-
-    Returns:
-        MagicMock: Mocked AsyncDatabaseClient instance.
-
-    """
-    return MagicMock()
-
-
-@pytest.fixture
-def mock_category_dao_class(mock_category_dao):
-    """Patch CategoryDAO class to return our mock instance.
-
-    Args:
-        mock_category_dao: Mocked CategoryDAO instance.
-
-    Yields:
-        Mock: Patched CategoryDAO class.
-
-    """
-    with patch(
-        "expenses_counter.modules.routers.api.v1.category.CategoryDAO", return_value=mock_category_dao
-    ) as mock_class:
-        yield mock_class
-
-
-@pytest.fixture
-def test_client(mock_category_dao_class, mock_db_client, test_config):  # noqa: ARG001
+def test_client(mock_category_dao, test_config):
     """Create a test client with mocked dependencies.
 
     Args:
-        mock_category_dao_class: Patched CategoryDAO class fixture.
-        mock_db_client: Mocked AsyncDatabaseClient fixture.
+        mock_category_dao: Mocked CategoryDAO instance.
         test_config: Test configuration fixture.
 
     Returns:
@@ -80,8 +51,7 @@ def test_client(mock_category_dao_class, mock_db_client, test_config):  # noqa: 
     """
     app = get_app(test_config)
 
-    # Override the database dependency to return mock db client
-    app.dependency_overrides[get_db] = lambda: mock_db_client
+    app.dependency_overrides[get_category] = lambda: mock_category_dao
 
     client = TestClient(app)
     yield client
@@ -316,7 +286,7 @@ class TestGetCategoryById:
         mock_category.description = "Test description"
         mock_category.parent_id = None
         mock_category.parent = None
-        mock_category_dao.get_by_id.return_value = mock_category
+        mock_category_dao.get_by_pk.return_value = mock_category
 
         # Act
         response = test_client.get(f"/api/v1/category/{category_id}")
@@ -326,7 +296,7 @@ class TestGetCategoryById:
         data = response.json()
         assert data["id"] == category_id
         assert data["name"] == "Test Category"
-        mock_category_dao.get_by_id.assert_called_once_with(category_id)
+        mock_category_dao.get_by_pk.assert_called_once_with(category_id)
 
     def test_get_category_by_id_not_found(self, test_client, mock_category_dao):
         """Test retrieval of non-existent category.
@@ -337,7 +307,7 @@ class TestGetCategoryById:
 
         """
         # Arrange
-        mock_category_dao.get_by_id.side_effect = NoResultFound("Category not found")
+        mock_category_dao.get_by_pk.side_effect = NoResultFound("Category not found")
 
         # Act
         response = test_client.get("/api/v1/category/999")
@@ -355,7 +325,7 @@ class TestGetCategoryById:
 
         """
         # Arrange
-        mock_category_dao.get_by_id.side_effect = DatabaseError("SELECT *", None, Exception("Database error"))
+        mock_category_dao.get_by_pk.side_effect = DatabaseError("SELECT *", None, Exception("Database error"))
 
         # Act
         response = test_client.get("/api/v1/category/42")
@@ -396,7 +366,7 @@ class TestCreateCategory:
         response = test_client.post("/api/v1/category", json=payload)
 
         # Assert
-        assert response.status_code == 200
+        assert response.status_code == 201
         data = response.json()
         assert data["name"] == "New Category"
         assert data["description"] == "New description"
@@ -436,7 +406,7 @@ class TestCreateCategory:
         response = test_client.post("/api/v1/category", json=payload)
 
         # Assert
-        assert response.status_code == 200
+        assert response.status_code == 201
         data = response.json()
         assert data["name"] == "Child Category"
         assert data["parent"] is not None
@@ -463,7 +433,7 @@ class TestCreateCategory:
 
         # Assert
         assert response.status_code == 400
-        assert "Parent category not found" in response.json()["detail"]
+        assert "Related object not found" in response.json()["detail"]
 
     def test_create_category_db_error(self, test_client, mock_category_dao):
         """Test category creation with database error.
@@ -483,14 +453,13 @@ class TestCreateCategory:
 
         # Assert
         assert response.status_code == 500
-        assert "error creating" in response.json()["detail"].lower()
+        assert "creating" in response.json()["detail"].lower()
 
     def test_create_category_validation_error(self, test_client):
         """Test category creation with invalid data.
 
         Args:
             test_client: FastAPI test client fixture.
-            mock_category_dao: Mocked CategoryDAO fixture.
 
         """
         # Arrange - empty name should fail validation
@@ -581,7 +550,7 @@ class TestUpdateCategory:
 
         # Assert
         assert response.status_code == 400
-        assert "Parent category not found" in response.json()["detail"]
+        assert "Related object not found" in response.json()["detail"]
 
     def test_update_category_db_error(self, test_client, mock_category_dao):
         """Test category update with database error.
@@ -601,7 +570,7 @@ class TestUpdateCategory:
 
         # Assert
         assert response.status_code == 500
-        assert "error updating" in response.json()["detail"].lower()
+        assert "updating" in response.json()["detail"].lower()
 
 
 @pytest.mark.api
@@ -662,4 +631,4 @@ class TestDeleteCategory:
 
         # Assert
         assert response.status_code == 500
-        assert "error deleting" in response.json()["detail"].lower()
+        assert "deleting" in response.json()["detail"].lower()

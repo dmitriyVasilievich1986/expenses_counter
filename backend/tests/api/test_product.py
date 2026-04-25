@@ -4,14 +4,14 @@ This module tests all product API endpoints without making direct database calls
 It uses FastAPI's TestClient and mocks the ProductDAO dependency.
 """
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.exc import DatabaseError, IntegrityError, NoResultFound
 
 from expenses_counter.modules.app import get_app
-from expenses_counter.modules.middlewares.dependencies.get_db import get_db
+from expenses_counter.modules.middlewares.dependencies.daos import get_product
 
 
 @pytest.fixture
@@ -24,7 +24,7 @@ def mock_product_dao():
     """
     dao = AsyncMock()
     dao.get_all = AsyncMock(return_value=([], 0))
-    dao.get_by_id = AsyncMock(return_value=None)
+    dao.get_by_pk = AsyncMock(return_value=None)
     dao.create = AsyncMock()
     dao.update = AsyncMock()
     dao.delete = AsyncMock()
@@ -37,40 +37,11 @@ def mock_product_dao():
 
 
 @pytest.fixture
-def mock_db_client():
-    """Create a mock AsyncDatabaseClient for testing.
-
-    Returns:
-        MagicMock: Mocked AsyncDatabaseClient instance.
-
-    """
-    return MagicMock()
-
-
-@pytest.fixture
-def mock_product_dao_class(mock_product_dao):
-    """Patch ProductDAO class to return our mock instance.
-
-    Args:
-        mock_product_dao: Mocked ProductDAO instance.
-
-    Yields:
-        Mock: Patched ProductDAO class.
-
-    """
-    with patch(
-        "expenses_counter.modules.routers.api.v1.product.ProductDAO", return_value=mock_product_dao
-    ) as mock_class:
-        yield mock_class
-
-
-@pytest.fixture
-def test_client(mock_product_dao_class, mock_db_client, test_config):  # noqa: ARG001
+def test_client(mock_product_dao, test_config):
     """Create a test client with mocked dependencies.
 
     Args:
-        mock_product_dao_class: Patched ProductDAO class fixture.
-        mock_db_client: Mocked AsyncDatabaseClient fixture.
+        mock_product_dao: Mocked ProductDAO instance.
         test_config: Test configuration fixture.
 
     Returns:
@@ -79,8 +50,7 @@ def test_client(mock_product_dao_class, mock_db_client, test_config):  # noqa: A
     """
     app = get_app(test_config)
 
-    # Override the database dependency to return mock db client
-    app.dependency_overrides[get_db] = lambda: mock_db_client
+    app.dependency_overrides[get_product] = lambda: mock_product_dao
 
     client = TestClient(app)
     yield client
@@ -149,19 +119,19 @@ class TestGetProductById:
         mock_product.sub_category_id = 1
         mock_product.category = None
         mock_product.img_path = None
-        mock_product_dao.get_by_id.return_value = mock_product
+        mock_product_dao.get_by_pk.return_value = mock_product
 
         # Act
         response = test_client.get(f"/api/v1/product/{product_id}")
 
         # Assert
         assert response.status_code == 200
-        mock_product_dao.get_by_id.assert_called_once_with(product_id)
+        mock_product_dao.get_by_pk.assert_called_once_with(product_id)
 
     def test_get_product_by_id_not_found(self, test_client, mock_product_dao):
         """Test retrieval of non-existent product."""
         # Arrange
-        mock_product_dao.get_by_id.side_effect = NoResultFound("Product not found")
+        mock_product_dao.get_by_pk.side_effect = NoResultFound("Product not found")
 
         # Act
         response = test_client.get("/api/v1/product/999")
@@ -173,7 +143,7 @@ class TestGetProductById:
     def test_get_product_by_id_db_error(self, test_client, mock_product_dao):
         """Test product retrieval with database error."""
         # Arrange
-        mock_product_dao.get_by_id.side_effect = DatabaseError("SELECT *", None, Exception("Database error"))
+        mock_product_dao.get_by_pk.side_effect = DatabaseError("SELECT *", None, Exception("Database error"))
 
         # Act
         response = test_client.get("/api/v1/product/42")
@@ -206,7 +176,7 @@ class TestCreateProduct:
         response = test_client.post("/api/v1/product", json=payload)
 
         # Assert
-        assert response.status_code == 200
+        assert response.status_code == 201
         mock_product_dao.create.assert_called_once()
 
     def test_create_product_category_not_found(self, test_client, mock_product_dao):
@@ -224,7 +194,7 @@ class TestCreateProduct:
 
         # Assert
         assert response.status_code == 400
-        assert "Category not found" in response.json()["detail"]
+        assert "Related object not found" in response.json()["detail"]
 
     def test_create_product_db_error(self, test_client, mock_product_dao):
         """Test product creation with database error."""

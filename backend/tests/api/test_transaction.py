@@ -5,14 +5,14 @@ It uses FastAPI's TestClient and mocks the TransactionDAO dependency.
 """
 
 from datetime import datetime
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.exc import DatabaseError, IntegrityError, NoResultFound
 
 from expenses_counter.modules.app import get_app
-from expenses_counter.modules.middlewares.dependencies.get_db import get_db
+from expenses_counter.modules.middlewares.dependencies.daos import get_transaction
 
 
 @pytest.fixture
@@ -25,7 +25,7 @@ def mock_transaction_dao():
     """
     dao = AsyncMock()
     dao.get_all = AsyncMock(return_value=([], 0))
-    dao.get_by_id = AsyncMock(return_value=None)
+    dao.get_by_pk = AsyncMock(return_value=None)
     dao.create = AsyncMock()
     dao.update = AsyncMock()
     dao.delete = AsyncMock()
@@ -38,40 +38,11 @@ def mock_transaction_dao():
 
 
 @pytest.fixture
-def mock_db_client():
-    """Create a mock AsyncDatabaseClient for testing.
-
-    Returns:
-        MagicMock: Mocked AsyncDatabaseClient instance.
-
-    """
-    return MagicMock()
-
-
-@pytest.fixture
-def mock_transaction_dao_class(mock_transaction_dao):
-    """Patch TransactionDAO class to return our mock instance.
-
-    Args:
-        mock_transaction_dao: Mocked TransactionDAO instance.
-
-    Yields:
-        Mock: Patched TransactionDAO class.
-
-    """
-    with patch(
-        "expenses_counter.modules.routers.api.v1.transaction.TransactionDAO", return_value=mock_transaction_dao
-    ) as mock_class:
-        yield mock_class
-
-
-@pytest.fixture
-def test_client(mock_transaction_dao_class, mock_db_client, test_config):  # noqa: ARG001
+def test_client(mock_transaction_dao, test_config):
     """Create a test client with mocked dependencies.
 
     Args:
-        mock_transaction_dao_class: Patched TransactionDAO class fixture.
-        mock_db_client: Mocked AsyncDatabaseClient fixture.
+        mock_transaction_dao: Mocked TransactionDAO instance.
         test_config: Test configuration fixture.
 
     Returns:
@@ -80,8 +51,7 @@ def test_client(mock_transaction_dao_class, mock_db_client, test_config):  # noq
     """
     app = get_app(test_config)
 
-    # Override the database dependency to return mock db client
-    app.dependency_overrides[get_db] = lambda: mock_db_client
+    app.dependency_overrides[get_transaction] = lambda: mock_transaction_dao
 
     client = TestClient(app)
     yield client
@@ -261,19 +231,19 @@ class TestGetTransactionById:
         mock_transaction.address_id = 1
         mock_transaction.product = mock_product
         mock_transaction.address = mock_address
-        mock_transaction_dao.get_by_id.return_value = mock_transaction
+        mock_transaction_dao.get_by_pk.return_value = mock_transaction
 
         # Act
         response = test_client.get(f"/api/v1/transaction/{transaction_id}")
 
         # Assert
         assert response.status_code == 200
-        mock_transaction_dao.get_by_id.assert_called_once_with(transaction_id)
+        mock_transaction_dao.get_by_pk.assert_called_once_with(transaction_id)
 
     def test_get_transaction_by_id_not_found(self, test_client, mock_transaction_dao):
         """Test retrieval of non-existent transaction."""
         # Arrange
-        mock_transaction_dao.get_by_id.return_value = None
+        mock_transaction_dao.get_by_pk.side_effect = NoResultFound("Transaction not found")
 
         # Act
         response = test_client.get("/api/v1/transaction/999")
@@ -285,7 +255,7 @@ class TestGetTransactionById:
     def test_get_transaction_by_id_db_error(self, test_client, mock_transaction_dao):
         """Test transaction retrieval with database error."""
         # Arrange
-        mock_transaction_dao.get_by_id.side_effect = DatabaseError("SELECT *", None, Exception("Database error"))
+        mock_transaction_dao.get_by_pk.side_effect = DatabaseError("SELECT *", None, Exception("Database error"))
 
         # Act
         response = test_client.get("/api/v1/transaction/42")
@@ -337,7 +307,7 @@ class TestCreateTransaction:
         response = test_client.post("/api/v1/transaction", json=payload)
 
         # Assert
-        assert response.status_code == 200
+        assert response.status_code == 201
         mock_transaction_dao.create.assert_called_once()
 
     def test_create_transaction_relationship_not_found(self, test_client, mock_transaction_dao):
@@ -360,7 +330,7 @@ class TestCreateTransaction:
 
         # Assert
         assert response.status_code == 400
-        assert "Product or Address not found" in response.json()["detail"]
+        assert "Related object not found" in response.json()["detail"]
 
     def test_create_transaction_db_error(self, test_client, mock_transaction_dao):
         """Test transaction creation with database error."""

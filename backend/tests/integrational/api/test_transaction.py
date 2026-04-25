@@ -59,7 +59,7 @@ def test_dependencies(client):
         "/api/v1/category",
         json={"name": "Test Category", "description": "For transaction tests"},
     )
-    assert category_response.status_code == 200
+    assert category_response.status_code == 201
     category_id = category_response.json()["id"]
 
     # Create product
@@ -71,7 +71,7 @@ def test_dependencies(client):
             "subCategoryId": category_id,
         },
     )
-    assert product_response.status_code == 200
+    assert product_response.status_code == 201
     product_id = product_response.json()["id"]
 
     # Create shop
@@ -83,7 +83,7 @@ def test_dependencies(client):
             "categoryId": category_id,
         },
     )
-    assert shop_response.status_code == 200
+    assert shop_response.status_code == 201
     shop_id = shop_response.json()["id"]
 
     # Create address
@@ -95,7 +95,7 @@ def test_dependencies(client):
             "shopId": shop_id,
         },
     )
-    assert address_response.status_code == 200
+    assert address_response.status_code == 201
     address_id = address_response.json()["id"]
 
     return {
@@ -127,7 +127,7 @@ class TestTransactionIntegration:
             "addressId": test_dependencies["address_id"],
         }
         response = client.post("/api/v1/transaction", json=payload)
-        assert response.status_code == 200
+        assert response.status_code == 201
         transaction_id = response.json()["id"]
 
         # Retrieve the transaction
@@ -172,7 +172,7 @@ class TestTransactionIntegration:
         created_ids = []
         for transaction_data in transactions_data:
             response = client.post("/api/v1/transaction", json=transaction_data)
-            assert response.status_code == 200
+            assert response.status_code == 201
             created_ids.append(response.json()["id"])
 
         # Verify each transaction can be retrieved
@@ -198,7 +198,7 @@ class TestTransactionIntegration:
                 "addressId": test_dependencies["address_id"],
             }
             response = client.post("/api/v1/transaction", json=payload)
-            assert response.status_code == 200
+            assert response.status_code == 201
 
         # Get all transactions
         response = client.get("/api/v1/transaction?limit=100&offset=0")
@@ -221,7 +221,7 @@ class TestTransactionIntegration:
             "addressId": test_dependencies["address_id"],
         }
         create_response = client.post("/api/v1/transaction", json=create_payload)
-        assert create_response.status_code == 200
+        assert create_response.status_code == 201
         transaction_id = create_response.json()["id"]
 
         # Update transaction
@@ -259,7 +259,7 @@ class TestTransactionIntegration:
             "addressId": test_dependencies["address_id"],
         }
         create_response = client.post("/api/v1/transaction", json=create_payload)
-        assert create_response.status_code == 200
+        assert create_response.status_code == 201
         transaction_id = create_response.json()["id"]
 
         # Verify it exists
@@ -344,7 +344,7 @@ class TestTransactionIntegration:
         }
         try:
             response = client.post("/api/v1/transaction", json=payload)
-            assert response.status_code in [200, 400, 500]
+            assert response.status_code in [201, 400, 500]
         except Exception:
             pass
 
@@ -368,7 +368,7 @@ class TestTransactionIntegration:
         }
         try:
             response = client.post("/api/v1/transaction", json=payload)
-            assert response.status_code in [200, 400, 500]
+            assert response.status_code in [201, 400, 500]
         except Exception:
             pass
 
@@ -434,7 +434,7 @@ class TestTransactionIntegration:
                 "addressId": test_dependencies["address_id"],
             }
             response = client.post("/api/v1/transaction", json=payload)
-            assert response.status_code == 200
+            assert response.status_code == 201
 
         # Get transactions for January 2025 - using future date to avoid conflicts
         try:
@@ -461,7 +461,7 @@ class TestTransactionIntegration:
                 "subCategoryId": test_dependencies["category_id"],
             },
         )
-        assert product2_response.status_code == 200
+        assert product2_response.status_code == 201
         product2_id = product2_response.json()["id"]
 
         # Create transaction with first product
@@ -475,7 +475,7 @@ class TestTransactionIntegration:
                 "addressId": test_dependencies["address_id"],
             },
         )
-        assert trans1.status_code == 200
+        assert trans1.status_code == 201
 
         # Create transaction with second product
         trans2 = client.post(
@@ -488,7 +488,7 @@ class TestTransactionIntegration:
                 "addressId": test_dependencies["address_id"],
             },
         )
-        assert trans2.status_code == 200
+        assert trans2.status_code == 201
 
         # Both should be retrievable
         assert client.get(f"/api/v1/transaction/{trans1.json()['id']}").status_code == 200
@@ -511,7 +511,7 @@ class TestTransactionIntegration:
                 "shopId": test_dependencies["shop_id"],
             },
         )
-        assert address2_response.status_code == 200
+        assert address2_response.status_code == 201
         address2_id = address2_response.json()["id"]
 
         # Create transaction with first address
@@ -525,7 +525,7 @@ class TestTransactionIntegration:
                 "addressId": test_dependencies["address_id"],
             },
         )
-        assert trans1.status_code == 200
+        assert trans1.status_code == 201
 
         # Create transaction with second address
         trans2 = client.post(
@@ -538,7 +538,7 @@ class TestTransactionIntegration:
                 "addressId": address2_id,
             },
         )
-        assert trans2.status_code == 200
+        assert trans2.status_code == 201
 
         # Both should be retrievable
         assert client.get(f"/api/v1/transaction/{trans1.json()['id']}").status_code == 200

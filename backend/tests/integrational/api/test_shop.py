@@ -58,7 +58,7 @@ def test_category(client):
         "/api/v1/category",
         json={"name": "Test Category", "description": "For shop tests"},
     )
-    assert response.status_code == 200
+    assert response.status_code == 201
     return response.json()
 
 
@@ -82,7 +82,7 @@ class TestShopIntegration:
             "categoryId": test_category["id"],
         }
         response = client.post("/api/v1/shop", json=payload)
-        assert response.status_code == 200
+        assert response.status_code == 201
         shop_id = response.json()["id"]
 
         # Retrieve the shop
@@ -103,7 +103,7 @@ class TestShopIntegration:
             "description": "Small local shop",
         }
         response = client.post("/api/v1/shop", json=payload)
-        assert response.status_code == 200
+        assert response.status_code == 201
         shop_id = response.json()["id"]
 
         # Retrieve the shop
@@ -128,7 +128,7 @@ class TestShopIntegration:
         created_ids = []
         for shop_data in shops_data:
             response = client.post("/api/v1/shop", json=shop_data)
-            assert response.status_code == 200
+            assert response.status_code == 201
             created_ids.append(response.json()["id"])
 
         # Verify each shop can be retrieved
@@ -152,7 +152,7 @@ class TestShopIntegration:
                 "categoryId": test_category["id"],
             }
             response = client.post("/api/v1/shop", json=payload)
-            assert response.status_code == 200
+            assert response.status_code == 201
 
         # Get all shops
         response = client.get("/api/v1/shop?limit=100&offset=0")
@@ -173,7 +173,7 @@ class TestShopIntegration:
             "categoryId": test_category["id"],
         }
         create_response = client.post("/api/v1/shop", json=create_payload)
-        assert create_response.status_code == 200
+        assert create_response.status_code == 201
         shop_id = create_response.json()["id"]
 
         # Update shop
@@ -205,7 +205,7 @@ class TestShopIntegration:
             "categoryId": test_category["id"],
         }
         create_response = client.post("/api/v1/shop", json=create_payload)
-        assert create_response.status_code == 200
+        assert create_response.status_code == 201
         shop_id = create_response.json()["id"]
 
         # Verify it exists
@@ -312,7 +312,7 @@ class TestShopIntegration:
             "categoryId": test_category["id"],
         }
         create_response = client.post("/api/v1/shop", json=create_payload)
-        assert create_response.status_code == 200
+        assert create_response.status_code == 201
         shop_id = create_response.json()["id"]
 
         # Try to update with invalid category
@@ -375,7 +375,7 @@ class TestShopIntegration:
             "categoryId": test_category["id"],
         }
         response1 = client.post("/api/v1/shop", json=payload1)
-        assert response1.status_code == 200
+        assert response1.status_code == 201
 
         # Create second shop in same category
         payload2 = {
@@ -384,7 +384,7 @@ class TestShopIntegration:
             "categoryId": test_category["id"],
         }
         response2 = client.post("/api/v1/shop", json=payload2)
-        assert response2.status_code == 200
+        assert response2.status_code == 201
 
         # Both should be retrievable
         assert client.get(f"/api/v1/shop/{response1.json()['id']}").status_code == 200
@@ -402,14 +402,14 @@ class TestShopIntegration:
             "/api/v1/category",
             json={"name": "Category 1", "description": "First category"},
         )
-        assert cat1_response.status_code == 200
+        assert cat1_response.status_code == 201
         cat1_id = cat1_response.json()["id"]
 
         cat2_response = client.post(
             "/api/v1/category",
             json={"name": "Category 2", "description": "Second category"},
         )
-        assert cat2_response.status_code == 200
+        assert cat2_response.status_code == 201
         cat2_id = cat2_response.json()["id"]
 
         # Create shop in first category
@@ -417,14 +417,14 @@ class TestShopIntegration:
             "/api/v1/shop",
             json={"name": "Shop Cat1", "description": "In cat 1", "categoryId": cat1_id},
         )
-        assert shop1.status_code == 200
+        assert shop1.status_code == 201
 
         # Create shop in second category
         shop2 = client.post(
             "/api/v1/shop",
             json={"name": "Shop Cat2", "description": "In cat 2", "categoryId": cat2_id},
         )
-        assert shop2.status_code == 200
+        assert shop2.status_code == 201
 
         # Both should be retrievable
         assert client.get(f"/api/v1/shop/{shop1.json()['id']}").status_code == 200
@@ -446,7 +446,7 @@ class TestShopIntegration:
             "categoryId": test_category["id"],
         }
         response = client.post("/api/v1/shop", json=payload)
-        assert response.status_code == 200
+        assert response.status_code == 201
         shop_id = response.json()["id"]
 
         # Retrieve and verify icon
