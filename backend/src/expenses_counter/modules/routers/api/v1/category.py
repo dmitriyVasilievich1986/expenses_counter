@@ -25,6 +25,7 @@ from expenses_counter.modules.middlewares.dependencies.daos import get_category
 from expenses_counter.modules.routers.schemas.base.metadata import PaginationMetadata
 from expenses_counter.modules.routers.schemas.requests.category import (
     GetAllCategoriesQuery,
+    PatchCategoryBody,
     PostCategoryBody,
     PutCategoryBody,
 )
@@ -241,6 +242,45 @@ async def update_category(
         logger.exception("Something went wrong while updating the category", exc_info=e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Something went wrong while updating the category"
+        ) from e
+
+    return GetSingleCategoryResponse.model_validate(payload)
+
+
+@router.patch("/{category_id}", response_model=GetSingleCategoryResponse, status_code=status.HTTP_200_OK)
+async def patch_category(
+    category_id: Annotated[int, Path(description="The unique identifier of the category to update")],
+    body: Annotated[PatchCategoryBody, Body(description="The category data to update")],
+    category_dao: Annotated[CategoryDAO, Depends(get_category)],
+) -> GetSingleCategoryResponse:
+    """Update an existing category with the request body.
+
+    Args:
+        category_id (int): Category primary key to update.
+        body (PatchCategoryBody): Partial update payload.
+        category_dao (CategoryDAO): Category data access object.
+
+    Returns:
+        GetSingleCategoryResponse: The updated category.
+
+    Raises:
+        HTTPException: 404 if no category exists for ``category_id``.
+        HTTPException: 400 if a referenced parent or related row violates integrity.
+        HTTPException: 500 if a database error occurs while updating the category.
+
+    """
+    try:
+        payload = await category_dao.update(category_id, **body.model_dump(exclude_unset=True))
+    except NoResultFound as e:
+        logger.warning("Category not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found") from e
+    except IntegrityError as e:
+        logger.exception("Related object not found", exc_info=e)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Related object not found") from e
+    except SQLAlchemyError as e:
+        logger.exception("Something went wrong while patching the category", exc_info=e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Something went wrong while patching the category"
         ) from e
 
     return GetSingleCategoryResponse.model_validate(payload)
