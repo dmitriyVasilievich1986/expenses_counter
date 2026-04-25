@@ -117,20 +117,7 @@ select = [
     "D",     # pydocstyle (D)
     "FIX",   # flake8-fixme (FIX)
 ]
-ignore = [
-    "E712",
-    "RUF001",
-    "N817",
-    "N814",
-    "RUF100",
-    "D100",
-    "D101",
-    "D104",
-    "D401",
-    "D203",
-    "D213",
-    "COM812",
-]
+ignore = ["E712", "RUF001", "N817", "N814", "RUF100", "COM812", "D203", "D213"]
 
 extend-select = ["I"]
 
