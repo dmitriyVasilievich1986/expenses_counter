@@ -14,7 +14,7 @@ depends_on = None
 
 
 def upgrade():
-    """Initial migration placeholder.
+    """Add initial migration placeholder.
 
     This is the first migration in the chain and serves as the base revision.
     No database changes are performed in this migration.
