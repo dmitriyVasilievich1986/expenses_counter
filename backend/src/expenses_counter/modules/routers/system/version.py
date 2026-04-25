@@ -6,7 +6,7 @@ __all__ = ("router",)
 from fastapi import APIRouter, status
 
 from expenses_counter import __version__ as app_version
-from expenses_counter.modules.routers.schemas import VersionResponse
+from expenses_counter.modules.routers.schemas.responses.system import VersionResponse
 
 router = APIRouter()
 
