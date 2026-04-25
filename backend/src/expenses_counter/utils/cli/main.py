@@ -1,3 +1,7 @@
+"""Main CLI module."""
+
+__all__ = ("main",)
+
 import asyncclick as click
 import uvicorn
 
