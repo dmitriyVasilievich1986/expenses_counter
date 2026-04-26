@@ -328,11 +328,13 @@ class BaseDAO[DatabaseModel: Base](ABC):
         await session.commit()
         return True
 
-    async def delete(self, pk: int, pk_column_name: str | None = None, instance: DatabaseModel | None = None) -> bool:
+    async def delete(
+        self, pk: int | str, pk_column_name: str | None = None, instance: DatabaseModel | None = None
+    ) -> bool:
         """Delete a row by primary key or by passing a loaded instance.
 
         Args:
-            pk (int): Primary key value when ``instance`` is omitted.
+            pk (int | str): Primary key value when ``instance`` is omitted.
             pk_column_name (str | None, optional): PK column attribute name.
                 Defaults to ``self.pk_column_name``.
             instance (DatabaseModel | None, optional): Row to delete without
