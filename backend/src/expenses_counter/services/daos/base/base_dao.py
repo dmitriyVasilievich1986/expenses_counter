@@ -285,7 +285,7 @@ class BaseDAO[DatabaseModel: Base](ABC):
         )
         await session.commit()
 
-        return await self._get_by_pk_raw(session, pk, self.pk_column_name)
+        return await self._get_by_pk_raw(session, pk, pk_column_name)
 
     async def update(self, pk: int | str, pk_column_name: str | None = None, **kwargs: Any) -> DatabaseModel:
         """Update a row by primary key and return the reloaded instance.
