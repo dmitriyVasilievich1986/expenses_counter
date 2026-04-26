@@ -33,14 +33,14 @@ class Category(Base):
 
     __tablename__ = "main_category"
 
-    id: int = Column[int](Integer, primary_key=True, autoincrement=True)
-    name: str = Column[str](String(150), nullable=False)
-    description: str | None = Column[str | None](Text, nullable=True)
+    id: Column[int] = Column[int](Integer, primary_key=True, autoincrement=True)
+    name: Column[str] = Column[str](String(150), nullable=False)
+    description: Column[str | None] = Column[str | None](Text, nullable=True)
 
     shops: Mapped[list["Shop"]] = relationship("Shop", back_populates="category")
     products: Mapped[list["Product"]] = relationship("Product", back_populates="category")
 
-    parent_id: int | None = Column[int | None](ForeignKey("main_category.id"), nullable=True)
+    parent_id: Column[int | None] = Column[int | None](ForeignKey("main_category.id"), nullable=True)
     parent: Mapped["Category | None"] = relationship("Category", remote_side=[id], back_populates="children")
     children: Mapped[list["Category"]] = relationship("Category", back_populates="parent")
 

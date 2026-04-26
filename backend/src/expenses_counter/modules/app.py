@@ -14,8 +14,7 @@ from expenses_counter import __version__ as app_version
 from expenses_counter.config.app_config import AppConfig
 from expenses_counter.modules.middlewares.app_lifespan import lifespan
 
-from .routers.api import router as root_router
-from .routers.system import router as system_router
+from .routers import api_router, system_router
 
 
 def get_app(config: AppConfig | None = None) -> FastAPI:
@@ -56,11 +55,11 @@ def get_app(config: AppConfig | None = None) -> FastAPI:
         allow_headers=config.info.cors_info.allow_headers,
     )
 
+    logger.debug("Adding API router...")
+    app.include_router(api_router)
+
     logger.debug("Adding system router...")
     app.include_router(system_router)
-
-    logger.debug("Adding root router...")
-    app.include_router(root_router)
 
     logger.info("App created successfully.")
     return app

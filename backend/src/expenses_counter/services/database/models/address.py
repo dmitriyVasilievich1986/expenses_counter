@@ -35,11 +35,11 @@ class Address(Base):
 
     __tablename__ = "main_shopaddress"
 
-    id: int = Column[int](Integer, primary_key=True, autoincrement=True)
-    local_name: str = Column[str](String(150), nullable=False)
-    address: str = Column[str](String(150), nullable=False)
+    id: Column[int] = Column[int](Integer, primary_key=True, autoincrement=True)
+    local_name: Column[str] = Column[str](String(150), nullable=False)
+    address: Column[str] = Column[str](String(150), nullable=False)
 
     transactions: Mapped[list["Transaction"]] = relationship("Transaction", back_populates="address")
 
-    shop_id: int = Column[int](ForeignKey("main_shop.id"), nullable=False)
+    shop_id: Column[int] = Column[int](ForeignKey("main_shop.id"), nullable=False)
     shop: Mapped["Shop"] = relationship("Shop", back_populates="addresses")

@@ -1,3 +1,7 @@
+"""Monthly body request schema module."""
+
+__all__ = ("MonthlyBodyRequest",)
+
 import datetime
 
 from pydantic import Field

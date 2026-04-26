@@ -1,27 +1,15 @@
-"""Category API router module.
+"""HTTP API routes for expense categories.
 
-This module provides REST API endpoints for managing categories in the expenses
-counter application. It includes full CRUD (Create, Read, Update, Delete) operations
-for categories with support for hierarchical category relationships.
-
-The router handles:
-    - Listing categories with pagination and sorting
-    - Listing categories filtered by parent (including root categories)
-    - Retrieving individual categories with parent hierarchy
-    - Creating new categories with optional parent relationships
-    - Updating existing categories
-    - Deleting categories
-
-All endpoints include proper error handling for database exceptions and return
-appropriate HTTP status codes.
+Provides list, read, create, update, and delete endpoints for the category
+hierarchy (parent/child). List endpoints support pagination and sorting.
 
 Routes:
-    GET /category - List all categories with pagination
-    GET /category/parent - List root categories (categories without a parent)
-    GET /category/parent/{parent_id} - List child categories of a specific parent
-    GET /category/{category_id} - Get a single category by ID
-    POST /category - Create a new category
-    PUT /category/{category_id} - Update an existing category
+    GET /category - Paginated list of all categories
+    GET /category/parent - Root categories only (no parent)
+    GET /category/parent/{parent_id} - Children of a given parent
+    GET /category/{category_id} - Single category by id
+    POST /category - Create a category
+    PUT /category/{category_id} - Replace a category
     DELETE /category/{category_id} - Delete a category
 """
 
@@ -29,13 +17,15 @@ __all__ = ("router",)
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Path, Query
-from sqlalchemy.exc import DatabaseError, IntegrityError, NoResultFound
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, status
+from loguru import logger
+from sqlalchemy.exc import IntegrityError, NoResultFound, SQLAlchemyError
 
-from expenses_counter.modules.middlewares.dependencies.get_db import get_db
+from expenses_counter.modules.middlewares.dependencies.daos import get_category
 from expenses_counter.modules.routers.schemas.base.metadata import PaginationMetadata
 from expenses_counter.modules.routers.schemas.requests.category import (
     GetAllCategoriesQuery,
+    PatchCategoryBody,
     PostCategoryBody,
     PutCategoryBody,
 )
@@ -45,80 +35,37 @@ from expenses_counter.modules.routers.schemas.responses.category import (
     SimpleCategoryGet,
 )
 from expenses_counter.services.daos import CategoryDAO
-from expenses_counter.services.database import AsyncDatabaseClient
 from expenses_counter.services.database.models.category import Category
 
 router = APIRouter(prefix="/category", tags=["Category"])
 
 
-@router.get("", response_model=GetAllCategoriesResponse)
+@router.get("", response_model=GetAllCategoriesResponse, status_code=status.HTTP_200_OK)
 async def get_category_list(
-    db: Annotated[AsyncDatabaseClient, Depends(get_db)],
+    category_dao: Annotated[CategoryDAO, Depends(get_category)],
     query: Annotated[GetAllCategoriesQuery, Query(description="Pagination and sorting parameters")],
 ) -> GetAllCategoriesResponse:
-    try:
-        async with CategoryDAO(database_client=db) as category_dao:
-            data, total = await category_dao.get_all(
-                limit=query.limit, offset=query.offset, sort_by=query.sort_by, sort_order=query.sort_order
-            )
-        metadata = PaginationMetadata(
-            total=total, offset=query.offset, limit=query.limit, sort_by=query.sort_by, sort_order=query.sort_order
-        )
-    except DatabaseError as e:
-        raise HTTPException(status_code=500, detail="Something went wrong while retrieving the category list") from e
-
-    return GetAllCategoriesResponse(
-        data=[SimpleCategoryGet.model_validate(category) for category in data], metadata=metadata
-    )
-
-
-@router.get("/parent", response_model=GetAllCategoriesResponse)
-async def get_root_category_list(
-    db: Annotated[AsyncDatabaseClient, Depends(get_db)],
-    query: Annotated[GetAllCategoriesQuery, Query(description="Pagination and sorting parameters")],
-) -> GetAllCategoriesResponse:
-    """Retrieve a paginated list of root categories (categories without a parent).
-
-    This endpoint returns a list of top-level categories that have no parent category,
-    effectively retrieving all root nodes in the category hierarchy. Results include
-    pagination support and metadata about the total count.
+    """Return all categories with pagination metadata.
 
     Args:
-        db: The database client instance for creating DAO connections.
-            Injected via FastAPI dependency injection from get_db.
-        query: Query parameters for pagination and sorting, including:
-            - limit: Maximum number of categories to return
-            - offset: Number of categories to skip
-            - sort_by: Field name to sort by
-            - sort_order: Sort direction (asc or desc)
+        category_dao (CategoryDAO): Category data access object.
+        query (GetAllCategoriesQuery): Pagination and sort parameters.
 
     Returns:
-        GetAllCategoriesResponse: A response object containing:
-            - data: List of root category objects with id and name
-            - metadata: Pagination information (total, offset, limit, sort parameters)
+        GetAllCategoriesResponse: Categories and pagination metadata.
 
     Raises:
-        HTTPException: 500 Internal Server Error if database operation fails.
-
-    Example:
-        GET /category/parent?limit=20&offset=0&sort_by=name&sort_order=asc
+        HTTPException: 500 if a database error occurs while listing categories.
 
     """
     try:
-        async with CategoryDAO(database_client=db) as category_dao:
-            data, total = await category_dao.get_all(
-                limit=query.limit,
-                offset=query.offset,
-                sort_by=query.sort_by,
-                sort_order=query.sort_order,
-                filters=[Category.parent_id is None],
-            )
-        metadata = PaginationMetadata(
-            total=total, offset=query.offset, limit=query.limit, sort_by=query.sort_by, sort_order=query.sort_order
-        )
-    except DatabaseError as e:
+        data, total = await category_dao.get_all(**query.model_dump())
+        metadata = PaginationMetadata(total=total, **query.model_dump())
+    except SQLAlchemyError as e:
+        logger.exception("Something went wrong while retrieving the category list", exc_info=e)
         raise HTTPException(
-            status_code=500, detail="Something went wrong while retrieving the category list by parent"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Something went wrong while retrieving the category list",
         ) from e
 
     return GetAllCategoriesResponse(
@@ -126,61 +73,67 @@ async def get_root_category_list(
     )
 
 
-@router.get("/parent/{parent_id}", response_model=GetAllCategoriesResponse)
+@router.get("/parent", response_model=GetAllCategoriesResponse, status_code=status.HTTP_200_OK)
+async def get_root_category_list(
+    category_dao: Annotated[CategoryDAO, Depends(get_category)],
+    query: Annotated[GetAllCategoriesQuery, Query(description="Pagination and sorting parameters")],
+) -> GetAllCategoriesResponse:
+    """Return top-level categories (those with no parent).
+
+    Args:
+        category_dao (CategoryDAO): Category data access object.
+        query (GetAllCategoriesQuery): Pagination and sort parameters.
+
+    Returns:
+        GetAllCategoriesResponse: Root categories and pagination metadata.
+
+    Raises:
+        HTTPException: 500 if a database error occurs while listing categories.
+
+    """
+    try:
+        data, total = await category_dao.get_all(filters=[Category.parent_id.is_(None)], **query.model_dump())
+        metadata = PaginationMetadata(total=total, **query.model_dump())
+    except SQLAlchemyError as e:
+        logger.exception("Something went wrong while retrieving the category list by parent", exc_info=e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Something went wrong while retrieving the category list by parent",
+        ) from e
+
+    return GetAllCategoriesResponse(
+        data=[SimpleCategoryGet.model_validate(category) for category in data], metadata=metadata
+    )
+
+
+@router.get("/parent/{parent_id}", response_model=GetAllCategoriesResponse, status_code=status.HTTP_200_OK)
 async def get_category_list_by_parent(
     parent_id: Annotated[int, Path(description="The unique identifier of the parent category to retrieve")],
-    db: Annotated[AsyncDatabaseClient, Depends(get_db)],
+    category_dao: Annotated[CategoryDAO, Depends(get_category)],
     query: Annotated[GetAllCategoriesQuery, Query(description="Pagination and sorting parameters")],
 ) -> GetAllCategoriesResponse:
-    """Retrieve a paginated list of child categories for a specific parent category.
-
-    This endpoint returns all categories that are direct children of the specified
-    parent category. This is useful for building hierarchical category trees or
-    displaying subcategories. Results include pagination support and metadata.
+    """Return direct child categories of the given parent.
 
     Args:
-        parent_id: The unique identifier (primary key) of the parent category whose
-            children should be retrieved. Must be a positive integer. Provided as a
-            path parameter.
-        db: The database client instance for creating DAO connections.
-            Injected via FastAPI dependency injection from get_db.
-        query: Query parameters for pagination and sorting, including:
-            - limit: Maximum number of categories to return
-            - offset: Number of categories to skip
-            - sort_by: Field name to sort by
-            - sort_order: Sort direction (asc or desc)
+        parent_id (int): Parent category primary key.
+        category_dao (CategoryDAO): Category data access object.
+        query (GetAllCategoriesQuery): Pagination and sort parameters.
 
     Returns:
-        GetAllCategoriesResponse: A response object containing:
-            - data: List of child category objects with id and name
-            - metadata: Pagination information (total, offset, limit, sort parameters)
+        GetAllCategoriesResponse: Child categories and pagination metadata.
 
     Raises:
-        HTTPException: 500 Internal Server Error if database operation fails.
-
-    Example:
-        GET /category/parent/42?limit=20&offset=0&sort_by=name&sort_order=asc
-
-    Note:
-        If the parent_id does not exist, an empty list will be returned rather than
-        an error, as having no children is a valid state.
+        HTTPException: 500 if a database error occurs while listing categories.
 
     """
     try:
-        async with CategoryDAO(database_client=db) as category_dao:
-            data, total = await category_dao.get_all(
-                limit=query.limit,
-                offset=query.offset,
-                sort_by=query.sort_by,
-                sort_order=query.sort_order,
-                filters=[Category.parent_id == parent_id],
-            )
-        metadata = PaginationMetadata(
-            total=total, offset=query.offset, limit=query.limit, sort_by=query.sort_by, sort_order=query.sort_order
-        )
-    except DatabaseError as e:
+        data, total = await category_dao.get_all(filters=[Category.parent_id == parent_id], **query.model_dump())
+        metadata = PaginationMetadata(total=total, **query.model_dump())
+    except SQLAlchemyError as e:
+        logger.exception("Something went wrong while retrieving the category list by parent", exc_info=e)
         raise HTTPException(
-            status_code=500, detail="Something went wrong while retrieving the category list by parent"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Something went wrong while retrieving the category list by parent",
         ) from e
 
     return GetAllCategoriesResponse(
@@ -188,181 +141,177 @@ async def get_category_list_by_parent(
     )
 
 
-@router.get("/{category_id}", response_model=GetSingleCategoryResponse)
+@router.get("/{category_id}", response_model=GetSingleCategoryResponse, status_code=status.HTTP_200_OK)
 async def get_category_by_id(
     category_id: Annotated[int, Path(description="The unique identifier of the category to retrieve")],
-    db: Annotated[AsyncDatabaseClient, Depends(get_db)],
+    category_dao: Annotated[CategoryDAO, Depends(get_category)],
 ) -> GetSingleCategoryResponse:
-    """Retrieve a single category by its unique identifier.
-
-    This endpoint returns detailed information about a specific category, including
-    its complete parent hierarchy loaded recursively. This allows clients to display
-    the full category path from root to the requested category.
+    """Return a single category by primary key.
 
     Args:
-        category_id: The unique identifier (primary key) of the category to retrieve.
-            Must be a positive integer. Provided as a path parameter.
-        db: The database client instance for creating DAO connections.
-            Injected via FastAPI dependency injection from get_db.
+        category_id (int): Category primary key.
+        category_dao (CategoryDAO): Category data access object.
 
     Returns:
-        GetSingleCategoryResponse: A response object containing the complete category
-            information including all parent relationships loaded recursively.
+        GetSingleCategoryResponse: The requested category payload.
 
     Raises:
-        HTTPException: 404 Not Found if the category with the given ID does not exist.
-        HTTPException: 500 Internal Server Error if database operation fails.
-
-    Example:
-        GET /category/42
+        HTTPException: 404 if no category exists for ``category_id``.
+        HTTPException: 500 if a database error occurs while loading the category.
 
     """
     try:
-        async with CategoryDAO(database_client=db) as category_dao:
-            category = await category_dao.get_by_id(category_id)
+        category = await category_dao.get_by_pk(category_id)
     except NoResultFound as e:
-        raise HTTPException(status_code=404, detail="Category not found") from e
-    except DatabaseError as e:
-        raise HTTPException(status_code=500, detail="Something went wrong while retrieving the category") from e
+        logger.warning("Category not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found") from e
+    except SQLAlchemyError as e:
+        logger.exception("Something went wrong while retrieving the category", exc_info=e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Something went wrong while retrieving the category",
+        ) from e
 
     return GetSingleCategoryResponse.model_validate(category)
 
 
-@router.post("", response_model=GetSingleCategoryResponse)
+@router.post("", response_model=GetSingleCategoryResponse, status_code=status.HTTP_201_CREATED)
 async def create_category(
-    body: PostCategoryBody,
-    db: Annotated[AsyncDatabaseClient, Depends(get_db)],
+    body: Annotated[PostCategoryBody, Body(description="The category data to create")],
+    category_dao: Annotated[CategoryDAO, Depends(get_category)],
 ) -> GetSingleCategoryResponse:
-    """Create a new category.
-
-    This endpoint creates a new category with the provided data. Categories can
-    optionally have a parent category to establish hierarchical relationships.
-    If a parent_id is provided, it must reference an existing category.
+    """Create a new category from the request body.
 
     Args:
-        body: The category data for creation, including:
-            - name: The name of the new category (required)
-            - parent_id: Optional ID of the parent category for hierarchy
-            - Additional fields as defined in PostCategoryBody schema
-        db: The database client instance for creating DAO connections.
-            Injected via FastAPI dependency injection from get_db.
+        body (PostCategoryBody): Fields for the new category.
+        category_dao (CategoryDAO): Category data access object.
 
     Returns:
-        GetSingleCategoryResponse: A response object containing the newly created
-            category with all its fields, including the assigned ID and any loaded
-            parent relationships.
+        GetSingleCategoryResponse: The created category.
 
     Raises:
-        HTTPException: 400 Bad Request if the parent category ID is invalid or
-            does not exist (IntegrityError).
-        HTTPException: 500 Internal Server Error if database operation fails.
-
-    Example:
-        POST /category
-        Body: {"name": "Electronics", "parent_id": 5}
+        HTTPException: 400 if a referenced parent or related row violates integrity.
+        HTTPException: 500 if a database error occurs while creating the category.
 
     """
     try:
-        async with CategoryDAO(database_client=db) as category_dao:
-            payload = await category_dao.create(**body.model_dump(by_alias=False))
+        payload = await category_dao.create(**body.model_dump())
     except IntegrityError as e:
-        raise HTTPException(status_code=400, detail="Parent category not found") from e
-    except DatabaseError as e:
-        raise HTTPException(status_code=500, detail="There was an error creating the category") from e
+        logger.exception("Related object not found", exc_info=e)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Related object not found") from e
+    except SQLAlchemyError as e:
+        logger.exception("Something went wrong while creating the category", exc_info=e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Something went wrong while creating the category"
+        ) from e
 
     return GetSingleCategoryResponse.model_validate(payload)
 
 
-@router.put("/{category_id}", response_model=GetSingleCategoryResponse)
+@router.put("/{category_id}", response_model=GetSingleCategoryResponse, status_code=status.HTTP_200_OK)
 async def update_category(
     category_id: Annotated[int, Path(description="The unique identifier of the category to update")],
-    body: PutCategoryBody,
-    db: Annotated[AsyncDatabaseClient, Depends(get_db)],
+    body: Annotated[PutCategoryBody, Body(description="The category data to update")],
+    category_dao: Annotated[CategoryDAO, Depends(get_category)],
 ) -> GetSingleCategoryResponse:
-    """Update an existing category by replacing all its fields.
-
-    This endpoint performs a full update (PUT) of a category, replacing all fields
-    with the provided data. The category must exist, and if a parent_id is provided,
-    the parent category must also exist.
+    """Replace an existing category with the request body.
 
     Args:
-        category_id: The unique identifier (primary key) of the category to update.
-            Must be a positive integer. Provided as a path parameter.
-        body: The complete category data to replace the existing category, including:
-            - name: The updated name of the category
-            - parent_id: Optional updated parent category ID for hierarchy
-            - Additional fields as defined in PutCategoryBody schema
-        db: The database client instance for creating DAO connections.
-            Injected via FastAPI dependency injection from get_db.
+        category_id (int): Category primary key to update.
+        body (PutCategoryBody): Full replacement payload.
+        category_dao (CategoryDAO): Category data access object.
 
     Returns:
-        GetSingleCategoryResponse: A response object containing the updated category
-            with all its fields and loaded parent relationships.
+        GetSingleCategoryResponse: The updated category.
 
     Raises:
-        HTTPException: 404 Not Found if the category with the given ID does not exist
-            (NoResultFound).
-        HTTPException: 400 Bad Request if the parent category ID is invalid or
-            does not exist (IntegrityError).
-        HTTPException: 500 Internal Server Error if database operation fails.
-
-    Example:
-        PUT /category/42
-        Body: {"name": "Updated Electronics", "parent_id": 3}
+        HTTPException: 404 if no category exists for ``category_id``.
+        HTTPException: 400 if a referenced parent or related row violates integrity.
+        HTTPException: 500 if a database error occurs while updating the category.
 
     """
     try:
-        async with CategoryDAO(database_client=db) as category_dao:
-            payload = await category_dao.update(category_id, **body.model_dump(by_alias=False))
+        payload = await category_dao.update(category_id, **body.model_dump())
     except NoResultFound as e:
-        raise HTTPException(status_code=404, detail="Category not found") from e
+        logger.warning("Category not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found") from e
     except IntegrityError as e:
-        raise HTTPException(status_code=400, detail="Parent category not found") from e
-    except DatabaseError as e:
-        raise HTTPException(status_code=500, detail="There was an error updating the category") from e
+        logger.exception("Related object not found", exc_info=e)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Related object not found") from e
+    except SQLAlchemyError as e:
+        logger.exception("Something went wrong while updating the category", exc_info=e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Something went wrong while updating the category"
+        ) from e
 
     return GetSingleCategoryResponse.model_validate(payload)
 
 
-@router.delete("/{category_id}", status_code=204)
-async def delete_category(
-    category_id: Annotated[int, Path(description="The unique identifier of the category to delete")],
-    db: Annotated[AsyncDatabaseClient, Depends(get_db)],
-):
-    """Delete a category by its unique identifier.
-
-    This endpoint permanently deletes a category from the database. The operation
-    will fail if the category has dependent relationships (e.g., child categories
-    or associated transactions) that would violate foreign key constraints.
+@router.patch("/{category_id}", response_model=GetSingleCategoryResponse, status_code=status.HTTP_200_OK)
+async def patch_category(
+    category_id: Annotated[int, Path(description="The unique identifier of the category to update")],
+    body: Annotated[PatchCategoryBody, Body(description="The category data to update")],
+    category_dao: Annotated[CategoryDAO, Depends(get_category)],
+) -> GetSingleCategoryResponse:
+    """Update an existing category with the request body.
 
     Args:
-        category_id: The unique identifier (primary key) of the category to delete.
-            Must be a positive integer. Provided as a path parameter.
-        db: The database client instance for creating DAO connections.
-            Injected via FastAPI dependency injection from get_db.
+        category_id (int): Category primary key to update.
+        body (PatchCategoryBody): Partial update payload.
+        category_dao (CategoryDAO): Category data access object.
 
     Returns:
-        No content (204 status code) on successful deletion. The response body
-        will be empty.
+        GetSingleCategoryResponse: The updated category.
 
     Raises:
-        HTTPException: 404 Not Found if the category with the given ID does not exist
-            (NoResultFound).
-        HTTPException: 500 Internal Server Error if database operation fails,
-            including cases where foreign key constraints prevent deletion.
-
-    Example:
-        DELETE /category/42
-
-    Note:
-        This is a destructive operation and cannot be undone. Ensure that the
-        category has no dependent entities before deletion.
+        HTTPException: 404 if no category exists for ``category_id``.
+        HTTPException: 400 if a referenced parent or related row violates integrity.
+        HTTPException: 500 if a database error occurs while updating the category.
 
     """
     try:
-        async with CategoryDAO(database_client=db) as category_dao:
-            await category_dao.delete(category_id)
+        payload = await category_dao.update(category_id, **body.model_dump(exclude_unset=True))
     except NoResultFound as e:
-        raise HTTPException(status_code=404, detail="Category not found") from e
-    except DatabaseError as e:
-        raise HTTPException(status_code=500, detail="There was an error deleting the category") from e
+        logger.warning("Category not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found") from e
+    except IntegrityError as e:
+        logger.exception("Related object not found", exc_info=e)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Related object not found") from e
+    except SQLAlchemyError as e:
+        logger.exception("Something went wrong while patching the category", exc_info=e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Something went wrong while patching the category"
+        ) from e
+
+    return GetSingleCategoryResponse.model_validate(payload)
+
+
+@router.delete("/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_category(
+    category_id: Annotated[int, Path(description="The unique identifier of the category to delete")],
+    category_dao: Annotated[CategoryDAO, Depends(get_category)],
+) -> None:
+    """Delete a category by primary key.
+
+    Args:
+        category_id (int): Category primary key to delete.
+        category_dao (CategoryDAO): Category data access object.
+
+    Returns:
+        None
+
+    Raises:
+        HTTPException: 404 if no category exists for ``category_id``.
+        HTTPException: 500 if a database error occurs while deleting the category.
+
+    """
+    try:
+        await category_dao.delete(category_id)
+    except NoResultFound as e:
+        logger.warning("Category not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found") from e
+    except SQLAlchemyError as e:
+        logger.exception("Something went wrong while deleting the category", exc_info=e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Something went wrong while deleting the category"
+        ) from e

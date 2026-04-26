@@ -59,7 +59,7 @@ def test_shop(client):
         "/api/v1/category",
         json={"name": "Test Category", "description": "For address tests"},
     )
-    assert category_response.status_code == 200
+    assert category_response.status_code == 201
     category_id = category_response.json()["id"]
 
     # Create shop
@@ -71,7 +71,7 @@ def test_shop(client):
             "categoryId": category_id,
         },
     )
-    assert shop_response.status_code == 200
+    assert shop_response.status_code == 201
     return shop_response.json()
 
 
@@ -94,7 +94,7 @@ class TestAddressIntegration:
             "shopId": test_shop["id"],
         }
         response = client.post("/api/v1/address", json=payload)
-        assert response.status_code == 200
+        assert response.status_code == 201
         address_id = response.json()["id"]
 
         # Retrieve the address
@@ -119,7 +119,7 @@ class TestAddressIntegration:
         created_ids = []
         for addr_data in addresses_data:
             response = client.post("/api/v1/address", json=addr_data)
-            assert response.status_code == 200
+            assert response.status_code == 201
             created_ids.append(response.json()["id"])
 
         # Verify each address can be retrieved
@@ -143,7 +143,7 @@ class TestAddressIntegration:
                 "shopId": test_shop["id"],
             }
             response = client.post("/api/v1/address", json=payload)
-            assert response.status_code == 200
+            assert response.status_code == 201
 
         # Get all addresses
         response = client.get("/api/v1/address?limit=100&offset=0")
@@ -164,7 +164,7 @@ class TestAddressIntegration:
             "shopId": test_shop["id"],
         }
         create_response = client.post("/api/v1/address", json=create_payload)
-        assert create_response.status_code == 200
+        assert create_response.status_code == 201
         address_id = create_response.json()["id"]
 
         # Update address
@@ -196,7 +196,7 @@ class TestAddressIntegration:
             "shopId": test_shop["id"],
         }
         create_response = client.post("/api/v1/address", json=create_payload)
-        assert create_response.status_code == 200
+        assert create_response.status_code == 201
         address_id = create_response.json()["id"]
 
         # Verify it exists
@@ -266,7 +266,7 @@ class TestAddressIntegration:
         try:
             response = client.post("/api/v1/address", json=payload)
             # May succeed or fail depending on FK constraint enforcement
-            assert response.status_code in [200, 400, 500]
+            assert response.status_code in [201, 400, 500]
         except Exception:
             # Response validation may fail if shop is None
             pass
@@ -290,7 +290,7 @@ class TestAddressIntegration:
             "shopId": test_shop["id"],
         }
         create_response = client.post("/api/v1/address", json=create_payload)
-        assert create_response.status_code == 200
+        assert create_response.status_code == 201
         address_id = create_response.json()["id"]
 
         # Try to update with invalid shop
@@ -355,7 +355,7 @@ class TestAddressIntegration:
             "shopId": test_shop["id"],
         }
         response1 = client.post("/api/v1/address", json=payload1)
-        assert response1.status_code == 200
+        assert response1.status_code == 201
 
         # Create second address for same shop
         payload2 = {
@@ -364,7 +364,7 @@ class TestAddressIntegration:
             "shopId": test_shop["id"],
         }
         response2 = client.post("/api/v1/address", json=payload2)
-        assert response2.status_code == 200
+        assert response2.status_code == 201
 
         # Both should be retrievable
         assert client.get(f"/api/v1/address/{response1.json()['id']}").status_code == 200

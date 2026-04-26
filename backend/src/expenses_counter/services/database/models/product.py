@@ -31,11 +31,11 @@ class Product(Base):
 
     __tablename__ = "main_product"
 
-    id: int = Column[int](Integer, primary_key=True, autoincrement=True)
-    name: str = Column[str](String(150), nullable=False)
-    description: str | None = Column[str | None](Text, nullable=True)
+    id: Column[int] = Column[int](Integer, primary_key=True, autoincrement=True)
+    name: Column[str] = Column[str](String(150), nullable=False)
+    description: Column[str | None] = Column[str | None](Text, nullable=True)
 
     transactions: Mapped[list["Transaction"]] = relationship("Transaction", back_populates="product")
 
-    category_id: int | None = Column[int | None](ForeignKey("main_category.id"), nullable=True)
+    category_id: Column[int | None] = Column[int | None](ForeignKey("main_category.id"), nullable=True)
     category: Mapped["Category | None"] = relationship("Category", back_populates="products")

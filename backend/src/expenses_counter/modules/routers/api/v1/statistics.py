@@ -8,76 +8,75 @@ __all__ = ("router",)
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.exc import DatabaseError
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from loguru import logger
+from sqlalchemy.exc import SQLAlchemyError
 
-from expenses_counter.modules.middlewares.dependencies.get_db import get_db
+from expenses_counter.modules.middlewares.dependencies.daos import get_transaction
 from expenses_counter.modules.routers.schemas.requests.statistics import GetPopularProductsQuery
 from expenses_counter.modules.routers.schemas.responses.product import SimpleProductGet
 from expenses_counter.modules.routers.schemas.responses.statistics import (
     SpendingsGroupedByMonthResponse,
 )
 from expenses_counter.services.daos import TransactionDAO
-from expenses_counter.services.database import AsyncDatabaseClient
 
 router = APIRouter(prefix="/statistics", tags=["Statistics"])
 
 
-@router.get("/spendings/grouped-by-month", response_model=list[SpendingsGroupedByMonthResponse])
+@router.get(
+    "/spendings/grouped-by-month", response_model=list[SpendingsGroupedByMonthResponse], status_code=status.HTTP_200_OK
+)
 async def get_spendings_grouped_by_month(
-    db: Annotated[AsyncDatabaseClient, Depends(get_db)],
+    transaction_dao: Annotated[TransactionDAO, Depends(get_transaction)],
 ) -> list[SpendingsGroupedByMonthResponse]:
-    """Retrieve spending data grouped by month.
-
-    Returns a list of spending totals aggregated by month, providing
-    a time-series view of expense patterns.
+    """Return total spendings aggregated by calendar month.
 
     Args:
-        db: Database client injected by FastAPI dependency injection.
+        transaction_dao (TransactionDAO): Transaction data access object.
 
     Returns:
-        List of SpendingsGroupedByMonthResponse objects containing month and total spending.
+        list[SpendingsGroupedByMonthResponse]: One entry per month with summed spendings.
 
     Raises:
-        HTTPException: 500 error if database operation fails.
+        HTTPException: 500 if a database error occurs while aggregating spendings.
 
     """
     try:
-        async with TransactionDAO(database_client=db) as transaction_dao:
-            data = await transaction_dao.get_spendings_grouped_by_month()
-    except DatabaseError as e:
+        data = await transaction_dao.get_spendings_grouped_by_month()
+        logger.info(f"Spendings grouped by month: {data}")
+    except SQLAlchemyError as e:
+        logger.exception("Something went wrong while retrieving the spendings grouped by month", exc_info=e)
         raise HTTPException(
-            status_code=500, detail="Something went wrong while retrieving the spendings grouped by month"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Something went wrong while retrieving the spendings grouped by month",
         ) from e
 
     return [SpendingsGroupedByMonthResponse(month=month, spendings=spendings) for month, spendings in data]
 
 
-@router.get("/most-popular-products", response_model=list[SimpleProductGet])
+@router.get("/most-popular-products", response_model=list[SimpleProductGet], status_code=status.HTTP_200_OK)
 async def get_most_popular_products(
-    db: Annotated[AsyncDatabaseClient, Depends(get_db)],
+    transaction_dao: Annotated[TransactionDAO, Depends(get_transaction)],
     query: Annotated[GetPopularProductsQuery, Query(description="The query parameters")],
 ) -> list[SimpleProductGet]:
-    """Retrieve the most frequently purchased products.
-
-    Returns products ordered by purchase frequency, allowing users to identify
-    their most commonly bought items.
+    """Return products ranked by how often they appear in transactions.
 
     Args:
-        db: Database client injected by FastAPI dependency injection.
-        query: Query parameters including limit for number of results.
+        transaction_dao (TransactionDAO): Transaction data access object.
+        query (GetPopularProductsQuery): Result size; ``limit`` defaults to 10 (max 100).
 
     Returns:
-        List of SimpleProductGet objects representing the most popular products.
+        list[SimpleProductGet]: Popular products up to ``query.limit``.
 
     Raises:
-        HTTPException: 500 error if database operation fails.
+        HTTPException: 500 if a database error occurs while ranking products.
 
     """
     try:
-        async with TransactionDAO(database_client=db) as transaction_dao:
-            return await transaction_dao.get_most_popular_products(limit=query.limit)
-    except DatabaseError as e:
+        return await transaction_dao.get_most_popular_products(limit=query.limit)
+    except SQLAlchemyError as e:
+        logger.exception("Something went wrong while retrieving the most popular products", exc_info=e)
         raise HTTPException(
-            status_code=500, detail="Something went wrong while retrieving the most popular products"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Something went wrong while retrieving the most popular products",
         ) from e

@@ -1,44 +1,39 @@
-"""Database client module."""
+"""Async SQLAlchemy engine and session management for the application."""
 
 __all__ = ("AsyncDatabaseClient",)
 
 from typing import AsyncGenerator
 
 from loguru import logger
-from sqlalchemy import text
+from sqlalchemy import event, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncEngine, AsyncSession, create_async_engine
+from sqlalchemy.pool import ConnectionPoolEntry
 
 from expenses_counter.config import AppConfig
 from expenses_counter.utils import Singleton
 
 
 class AsyncDatabaseClient(metaclass=Singleton):
-    """Async SQLAlchemy singleton database client.
-
-    This class provides a singleton instance for managing async database connections
-    using SQLAlchemy. It handles engine creation, session factory setup, and
-    provides methods to obtain database sessions.
-
-    Attributes:
-        _engine: The SQLAlchemy async engine instance.
-        _session_factory: Factory for creating async database sessions.
-
-    """
+    """Singleton that owns the async engine and session factory."""
 
     _engine: AsyncEngine
     _session_factory: async_sessionmaker[AsyncSession]
 
     def __init__(self, app_config: AppConfig | None = None) -> None:
-        """Initialize the database client.
+        """Build the async engine and session factory from app configuration.
 
-        Creates the async SQLAlchemy engine and session factory if not already
-        initialized. Uses the provided app_config or retrieves the default
-        configuration.
+        For SQLite, registers a connect hook that enables ``PRAGMA foreign_keys``.
 
         Args:
-            app_config: Optional application configuration. If not provided,
-                the default AppConfig instance will be used.
+            app_config (AppConfig | None, optional): Application config with
+                database URL and options. Defaults to None.
+
+        Returns:
+            None
+
+        Raises:
+            RuntimeError: If ``app_config`` is None.
 
         """
         if app_config is None:
@@ -50,6 +45,8 @@ class AsyncDatabaseClient(metaclass=Singleton):
             echo=app_config.info.api_info.debug,
             future=True,
         )
+        if app_config.services.database.provider.startswith("sqlite"):
+            event.listen(self._engine.sync_engine, "connect", self._set_sqlite_pragma)
         self._session_factory = async_sessionmaker[AsyncSession](
             self._engine,
             class_=AsyncSession,
@@ -57,101 +54,68 @@ class AsyncDatabaseClient(metaclass=Singleton):
         )
         logger.info("Database client initialized successfully.")
 
-    @property
-    def engine(self) -> AsyncEngine:
-        """Get the database engine.
+    @staticmethod
+    def _set_sqlite_pragma(dbapi_connection: object, _connection_record: ConnectionPoolEntry) -> None:
+        """Enable foreign-key enforcement for a new SQLite connection.
+
+        Args:
+            dbapi_connection (object): DBAPI connection from the pool.
+            _connection_record (ConnectionPoolEntry): Pool entry (unused).
 
         Returns:
-            The database engine.
+            None
+
+        """
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
+
+    @property
+    def engine(self) -> AsyncEngine:
+        """Return the shared async SQLAlchemy engine.
+
+        Returns:
+            AsyncEngine: The configured engine instance.
 
         """
         return self._engine
 
     @property
     def session_factory(self) -> async_sessionmaker[AsyncSession]:
-        """Get the session factory.
+        """Return the factory used to create async sessions.
 
         Returns:
-            The session factory.
+            async_sessionmaker[AsyncSession]: Session factory with
+                ``expire_on_commit=False``.
 
         """
         return self._session_factory
 
     async def get_session(self) -> AsyncGenerator[AsyncSession, None]:
-        """Get an async database session.
-
-        Creates and yields an async database session from the session factory.
-        The session is automatically closed when exiting the context.
+        """Yield a context-managed async session for request-scoped work.
 
         Yields:
-            An async SQLAlchemy session that can be used for database operations.
-
-        Raises:
-            RuntimeError: If the database client has not been initialized.
-
-        Example:
-            Basic usage for querying:
-
-            .. code-block:: python
-
-                from expenses_counter.services.database import AsyncDatabaseClient
-                from expenses_counter.services.database.models import Category
-
-                client = AsyncDatabaseClient()
-
-                # Query example
-                async for session in client.get_session():
-                    result = await session.execute(
-                        select(Category).where(Category.name == "Groceries")
-                    )
-                    category = result.scalar_one_or_none()
-
-        Example:
-                Creating a new record:
-
-            .. code-block:: python
-
-                async for session in client.get_session():
-                    new_category = Category(name="Electronics", description="Tech items")
-                    session.add(new_category)
-                    await session.commit()
-
-        Example:
-                Updating a record:
-
-            .. code-block:: python
-
-                async for session in client.get_session():
-                    result = await session.execute(
-                        select(Category).where(Category.id == 1)
-                    )
-                    category = result.scalar_one()
-                    category.name = "Updated Name"
-                    await session.commit()
+            AsyncSession: A session that is closed when the async context exits.
 
         """
         async with self._session_factory() as session:
             yield session
 
     async def close(self) -> None:
-        """Close the database engine and clean up resources.
+        """Dispose of the engine and release pool connections.
 
-        Disposes of the database engine and resets the session factory.
-        This should be called when shutting down the application to properly
-        clean up database connections.
+        Returns:
+            None
+
         """
         await self._engine.dispose()
         logger.info("Database client closed successfully.")
 
     async def healthcheck(self) -> bool:
-        """Check the health of the database client.
-
-        Executes a simple SELECT query to verify database connectivity and
-        operational status.
+        """Run a simple ``SELECT 1`` to verify the database is reachable.
 
         Returns:
-            True if the database client is healthy and can execute queries,
-            False if any SQLAlchemy error occurs during the health check.
+            bool: True if the query succeeds, False on ``SQLAlchemyError``.
 
         """
         try:

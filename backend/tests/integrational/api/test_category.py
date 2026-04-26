@@ -61,7 +61,7 @@ class TestCategoryIntegration:
             "description": "All food and beverage expenses",
         }
         response = client.post("/api/v1/category", json=payload)
-        assert response.status_code == 200
+        assert response.status_code == 201
         category_id = response.json()["id"]
 
         # Retrieve the category via API
@@ -85,7 +85,7 @@ class TestCategoryIntegration:
         created_ids = []
         for cat_data in categories_data:
             response = client.post("/api/v1/category", json=cat_data)
-            assert response.status_code == 200
+            assert response.status_code == 201
             created_ids.append(response.json()["id"])
 
         # Verify each category can be retrieved
@@ -104,7 +104,7 @@ class TestCategoryIntegration:
         for i in range(3):
             payload = {"name": f"Category {i}", "description": f"Description {i}"}
             response = client.post("/api/v1/category", json=payload)
-            assert response.status_code == 200
+            assert response.status_code == 201
 
         # Get all categories
         response = client.get("/api/v1/category?limit=100&offset=0")
@@ -123,7 +123,7 @@ class TestCategoryIntegration:
             "description": "Personal care products",
         }
         create_response = client.post("/api/v1/category", json=create_payload)
-        assert create_response.status_code == 200
+        assert create_response.status_code == 201
         category_id = create_response.json()["id"]
 
         # Update category
@@ -149,7 +149,7 @@ class TestCategoryIntegration:
         # Create category
         create_payload = {"name": "Temporary Category", "description": "To be deleted"}
         create_response = client.post("/api/v1/category", json=create_payload)
-        assert create_response.status_code == 200
+        assert create_response.status_code == 201
         category_id = create_response.json()["id"]
 
         # Verify it exists
@@ -231,7 +231,7 @@ class TestCategoryIntegration:
         """
         # Create parent category
         parent_response = client.post("/api/v1/category", json={"name": "Parent", "description": "Parent category"})
-        assert parent_response.status_code == 200
+        assert parent_response.status_code == 201
         parent_id = parent_response.json()["id"]
 
         # Create child category
@@ -243,7 +243,7 @@ class TestCategoryIntegration:
                 "parent_id": parent_id,
             },
         )
-        assert child_response.status_code == 200
+        assert child_response.status_code == 201
 
     def test_get_root_categories_endpoint(self, client):
         """Test the root categories endpoint.
@@ -264,7 +264,7 @@ class TestCategoryIntegration:
         """
         # Create a parent first
         parent_response = client.post("/api/v1/category", json={"name": "TestParent", "description": "Test"})
-        assert parent_response.status_code == 200
+        assert parent_response.status_code == 201
         parent_id = parent_response.json()["id"]
 
         # Query children

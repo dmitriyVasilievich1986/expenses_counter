@@ -58,7 +58,7 @@ def test_category(client):
         "/api/v1/category",
         json={"name": "Test Category", "description": "For product tests"},
     )
-    assert response.status_code == 200
+    assert response.status_code == 201
     return response.json()
 
 
@@ -81,7 +81,7 @@ class TestProductIntegration:
             "subCategoryId": test_category["id"],
         }
         response = client.post("/api/v1/product", json=payload)
-        assert response.status_code == 200
+        assert response.status_code == 201
         product_id = response.json()["id"]
 
         # Retrieve the product
@@ -106,7 +106,7 @@ class TestProductIntegration:
         created_ids = []
         for product_data in products_data:
             response = client.post("/api/v1/product", json=product_data)
-            assert response.status_code == 200
+            assert response.status_code == 201
             created_ids.append(response.json()["id"])
 
         # Verify each product can be retrieved
@@ -130,7 +130,7 @@ class TestProductIntegration:
                 "subCategoryId": test_category["id"],
             }
             response = client.post("/api/v1/product", json=payload)
-            assert response.status_code == 200
+            assert response.status_code == 201
 
         # Get all products
         response = client.get("/api/v1/product?limit=100&offset=0")
@@ -151,7 +151,7 @@ class TestProductIntegration:
             "subCategoryId": test_category["id"],
         }
         create_response = client.post("/api/v1/product", json=create_payload)
-        assert create_response.status_code == 200
+        assert create_response.status_code == 201
         product_id = create_response.json()["id"]
 
         # Update product
@@ -183,7 +183,7 @@ class TestProductIntegration:
             "subCategoryId": test_category["id"],
         }
         create_response = client.post("/api/v1/product", json=create_payload)
-        assert create_response.status_code == 200
+        assert create_response.status_code == 201
         product_id = create_response.json()["id"]
 
         # Verify it exists
@@ -277,7 +277,7 @@ class TestProductIntegration:
             "subCategoryId": test_category["id"],
         }
         create_response = client.post("/api/v1/product", json=create_payload)
-        assert create_response.status_code == 200
+        assert create_response.status_code == 201
         product_id = create_response.json()["id"]
 
         # Try to update with invalid category
@@ -342,7 +342,7 @@ class TestProductIntegration:
             "subCategoryId": test_category["id"],
         }
         response1 = client.post("/api/v1/product", json=payload1)
-        assert response1.status_code == 200
+        assert response1.status_code == 201
 
         # Create second product in same category
         payload2 = {
@@ -351,7 +351,7 @@ class TestProductIntegration:
             "subCategoryId": test_category["id"],
         }
         response2 = client.post("/api/v1/product", json=payload2)
-        assert response2.status_code == 200
+        assert response2.status_code == 201
 
         # Both should be retrievable
         assert client.get(f"/api/v1/product/{response1.json()['id']}").status_code == 200
@@ -369,14 +369,14 @@ class TestProductIntegration:
             "/api/v1/category",
             json={"name": "Category 1", "description": "First category"},
         )
-        assert cat1_response.status_code == 200
+        assert cat1_response.status_code == 201
         cat1_id = cat1_response.json()["id"]
 
         cat2_response = client.post(
             "/api/v1/category",
             json={"name": "Category 2", "description": "Second category"},
         )
-        assert cat2_response.status_code == 200
+        assert cat2_response.status_code == 201
         cat2_id = cat2_response.json()["id"]
 
         # Create product in first category
@@ -384,14 +384,14 @@ class TestProductIntegration:
             "/api/v1/product",
             json={"name": "Product Cat1", "description": "In cat 1", "subCategoryId": cat1_id},
         )
-        assert product1.status_code == 200
+        assert product1.status_code == 201
 
         # Create product in second category
         product2 = client.post(
             "/api/v1/product",
             json={"name": "Product Cat2", "description": "In cat 2", "subCategoryId": cat2_id},
         )
-        assert product2.status_code == 200
+        assert product2.status_code == 201
 
         # Both should be retrievable
         assert client.get(f"/api/v1/product/{product1.json()['id']}").status_code == 200

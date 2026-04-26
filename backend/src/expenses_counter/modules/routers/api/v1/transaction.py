@@ -15,6 +15,7 @@ All endpoints include proper error handling for database exceptions and return
 appropriate HTTP status codes.
 
 Routes:
+    POST /transaction/monthly - List transactions in the month of ``body.date``
     GET /transaction - List all transactions with pagination
     GET /transaction/{transaction_id} - Get a single transaction by ID
     POST /transaction - Create a new transaction
@@ -27,10 +28,11 @@ __all__ = ("router",)
 from typing import Annotated
 
 from dateutil.relativedelta import relativedelta
-from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query
-from sqlalchemy.exc import DatabaseError, IntegrityError, NoResultFound
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, status
+from loguru import logger
+from sqlalchemy.exc import IntegrityError, NoResultFound, SQLAlchemyError
 
-from expenses_counter.modules.middlewares.dependencies.get_db import get_db
+from expenses_counter.modules.middlewares.dependencies.daos import get_transaction
 from expenses_counter.modules.routers.schemas.base.metadata import PaginationMetadata
 from expenses_counter.modules.routers.schemas.requests.transaction import (
     GetAllTransactionsQuery,
@@ -45,211 +47,220 @@ from expenses_counter.modules.routers.schemas.responses.transaction import (
     SimpleTransactionGet,
 )
 from expenses_counter.services.daos import TransactionDAO
-from expenses_counter.services.database import AsyncDatabaseClient
 from expenses_counter.services.database.models.transaction import Transaction
 
 router = APIRouter(prefix="/transaction", tags=["Transaction"])
 
 
-@router.post("/monthly", response_model=GetAllTransactionsResponse)
+@router.post("/monthly", response_model=GetAllTransactionsResponse, status_code=status.HTTP_200_OK)
 async def get_transactions_by_date_range(
     body: Annotated[MonthlyBodyRequest, Body(description="The body of the request")],
     query: Annotated[MonthlyQuery, Query(description="The query parameters")],
-    db: Annotated[AsyncDatabaseClient, Depends(get_db)],
-):
-    """Retrieve all transactions by date range.
+    transaction_dao: Annotated[TransactionDAO, Depends(get_transaction)],
+) -> GetAllTransactionsResponse:
+    """Return all transactions whose dates fall in the calendar month of ``body.date``.
+
+    The range is ``[first day of month, first day of next month)``.
 
     Args:
-        body: Request body containing the date to filter transactions by month.
-        query: Query parameters including sort_by and sort_order.
-        db: The database client instance for creating DAO connections.
-            Injected via FastAPI dependency injection from get_db.
+        body (MonthlyBodyRequest): Request body; ``date`` selects the month.
+        query (MonthlyQuery): Sort field and order for the result set.
+        transaction_dao (TransactionDAO): Transaction data access object.
 
     Returns:
-        GetAllTransactionsResponse containing a list of transactions and pagination metadata.
+        GetAllTransactionsResponse: Transactions in the month and pagination metadata.
 
     Raises:
-        HTTPException: 500 Internal Server Error if database operation fails.
+        HTTPException: 500 if a database error occurs while listing transactions.
 
     """
     start_date = body.date.replace(day=1)
     end_date = start_date + relativedelta(months=1)
     try:
-        async with TransactionDAO(database_client=db) as transaction_dao:
-            data, total = await transaction_dao.get_all(
-                filters=[Transaction.date >= start_date, Transaction.date < end_date],
-                limit=None,
-                offset=None,
-                sort_by=query.sort_by,
-                sort_order=query.sort_order,
-            )
-        metadata = PaginationMetadata(
-            total=total, offset=None, limit=None, sort_by=query.sort_by, sort_order=query.sort_order
+        data, total = await transaction_dao.get_all(
+            filters=[Transaction.date >= start_date, Transaction.date < end_date],
+            limit=None,
+            offset=None,
+            sort_by=query.sort_by,
+            sort_order=query.sort_order,
         )
-    except DatabaseError as e:
-        raise HTTPException(status_code=500, detail="Something went wrong while retrieving the transaction list") from e
+    except SQLAlchemyError as e:
+        logger.exception("Something went wrong while retrieving the transaction list", exc_info=e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Something went wrong while retrieving the transaction list",
+        ) from e
 
+    metadata = PaginationMetadata(
+        total=total, offset=None, limit=None, sort_by=query.sort_by, sort_order=query.sort_order
+    )
     return GetAllTransactionsResponse(
         data=[SimpleTransactionGet.model_validate(transaction) for transaction in data], metadata=metadata
     )
 
 
-@router.get("", response_model=GetAllTransactionsResponse)
+@router.get("", response_model=GetAllTransactionsResponse, status_code=status.HTTP_200_OK)
 async def get_transaction_list(
-    db: Annotated[AsyncDatabaseClient, Depends(get_db)],
+    transaction_dao: Annotated[TransactionDAO, Depends(get_transaction)],
     query: Annotated[GetAllTransactionsQuery, Query(description="Pagination and sorting parameters")],
-):
-    """Retrieve all transactions with pagination and sorting.
+) -> GetAllTransactionsResponse:
+    """Return all transactions with pagination metadata.
 
     Args:
-        db: The database client instance for creating DAO connections.
-            Injected via FastAPI dependency injection from get_db.
-        query: Pagination and sorting parameters including limit, offset, sort_by, and sort_order.
+        transaction_dao (TransactionDAO): Transaction data access object.
+        query (GetAllTransactionsQuery): Pagination and sort parameters.
 
     Returns:
-        GetAllTransactionsResponse containing a list of transactions and pagination metadata.
+        GetAllTransactionsResponse: Transactions and pagination metadata.
 
     Raises:
-        HTTPException: 500 Internal Server Error if database operation fails.
+        HTTPException: 500 if a database error occurs while listing transactions.
 
     """
     try:
-        async with TransactionDAO(database_client=db) as transaction_dao:
-            data, total = await transaction_dao.get_all(
-                limit=query.limit, offset=query.offset, sort_by=query.sort_by, sort_order=query.sort_order
-            )
-        metadata = PaginationMetadata(
-            total=total, offset=query.offset, limit=query.limit, sort_by=query.sort_by, sort_order=query.sort_order
-        )
-    except DatabaseError as e:
-        raise HTTPException(status_code=500, detail="Something went wrong while retrieving the transaction list") from e
+        data, total = await transaction_dao.get_all(**query.model_dump())
+    except SQLAlchemyError as e:
+        logger.exception("Something went wrong while retrieving the transaction list", exc_info=e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Something went wrong while retrieving the transaction list",
+        ) from e
 
+    metadata = PaginationMetadata(total=total, **query.model_dump())
     return GetAllTransactionsResponse(
         data=[SimpleTransactionGet.model_validate(transaction) for transaction in data], metadata=metadata
     )
 
 
-@router.get("/{transaction_id}", response_model=GetSingleTransactionResponse)
+@router.get("/{transaction_id}", response_model=GetSingleTransactionResponse, status_code=status.HTTP_200_OK)
 async def get_transaction_by_id(
     transaction_id: Annotated[int, Path(description="The unique identifier of the transaction to retrieve")],
-    db: Annotated[AsyncDatabaseClient, Depends(get_db)],
-):
-    """Retrieve a transaction by its ID.
+    transaction_dao: Annotated[TransactionDAO, Depends(get_transaction)],
+) -> GetSingleTransactionResponse:
+    """Return a single transaction by primary key.
 
     Args:
-        transaction_id: The unique identifier of the transaction to retrieve.
-        db: The database client instance for creating DAO connections.
-            Injected via FastAPI dependency injection from get_db.
+        transaction_id (int): Transaction primary key.
+        transaction_dao (TransactionDAO): Transaction data access object.
 
     Returns:
-        GetSingleTransactionResponse containing the transaction details.
+        GetSingleTransactionResponse: The requested transaction payload.
 
     Raises:
-        HTTPException: 404 Not Found if the transaction is not found.
-            500 Internal Server Error if database operation fails.
+        HTTPException: 404 if no transaction exists for ``transaction_id``.
+        HTTPException: 500 if a database error occurs while loading the transaction.
 
     """
     try:
-        async with TransactionDAO(database_client=db) as transaction_dao:
-            transaction = await transaction_dao.get_by_id(transaction_id)
-    except DatabaseError as e:
-        raise HTTPException(status_code=500, detail="Something went wrong while retrieving the transaction") from e
+        return await transaction_dao.get_by_pk(transaction_id)
+    except NoResultFound as e:
+        logger.warning("Transaction not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Transaction not found") from e
+    except SQLAlchemyError as e:
+        logger.exception("Something went wrong while retrieving the transaction", exc_info=e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Something went wrong while retrieving the transaction",
+        ) from e
 
-    if transaction is None:
-        raise HTTPException(status_code=404, detail="Transaction not found")
 
-    return transaction
-
-
-@router.post("", response_model=GetSingleTransactionResponse)
+@router.post("", response_model=GetSingleTransactionResponse, status_code=status.HTTP_201_CREATED)
 async def create_transaction(
-    body: PostTransactionBody,
-    db: Annotated[AsyncDatabaseClient, Depends(get_db)],
-):
+    body: Annotated[PostTransactionBody, Body(description="The transaction data to create")],
+    transaction_dao: Annotated[TransactionDAO, Depends(get_transaction)],
+) -> GetSingleTransactionResponse:
     """Create a new transaction.
 
     Args:
-        body: The transaction data to create including date, count, price, product_id, and address_id.
-        db: The database client instance for creating DAO connections.
-            Injected via FastAPI dependency injection from get_db.
+        body (PostTransactionBody): Fields for the new transaction (e.g. product and address).
+        transaction_dao (TransactionDAO): Transaction data access object.
 
     Returns:
-        GetSingleTransactionResponse containing the newly created transaction.
+        GetSingleTransactionResponse: The created transaction payload.
 
     Raises:
-        HTTPException: 400 Bad Request if the referenced product or address is not found (IntegrityError).
-            500 Internal Server Error if database operation fails.
+        HTTPException: 400 if a referenced entity violates integrity (e.g. missing product).
+        HTTPException: 500 if a database error occurs while creating the transaction.
 
     """
     try:
-        async with TransactionDAO(database_client=db) as transaction_dao:
-            return await transaction_dao.create(**body.model_dump(by_alias=False))
+        return await transaction_dao.create(**body.model_dump())
     except IntegrityError as e:
-        raise HTTPException(status_code=400, detail="Product or Address not found") from e
-    except DatabaseError as e:
-        raise HTTPException(status_code=500, detail="Something went wrong while creating the transaction") from e
+        logger.exception("Related object not found", exc_info=e)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Related object not found") from e
+    except SQLAlchemyError as e:
+        logger.exception("Something went wrong while creating the transaction", exc_info=e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Something went wrong while creating the transaction",
+        ) from e
 
 
-@router.put("/{transaction_id}", response_model=GetSingleTransactionResponse)
+@router.put("/{transaction_id}", response_model=GetSingleTransactionResponse, status_code=status.HTTP_200_OK)
 async def update_transaction(
     transaction_id: Annotated[int, Path(description="The unique identifier of the transaction to update")],
-    body: PutTransactionBody,
-    db: Annotated[AsyncDatabaseClient, Depends(get_db)],
-):
-    """Update an existing transaction by replacing all its fields.
+    body: Annotated[PutTransactionBody, Body(description="The transaction data to update")],
+    transaction_dao: Annotated[TransactionDAO, Depends(get_transaction)],
+) -> GetSingleTransactionResponse:
+    """Replace an existing transaction by primary key.
 
     Args:
-        transaction_id: The unique identifier of the transaction to update.
-        body: The complete transaction data to replace the existing transaction.
-        db: The database client instance for creating DAO connections.
-            Injected via FastAPI dependency injection from get_db.
+        transaction_id (int): Transaction primary key.
+        body (PutTransactionBody): Full replacement payload for the transaction.
+        transaction_dao (TransactionDAO): Transaction data access object.
 
     Returns:
-        GetSingleTransactionResponse containing the updated transaction.
+        GetSingleTransactionResponse: The updated transaction payload.
 
     Raises:
-        HTTPException: 400 Bad Request if the referenced product or address is not found (IntegrityError).
-            404 Not Found if the transaction is not found (NoResultFound).
-            500 Internal Server Error if database operation fails.
+        HTTPException: 400 if a referenced entity violates integrity (e.g. invalid product).
+        HTTPException: 404 if no transaction exists for ``transaction_id``.
+        HTTPException: 500 if a database error occurs while updating the transaction.
 
     """
     try:
-        async with TransactionDAO(database_client=db) as transaction_dao:
-            return await transaction_dao.update(transaction_id, **body.model_dump(by_alias=False))
+        return await transaction_dao.update(transaction_id, **body.model_dump())
     except IntegrityError as e:
-        raise HTTPException(status_code=400, detail="Product or Address not found") from e
+        logger.exception("Related object not found", exc_info=e)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Related object not found") from e
     except NoResultFound as e:
-        raise HTTPException(status_code=404, detail="Transaction not found") from e
-    except DatabaseError as e:
-        raise HTTPException(status_code=500, detail="Something went wrong while updating the transaction") from e
+        logger.warning("Transaction not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Transaction not found") from e
+    except SQLAlchemyError as e:
+        logger.exception("Something went wrong while updating the transaction", exc_info=e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Something went wrong while updating the transaction",
+        ) from e
 
 
-@router.delete("/{transaction_id}", status_code=204)
+@router.delete("/{transaction_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_transaction(
     transaction_id: Annotated[int, Path(description="The unique identifier of the transaction to delete")],
-    db: Annotated[AsyncDatabaseClient, Depends(get_db)],
-):
-    """Delete a transaction by its ID.
+    transaction_dao: Annotated[TransactionDAO, Depends(get_transaction)],
+) -> None:
+    """Delete a transaction by primary key.
 
     Args:
-        transaction_id: The unique identifier of the transaction to delete.
-        db: The database client instance for creating DAO connections.
-            Injected via FastAPI dependency injection from get_db.
+        transaction_id (int): Transaction primary key.
+        transaction_dao (TransactionDAO): Transaction data access object.
 
     Returns:
-        None (204 No Content status code).
+        None
 
     Raises:
-        HTTPException: 404 Not Found if the transaction is not found (NoResultFound).
-            500 Internal Server Error if database operation fails.
+        HTTPException: 404 if no transaction exists for ``transaction_id``.
+        HTTPException: 500 if a database error occurs while deleting the transaction.
 
     """
     try:
-        async with TransactionDAO(database_client=db) as transaction_dao:
-            deleted = await transaction_dao.delete(transaction_id)
-        if not deleted:
-            raise HTTPException(status_code=404, detail="Transaction not found")
+        await transaction_dao.delete(transaction_id)
     except NoResultFound as e:
-        raise HTTPException(status_code=404, detail="Transaction not found") from e
-    except DatabaseError as e:
-        raise HTTPException(status_code=500, detail="Something went wrong while deleting the transaction") from e
+        logger.warning("Transaction not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Transaction not found") from e
+    except SQLAlchemyError as e:
+        logger.exception("Something went wrong while deleting the transaction", exc_info=e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Something went wrong while deleting the transaction",
+        ) from e
