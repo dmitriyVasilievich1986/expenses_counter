@@ -188,7 +188,6 @@ async def update_address(
     """
     try:
         r = await address_dao.update(address_id, **body.model_dump())
-        logger.info(f"Updated address: {r}")
         return GetSingleAddressResponse.model_validate(r)
     except IntegrityError as e:
         logger.exception("Related object not found", exc_info=e)
