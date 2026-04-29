@@ -4,7 +4,7 @@ __all__ = ("SettingsStorage",)
 
 from typing import Optional, TYPE_CHECKING
 
-from expenses_counter.utils import Singleton
+from expenses_counter.utils.singleton import Singleton
 
 if TYPE_CHECKING:
     from .base import BaseConfig
