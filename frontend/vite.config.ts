@@ -14,7 +14,7 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: '../static',
+    outDir: resolve(__dirname, '../backend/static'),
     emptyOutDir: false,
     rollupOptions: {
       output: {
