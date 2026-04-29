@@ -22,7 +22,7 @@ class PathsInfo(BaseModel):
 
     """
 
-    root: Path = Field(Path(__file__).resolve().parents[5], description="The root path of the application")
+    root: Path = Field(Path(__file__).resolve().parents[6], description="The root path of the application")
 
     @property
     def static(self) -> Path:
@@ -33,6 +33,26 @@ class PathsInfo(BaseModel):
 
         """
         return self.root / "static"
+
+    @property
+    def assets(self) -> Path:
+        """Return the directory for Vite-bundled JS and CSS assets.
+
+        Returns:
+            Path: ``static / "assets"``.
+
+        """
+        return self.static / "assets"
+
+    @property
+    def index_html(self) -> Path:
+        """Return the index.html file.
+
+        Returns:
+            Path: ``static / "index.html"``.
+
+        """
+        return self.static / "index.html"
 
     @property
     def js(self) -> Path:
