@@ -22,7 +22,7 @@ class PathsInfo(BaseModel):
 
     """
 
-    root: Path = Field(Path(__file__).resolve().parents[6], description="The root path of the application")
+    root: Path = Field(Path(__file__).resolve().parents[5], description="The root path of the application")
 
     @property
     def static(self) -> Path:
@@ -33,6 +33,16 @@ class PathsInfo(BaseModel):
 
         """
         return self.root / "static"
+
+    @property
+    def src(self) -> Path:
+        """Return the services directory.
+
+        Returns:
+            Path: ``root / "services"``.
+
+        """
+        return self.root / "src" / "expenses_counter"
 
     @property
     def assets(self) -> Path:
@@ -93,3 +103,13 @@ class PathsInfo(BaseModel):
 
         """
         return self.static / "fonts"
+
+    @property
+    def alembic_ini(self) -> Path:
+        """Return the alembic.ini file.
+
+        Returns:
+            Path: ``root / "services" / "alembic" / "alembic.ini"``.
+
+        """
+        return self.src / "services" / "alembic" / "alembic.ini"
