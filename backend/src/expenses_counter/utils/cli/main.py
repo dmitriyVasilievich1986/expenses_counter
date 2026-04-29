@@ -9,6 +9,7 @@ from expenses_counter import __version__ as app_version
 from expenses_counter.config import AppConfig
 
 from .crawler import crawler
+from .db import db
 
 
 @click.group(help="CLI for managing the Expenses Counter.")
@@ -35,7 +36,15 @@ async def main(ctx: click.Context) -> None:
 @main.command(help="Show the Expenses Counter application configuration.")
 @click.pass_context
 async def show_config(ctx: click.Context) -> None:
-    """Show the Expenses Counter application configuration."""
+    """Print the resolved application configuration as indented JSON.
+
+    Args:
+        ctx (click.Context): Click context holding the loaded ``AppConfig``.
+
+    Returns:
+        None
+
+    """
     config: AppConfig = ctx.obj["config"]
     click.echo(config.model_dump_json(indent=2))
 
@@ -71,3 +80,4 @@ def run(host: str, port: int, reload: bool) -> None:
 
 
 main.add_command(crawler)
+main.add_command(db)
