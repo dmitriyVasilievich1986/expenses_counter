@@ -57,14 +57,14 @@ def get_app(config: AppConfig | None = None) -> FastAPI:
         allow_headers=config.info.cors_info.allow_headers,
     )
 
+    logger.debug("Mounting static assets from %s...", str(config.info.paths_info.static))
+    mount_static_files(app, config)
+
     logger.debug("Adding API router...")
     app.include_router(api_router)
 
     logger.debug("Adding system router...")
     app.include_router(system_router)
-
-    logger.debug("Mounting static assets from %s...", str(config.info.paths_info.static))
-    mount_static_files(app, config)
 
     logger.info("App created successfully.")
     return app
