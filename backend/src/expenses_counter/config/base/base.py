@@ -72,7 +72,7 @@ class BaseConfig(BaseSettings):
                 not exist.
 
         """
-        file_path = Path(getenv("CONFIG_FILE_PATH", "configurations/local.yaml"))
+        file_path = Path(getenv("CONFIG_FILE_PATH", "configurations/prod.yaml"))
         if not file_path.exists():
             logger.warning(f"Config file path {file_path} does not exist. Aborting.")
             raise FileNotFoundError(f"Config file path {file_path} does not exist.")
