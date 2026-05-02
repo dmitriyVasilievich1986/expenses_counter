@@ -97,8 +97,8 @@ class Database(BaseModel):
                     raise ValueError("User, password and name are required for PostgreSQL")
                 return URL.create(
                     self.provider,
-                    username=self.user.get_secret_value(),
-                    password=self.password.get_secret_value(),
+                    username=self.user.get_secret_value(),  # type: ignore[union-attr]
+                    password=self.password.get_secret_value(),  # type: ignore[union-attr]
                     host=self.host,
                     port=self.port,
                     database=self.name,
