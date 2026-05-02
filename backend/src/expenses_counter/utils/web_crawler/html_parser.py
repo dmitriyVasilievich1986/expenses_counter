@@ -64,7 +64,7 @@ class HTMLParser:
         date_span = self.bs.find("span", id="sdcDateTimeLabel")
         if date_span is None:
             raise ValueError("Date span not found")
-        date_reg = re.sub(r"\s+", "", date_span.contents[0])
+        date_reg = re.sub(r"\s+", "", str(date_span.contents[0]))
         self._date = datetime.strptime(date_reg, "%d.%m.%Y.%H:%M:%S")
         return self._date
 
