@@ -1,3 +1,7 @@
+/**
+ * Product list page: load products and categories, group products by category, and render stacks with navigation to detail and create.
+ */
+
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
@@ -11,6 +15,11 @@ import { useProductAPIClient, useCategoryAPIClient } from '@services/apiClient';
 import { useCategoryStore } from '@store/category';
 import { useProductStore } from '@store/product';
 
+/**
+ * Render products grouped by category as card stacks and a create button.
+ *
+ * @returns {JSX.Element} The product list layout inside a container.
+ */
 export function ProductList() {
   const products = useProductStore((state) => state.products);
   const categories = useCategoryStore((state) => state.categories);
@@ -37,7 +46,7 @@ export function ProductList() {
           key={k}
           categoryId={parseInt(k) ?? null}
           items={productsByCategory[k]}
-          onClick={() => navigate(`/product/${k}`)}
+          onClick={(item) => navigate(`/product/${item.id}`)}
         />
       ))}
       <Box sx={{ display: 'flex', justifyContent: 'end', mt: 2 }}>
