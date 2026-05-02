@@ -72,8 +72,8 @@ async def fill_db(ctx: click.Context) -> None:
 
     """
     config: AppConfig = ctx.obj["config"]
-    command = FillDBCommand(app_config=config)
-    await command.initialize()
-    await command.validate()
-    await command.execute()
+    cmd = FillDBCommand(app_config=config)
+    await cmd.initialize()
+    await cmd.validate()
+    await cmd.execute()
     click.echo("Database filled with initial data.")
