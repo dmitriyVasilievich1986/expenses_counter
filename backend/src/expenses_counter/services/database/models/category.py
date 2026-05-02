@@ -5,8 +5,8 @@ __all__ = ("Category",)
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Column, ForeignKey, Integer, String, Text
-from sqlalchemy.orm import Mapped, relationship
+from sqlalchemy import ForeignKey, Integer, String, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
 
@@ -33,14 +33,14 @@ class Category(Base):
 
     __tablename__ = "main_category"
 
-    id: Column[int] = Column[int](Integer, primary_key=True, autoincrement=True)
-    name: Column[str] = Column[str](String(150), nullable=False)
-    description: Column[str | None] = Column[str | None](Text, nullable=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String(150), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     shops: Mapped[list["Shop"]] = relationship("Shop", back_populates="category")
     products: Mapped[list["Product"]] = relationship("Product", back_populates="category")
 
-    parent_id: Column[int | None] = Column[int | None](ForeignKey("main_category.id"), nullable=True)
+    parent_id: Mapped[int | None] = mapped_column(ForeignKey("main_category.id"), nullable=True)
     parent: Mapped["Category | None"] = relationship("Category", remote_side=[id], back_populates="children")
     children: Mapped[list["Category"]] = relationship("Category", back_populates="parent")
 
