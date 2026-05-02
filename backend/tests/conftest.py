@@ -16,7 +16,7 @@ from alembic.config import Config as AlembicConfig
 from expenses_counter.config import AppConfig
 from expenses_counter.config.base.storage import SettingsStorage
 from expenses_counter.services.database import AsyncDatabaseClient
-from expenses_counter.utils import Singleton
+from expenses_counter.utils.singleton import Singleton
 
 
 @pytest.fixture(scope="session")

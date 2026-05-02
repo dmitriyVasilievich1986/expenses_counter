@@ -5,6 +5,7 @@
 *.sqlite3
 *.env
 logs/
+static/
 
 .ruff_cache/
 .DS_Store

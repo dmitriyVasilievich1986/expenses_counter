@@ -9,6 +9,7 @@ from expenses_counter import __version__ as app_version
 from expenses_counter.config import AppConfig
 
 from .crawler import crawler
+from .db import db
 
 
 @click.group(help="CLI for managing the Expenses Counter.")
@@ -35,14 +36,22 @@ async def main(ctx: click.Context) -> None:
 @main.command(help="Show the Expenses Counter application configuration.")
 @click.pass_context
 async def show_config(ctx: click.Context) -> None:
-    """Show the Expenses Counter application configuration."""
+    """Print the resolved application configuration as indented JSON.
+
+    Args:
+        ctx (click.Context): Click context holding the loaded ``AppConfig``.
+
+    Returns:
+        None
+
+    """
     config: AppConfig = ctx.obj["config"]
     click.echo(config.model_dump_json(indent=2))
 
 
 @main.command(help="Start the Expenses Counter application server.")
 @click.option("--host", default="0.0.0.0", help="Host to bind the server to.")
-@click.option("--port", default=3000, help="Port to bind the server to.")
+@click.option("--port", default=8000, help="Port to bind the server to.")
 @click.option("--reload", is_flag=True, help="Enable auto-reload for development.")
 def run(host: str, port: int, reload: bool) -> None:
     """Start the Expenses Counter web server using Uvicorn.
@@ -53,7 +62,7 @@ def run(host: str, port: int, reload: bool) -> None:
 
     Args:
         host: The network interface to bind the server to (default: "0.0.0.0").
-        port: The port number to listen on (default: 3000).
+        port: The port number to listen on (default: 8000).
         reload: Enable auto-reload when code changes are detected (default: False).
 
     Returns:
@@ -71,3 +80,4 @@ def run(host: str, port: int, reload: bool) -> None:
 
 
 main.add_command(crawler)
+main.add_command(db)

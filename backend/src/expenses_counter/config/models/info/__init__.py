@@ -13,6 +13,7 @@ from expenses_counter import __version__ as app_version
 
 from .api import APIInfo
 from .cors import CORSInfo
+from .paths import PathsInfo
 
 
 class Info(BaseModel):
@@ -35,5 +36,6 @@ class Info(BaseModel):
     description: str = Field("Expenses Counter", description="The description of the application")
     version: str = Field(app_version, description="The version of the application")
 
-    api_info: APIInfo = Field(..., description="The API information")
-    cors_info: CORSInfo = Field(..., description="The CORS information")
+    api_info: APIInfo = Field(description="The API information", default_factory=APIInfo)
+    cors_info: CORSInfo = Field(description="The CORS information", default_factory=CORSInfo)
+    paths_info: PathsInfo = Field(description="The paths information", default_factory=PathsInfo)

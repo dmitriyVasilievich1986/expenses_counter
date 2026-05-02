@@ -7,6 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Expenses Counter is a full-stack expense tracking application with a Python/FastAPI backend and React frontend. The application tracks personal expenses by organizing them into products, categories, shops, and addresses, providing structured analysis of spending patterns.
 
 **Tech Stack:**
+
 - Backend: Python 3.13, FastAPI, SQLAlchemy 2.0 (async), PostgreSQL/SQLite
 - Frontend: React 18, Redux Toolkit, Material-UI, TypeScript/JavaScript
 - Build Tools: uv (Python), webpack (JavaScript)
@@ -30,7 +31,7 @@ source .venv/bin/activate  # Unix/macOS
 # Run the application
 uv run expenses_counter run                    # Production mode
 uv run expenses_counter run --reload           # Development mode with auto-reload
-uv run expenses_counter run --host 0.0.0.0 --port 3000  # Custom host/port
+uv run expenses_counter run --host 0.0.0.0 --port 8000  # Custom host/port
 
 # Show configuration
 uv run expenses_counter show-config
@@ -132,6 +133,7 @@ Transaction
 **DAO Schema Pattern:**
 
 Each DAO includes Pydantic schemas for different operations:
+
 - **Get**: Full response schema with all fields and relationships
 - **Post**: Creation schema with required fields only
 - **Put**: Full update requiring all fields
@@ -140,6 +142,7 @@ Each DAO includes Pydantic schemas for different operations:
 **API Endpoints:**
 
 All entity endpoints follow RESTful conventions:
+
 - `GET /api/v1/{entity}/` - List all
 - `GET /api/v1/{entity}/{id}` - Get by ID
 - `POST /api/v1/{entity}/` - Create
@@ -148,6 +151,7 @@ All entity endpoints follow RESTful conventions:
 - `DELETE /api/v1/{entity}/{id}` - Delete
 
 System endpoints:
+
 - `GET /health` - Health check (tests database connection)
 - `GET /version` - Application version
 
@@ -191,11 +195,13 @@ The backend uses a sophisticated YAML-based configuration system:
 ### Version Management
 
 Version is stored in `backend/src/expenses_counter/__init__.py`:
+
 ```python
 __version__ = "X.Y.Z"
 ```
 
 Version bumping is handled by `.github/scripts/bump_version.py`:
+
 - Development branch: bumps PATCH version
 - Master branch: bumps MINOR version and resets PATCH to 0
 
@@ -204,12 +210,14 @@ Version bumping is handled by `.github/scripts/bump_version.py`:
 GitHub Actions workflows in `.github/workflows/`:
 
 **build_backend.yml:**
+
 - Runs on push/PR to master or development
 - Lints with `ruff check src/`
 - Checks formatting with `ruff format --check src/`
 - Builds package with `python -m build`
 
 **build_frontend.yml:**
+
 - Runs on push/PR to master or development
 - Installs dependencies with `npm ci`
 - Builds with `npm run build`
@@ -218,6 +226,7 @@ GitHub Actions workflows in `.github/workflows/`:
 ## Code Style
 
 **Python (Backend):**
+
 - Ruff configuration in `backend/pyproject.toml`
 - Line length: 120 characters
 - Extensive rule set enabled (see pyproject.toml for details)
@@ -225,6 +234,7 @@ GitHub Actions workflows in `.github/workflows/`:
 - Docstrings required for modules, classes, and public methods
 
 **JavaScript/TypeScript (Frontend):**
+
 - Babel configuration in `frontend/.babelrc`
 - TypeScript configuration in `frontend/tsconfig.json`
 - Webpack configuration in `frontend/webpack.config.js`
@@ -239,6 +249,7 @@ The application supports both PostgreSQL (production) and SQLite (development/te
 - Relationships use lazy loading with `selectinload` for eager loading when needed
 
 **Migration Workflow:**
+
 1. Modify models in `services/database/models/`
 2. Generate migration: `uv run alembic revision --autogenerate -m "description"`
 3. Review generated migration in `services/alembic/versions/`
@@ -247,17 +258,20 @@ The application supports both PostgreSQL (production) and SQLite (development/te
 ## Entry Points
 
 **Backend:**
+
 - CLI: `expenses_counter` command (defined in `pyproject.toml` project.scripts)
 - Module: `python -m expenses_counter` (via `__main__.py`)
 - Factory: `expenses_counter.modules.app:get_app` (for Uvicorn)
 
 **Frontend:**
+
 - Entry: `frontend/src/index.js`
 - Output: `backend/static/js/main.js`
 
 ## Testing
 
 Test configuration is present in `backend/pyproject.toml`:
+
 ```toml
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "expense_counter.expense_counter.tests_settings"

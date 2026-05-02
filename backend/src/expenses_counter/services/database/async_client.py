@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncEngine, AsyncSession
 from sqlalchemy.pool import ConnectionPoolEntry
 
 from expenses_counter.config import AppConfig
-from expenses_counter.utils import Singleton
+from expenses_counter.utils.singleton import Singleton
 
 
 class AsyncDatabaseClient(metaclass=Singleton):
