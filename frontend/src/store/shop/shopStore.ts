@@ -1,16 +1,36 @@
+/**
+ * Zustand store for shops: paginated list state, the shop currently in focus,
+ * and address lists kept in sync with `currentShop`.
+ *
+ * Wrapped with Redux DevTools middleware for debugging.
+ */
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
 import type { ShopSimpleType, ShopStoreStateType } from './types';
 
+/** Hook returning shop store state and actions (see {@link ShopStoreStateType}). */
 export const useShopStore = create<ShopStoreStateType>()(
   devtools((set) => ({
     shops: null,
     currentShop: null,
+    totalShops: 0,
+    shopListLoading: false,
     addresses: null,
     setCurrentShop: (shop) => set({ currentShop: shop }, undefined, 'setCurrentShop'),
+    setShops: (shops, totalShops) =>
+      set({ shops: shops, totalShops: totalShops }, undefined, 'setShops'),
+    setShopListLoading: (loading) =>
+      set({ shopListLoading: loading }, undefined, 'setShopListLoading'),
     addShops: (shops) =>
-      set((state) => ({ shops: [...(state.shops ?? []), ...shops] }), undefined, 'addShops'),
+      set(
+        (state) => ({
+          shops: [...(state.shops ?? []), ...shops],
+          totalShops: state.totalShops + shops.length,
+        }),
+        undefined,
+        'addShops'
+      ),
     updateShop: (shop) =>
       set(
         (state) => ({
@@ -21,7 +41,10 @@ export const useShopStore = create<ShopStoreStateType>()(
       ),
     deleteShop: (id) =>
       set(
-        (state) => ({ shops: (state.shops as ShopSimpleType[]).filter((s) => s.id !== id) }),
+        (state) => ({
+          shops: (state.shops as ShopSimpleType[]).filter((s) => s.id !== id),
+          totalShops: state.totalShops - 1,
+        }),
         undefined,
         'deleteShop'
       ),
