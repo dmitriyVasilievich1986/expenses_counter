@@ -24,8 +24,8 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-config = AppConfig.get_or_create()
-db_client = AsyncDatabaseClient(app_config=config)
+app_config = AppConfig.get_or_create()
+db_client = AsyncDatabaseClient(app_config=app_config)
 
 logger.info("Alembic migrations started")
 logger.info(f"Models: {models.__all__}")
