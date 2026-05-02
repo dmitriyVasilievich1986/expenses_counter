@@ -1,3 +1,7 @@
+/**
+ * Shop list page: load shops and categories, group shops by category, and render stacks with navigation to detail and create.
+ */
+
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
@@ -11,8 +15,11 @@ import { useShopAPIClient, useCategoryAPIClient } from '@services/apiClient';
 import { useCategoryStore } from '@store/category';
 import { useShopStore } from '@store/shop';
 
-// import { CardsStack } from './cardsStack';
-
+/**
+ * Render shops grouped by category as card stacks and a create button.
+ *
+ * @returns {JSX.Element} The shop list layout inside a container.
+ */
 export function ShopList() {
   const shops = useShopStore((state) => state.shops);
   const categories = useCategoryStore((state) => state.categories);
@@ -39,7 +46,7 @@ export function ShopList() {
           key={k}
           categoryId={parseInt(k) ?? null}
           items={shopsByCategory[k]}
-          onClick={() => navigate(`/shop/${k}`)}
+          onClick={(item) => navigate(`/shop/${item.id}`)}
         />
       ))}
       <Box sx={{ display: 'flex', justifyContent: 'end', mt: 2 }}>
