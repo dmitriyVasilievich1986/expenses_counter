@@ -1,8 +1,8 @@
-"""Settings storage module."""
+"""Singleton-backed storage for loaded application configuration instances."""
 
 __all__ = ("SettingsStorage",)
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from expenses_counter.utils.singleton import Singleton
 
@@ -10,42 +10,43 @@ if TYPE_CHECKING:
     from .base import BaseConfig
 
 
-class SettingsStorage(metaclass=Singleton):
-    """Thread-safe storage for application settings.
+class SettingsStorage[ConfigType: "BaseConfig"](metaclass=Singleton):
+    """Hold a single optional settings object for a given config type.
 
-    This class provides a singleton instance for storing configuration settings.
-    It ensures only one instance exists across the application and provides
-    thread-safe access to the stored settings through property accessors.
+    Used with :meth:`BaseConfig.get_or_create` so configuration is resolved
+    through one shared instance per process. ``ConfigType`` is the concrete
+    ``BaseConfig`` subclass being stored.
     """
 
-    _settings: Optional["BaseConfig"] = None
+    _settings: ConfigType | None = None
 
     @property
-    def settings(self) -> Optional["BaseConfig"]:
-        """Get the currently stored settings instance.
+    def settings(self) -> ConfigType | None:
+        """Return the cached settings instance, if any.
 
         Returns:
-            Optional[BaseConfig]: The stored settings instance, or None if
-                no settings have been set yet.
+            ConfigType | None: The stored settings, or ``None`` if unset or
+                cleared.
 
         """
         return self._settings
 
     @settings.setter
-    def settings(self, settings: "BaseConfig"):
-        """Set the settings instance.
+    def settings(self, settings: ConfigType) -> None:
+        """Store the given settings instance as the singleton value.
 
         Args:
-            settings: The BaseConfig instance to store.
+            settings (ConfigType): Configuration object to cache.
 
         """
         self._settings = settings
 
     @settings.deleter
     def settings(self) -> None:
-        """Clear the stored settings instance.
+        """Clear the cached settings instance.
 
-        Sets the internal settings storage to None, effectively clearing
-        any previously stored configuration.
+        Returns:
+            None
+
         """
         self._settings = None
