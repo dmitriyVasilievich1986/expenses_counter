@@ -41,7 +41,7 @@ class TransactionDAO(BaseDAO[Transaction]):
 
         stmt = select(date_column, func.sum(Transaction.price)).group_by(date_column).order_by(date_column)
         result = await session.execute(stmt)
-        return result.scalars().all()
+        return result.tuples().all()
 
     async def get_spendings_grouped_by_month(self) -> Sequence[tuple[str, float]]:
         """Return total spending per month across all transactions.
