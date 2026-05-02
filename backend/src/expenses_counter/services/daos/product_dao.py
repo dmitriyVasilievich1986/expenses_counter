@@ -30,5 +30,5 @@ class ProductDAO(BaseDAO[Product]):
         if self.session is not None:
             return await self._get_by_pk_raw(self.session, name, "name", filters)
 
-        async with self.database_client.session_factory() as session:
+        async with self.database_client.session_factory() as session:  # type: ignore[union-attr]
             return await self._get_by_pk_raw(session, name, "name", filters)
