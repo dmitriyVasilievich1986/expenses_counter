@@ -36,6 +36,6 @@ class Info(BaseModel):
     description: str = Field("Expenses Counter", description="The description of the application")
     version: str = Field(app_version, description="The version of the application")
 
-    api_info: APIInfo = Field(description="The API information", default_factory=APIInfo)
-    cors_info: CORSInfo = Field(description="The CORS information", default_factory=CORSInfo)
-    paths_info: PathsInfo = Field(description="The paths information", default_factory=PathsInfo)
+    api_info: APIInfo = Field(description="The API information", default_factory=APIInfo)  # type: ignore[arg-type]
+    cors_info: CORSInfo = Field(description="The CORS information", default_factory=CORSInfo)  # type: ignore[arg-type]
+    paths_info: PathsInfo = Field(description="The paths information", default_factory=PathsInfo)  # type: ignore[arg-type]
