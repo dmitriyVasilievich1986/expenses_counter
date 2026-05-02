@@ -3,6 +3,7 @@
 __all__ = ("Transaction",)
 
 import datetime
+from decimal import Decimal
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Date, ForeignKey, Integer, Numeric
@@ -37,11 +38,11 @@ class Transaction(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     date: Mapped[datetime.date] = mapped_column(Date, nullable=False)
-    count: Mapped[float] = mapped_column(
-        Numeric[float](precision=10, scale=3, asdecimal=True), nullable=False, default=0
+    count: Mapped[Decimal] = mapped_column(
+        Numeric[Decimal](precision=10, scale=3, asdecimal=True), nullable=False, default=0
     )
-    price: Mapped[float] = mapped_column(
-        Numeric[float](precision=10, scale=2, asdecimal=True), nullable=False, default=0
+    price: Mapped[Decimal] = mapped_column(
+        Numeric[Decimal](precision=10, scale=2, asdecimal=True), nullable=False, default=0
     )
 
     product_id: Mapped[int] = mapped_column(ForeignKey("main_product.id"), nullable=False)
