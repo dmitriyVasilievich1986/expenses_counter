@@ -66,7 +66,7 @@ class AsyncDatabaseClient(metaclass=Singleton):
             None
 
         """
-        cursor = dbapi_connection.cursor()
+        cursor = dbapi_connection.cursor()  # type: ignore[attr-defined]
         cursor.execute("PRAGMA foreign_keys=ON")
         cursor.close()
 
