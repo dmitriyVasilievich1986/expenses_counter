@@ -35,30 +35,30 @@ def get_app(config: AppConfig | None = None) -> FastAPI:
 
     """
     logger.info("Getting app...")
-    config = config or AppConfig.get_or_create()
-    logger.debug(f"Config: {config}")
+    app_config: AppConfig = config or AppConfig.get_or_create()
+    logger.debug(f"Config: {app_config}")
 
     logger.debug("Creating FastAPI app...")
     app = FastAPI(
-        title=config.info.name,
-        description=config.info.description,
+        title=app_config.info.name,
+        description=app_config.info.description,
         version=app_version,
-        debug=config.info.api_info.debug,
-        log_level=config.info.api_info.log_level,
+        debug=app_config.info.api_info.debug,
+        log_level=app_config.info.api_info.log_level,
         lifespan=lifespan,
     )
 
-    logger.debug(f"Adding CORS middleware with allowed origins: {config.info.cors_info.origins}")
+    logger.debug(f"Adding CORS middleware with allowed origins: {app_config.info.cors_info.origins}")
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=config.info.cors_info.origins,
-        allow_credentials=config.info.cors_info.allow_credentials,
-        allow_methods=config.info.cors_info.allow_methods,
-        allow_headers=config.info.cors_info.allow_headers,
+        allow_origins=app_config.info.cors_info.origins,
+        allow_credentials=app_config.info.cors_info.allow_credentials,
+        allow_methods=app_config.info.cors_info.allow_methods,
+        allow_headers=app_config.info.cors_info.allow_headers,
     )
 
-    logger.debug("Mounting static assets from %s...", str(config.info.paths_info.static))
-    mount_static_files(app, config)
+    logger.debug("Mounting static assets from %s...", str(app_config.info.paths_info.static))
+    mount_static_files(app, app_config)
 
     logger.debug("Adding API router...")
     app.include_router(api_router)
