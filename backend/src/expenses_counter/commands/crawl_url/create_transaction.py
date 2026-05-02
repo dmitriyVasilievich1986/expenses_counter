@@ -142,17 +142,18 @@ class CreateTransactionCommand(BaseCommand):
         """
         address = await self._get_address(self.html_parser.address)
 
-        transaction_dao = TransactionDAO(database_client=self.db_client)
-        for i, row in self.table_parser.iterrows():
-            logger.info(f"Processing row {i + 1} of {len(self.table_parser)}")  # type: ignore[operator]
-            product = await self._get_or_create_product(row["name"])
-            await transaction_dao.create(
-                date=self.html_parser.date,
-                product_id=product.id,
-                address_id=address.id,
-                count=row["quantity"],
-                price=row["unit_price"],
-            )
+        async with self.db_client.session_factory() as session:
+            transaction_dao = TransactionDAO(session=session, database_client=None)
+            for i, row in self.table_parser.iterrows():
+                logger.info(f"Processing row {i + 1} of {len(self.table_parser)}")  # type: ignore[operator]
+                product = await self._get_or_create_product(row["name"])
+                await transaction_dao.create(
+                    date=self.html_parser.date,
+                    product_id=product.id,
+                    address_id=address.id,
+                    count=row["quantity"],
+                    price=row["unit_price"],
+                )
 
         message = f"""
         Transaction creation completed.
