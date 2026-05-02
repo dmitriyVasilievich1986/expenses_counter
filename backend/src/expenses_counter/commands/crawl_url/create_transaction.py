@@ -144,7 +144,7 @@ class CreateTransactionCommand(BaseCommand):
 
         transaction_dao = TransactionDAO(database_client=self.db_client)
         for i, row in self.table_parser.iterrows():
-            logger.info(f"Processing row {i + 1} of {len(self.table_parser)}")
+            logger.info(f"Processing row {i + 1} of {len(self.table_parser)}")  # type: ignore[operator]
             product = await self._get_or_create_product(row["name"])
             await transaction_dao.create(
                 date=self.html_parser.date,
