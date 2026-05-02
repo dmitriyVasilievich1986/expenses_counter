@@ -40,7 +40,7 @@ class TableParser(pd.DataFrame):
         df = dfs[0]
         df = self._rename_columns(df)
         df = self._convert_dataframe(df)
-        super().__init__(df)
+        super(pd.DataFrame, self).__init__(df)
 
     def _rename_columns(self, df: pd.DataFrame) -> pd.DataFrame:
         """Rename Serbian column names to English equivalents.
