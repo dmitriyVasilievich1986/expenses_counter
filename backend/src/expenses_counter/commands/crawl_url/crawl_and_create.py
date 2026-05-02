@@ -3,6 +3,8 @@
 __all__ = ("CrawlAndCreateCommand",)
 
 
+from typing import Any
+
 from expenses_counter.commands.base import BaseCommand
 from expenses_counter.utils.web_crawler import Crawler, HTMLParser, TableParser
 
@@ -36,7 +38,7 @@ class CrawlAndCreateCommand(BaseCommand):
         self.url = url
         self.default_category_id = default_category_id
 
-    async def initialize(self) -> None:
+    async def initialize(self, **_: Any) -> None:
         """Initialize command resources.
 
         This command does not require initialization as it delegates to
