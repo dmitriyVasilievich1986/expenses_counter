@@ -47,7 +47,7 @@ class BaseConfig(BaseSettings):
         This method overrides Pydantic's default settings sources to include
         a YAML configuration file as an additional source. The YAML file path
         is determined by the CONFIG_FILE_PATH environment variable, defaulting
-        to "configurations/local.yaml" if not set.
+        to "configurations/prod.yaml" if not set.
 
         The priority order of settings sources (highest to lowest) is:
         1. Initialization settings (arguments passed to __init__)
