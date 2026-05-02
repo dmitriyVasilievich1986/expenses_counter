@@ -3,7 +3,7 @@
 __all__ = ("BaseDAO",)
 
 from abc import ABC
-from typing import Any, Literal
+from typing import Any, Literal, Sequence
 
 from sqlalchemy import asc, desc, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -124,7 +124,7 @@ class BaseDAO[DatabaseModel: Base](ABC):
         if self.session is not None:
             return await self._get_by_pk_raw(self.session, pk, pk_column_name, filters)
 
-        async with self.database_client.session_factory() as session:   # type: ignore[union-attr]
+        async with self.database_client.session_factory() as session:  # type: ignore[union-attr]
             return await self._get_by_pk_raw(session, pk, pk_column_name, filters)
 
     async def _get_total_raw(self, session: AsyncSession, filters: list[ColumnElement[bool]] | None = None) -> int:
@@ -161,7 +161,7 @@ class BaseDAO[DatabaseModel: Base](ABC):
         if self.session is not None:
             return await self._get_total_raw(self.session, filters)
 
-        async with self.database_client.session_factory() as session:   # type: ignore[union-attr]
+        async with self.database_client.session_factory() as session:  # type: ignore[union-attr]
             return await self._get_total_raw(session, filters)
 
     async def _get_all_raw(
@@ -172,7 +172,7 @@ class BaseDAO[DatabaseModel: Base](ABC):
         sort_by: str | None,
         sort_order: Literal["asc", "desc"],
         filters: list[ColumnElement[bool]] | None,
-    ) -> tuple[list[DatabaseModel], int]:
+    ) -> tuple[Sequence[DatabaseModel], int]:
         """List rows with pagination, sorting, eager loads, and total count.
 
         Args:
@@ -184,7 +184,7 @@ class BaseDAO[DatabaseModel: Base](ABC):
             filters (list[ColumnElement[bool]] | None): Extra WHERE clauses.
 
         Returns:
-            tuple[list[DatabaseModel], int]: Page of instances and total count
+            tuple[Sequence[DatabaseModel], int]: Page of instances and total count
                 for the same filter set.
 
         """
@@ -218,7 +218,7 @@ class BaseDAO[DatabaseModel: Base](ABC):
         sort_by: str = "id",
         sort_order: Literal["asc", "desc"] = "asc",
         filters: list[ColumnElement[bool]] | None = None,
-    ) -> tuple[list[DatabaseModel], int]:
+    ) -> tuple[Sequence[DatabaseModel], int]:
         """List rows with pagination and return the filtered total count.
 
         Args:
@@ -232,13 +232,13 @@ class BaseDAO[DatabaseModel: Base](ABC):
                 clauses. Defaults to None.
 
         Returns:
-            tuple[list[DatabaseModel], int]: Page of instances and total count.
+            tuple[Sequence[DatabaseModel], int]: Page of instances and total count.
 
         """
         if self.session is not None:
             return await self._get_all_raw(self.session, limit, offset, sort_by, sort_order, filters)
 
-        async with self.database_client.session_factory() as session:   # type: ignore[union-attr]
+        async with self.database_client.session_factory() as session:  # type: ignore[union-attr]
             return await self._get_all_raw(session, limit, offset, sort_by, sort_order, filters)
 
     async def _create_raw(self, session: AsyncSession, **kwargs) -> DatabaseModel:
@@ -262,7 +262,7 @@ class BaseDAO[DatabaseModel: Base](ABC):
         if self.session is not None:
             return await self._create_raw(self.session, **kwargs)
 
-        async with self.database_client.session_factory() as session:   # type: ignore[union-attr]
+        async with self.database_client.session_factory() as session:  # type: ignore[union-attr]
             return await self._create_raw(session, **kwargs)
 
     async def _update_raw(
@@ -304,7 +304,7 @@ class BaseDAO[DatabaseModel: Base](ABC):
         if self.session is not None:
             return await self._update_raw(self.session, pk, col, **kwargs)
 
-        async with self.database_client.session_factory() as session:   # type: ignore[union-attr]
+        async with self.database_client.session_factory() as session:  # type: ignore[union-attr]
             return await self._update_raw(session, pk, col, **kwargs)
 
     async def _delete_raw(
@@ -348,5 +348,5 @@ class BaseDAO[DatabaseModel: Base](ABC):
         if self.session is not None:
             return await self._delete_raw(self.session, pk, col, instance)
 
-        async with self.database_client.session_factory() as session:   # type: ignore[union-attr]
+        async with self.database_client.session_factory() as session:  # type: ignore[union-attr]
             return await self._delete_raw(session, pk, col, instance)
