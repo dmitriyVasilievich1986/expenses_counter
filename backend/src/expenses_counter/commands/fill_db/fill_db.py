@@ -4,6 +4,7 @@ __all__ = ("FillDBCommand",)
 
 
 from datetime import date
+from typing import Any
 
 from expenses_counter.config import AppConfig
 from expenses_counter.modules.routers.schemas.requests.address import PostAddressBody
@@ -37,7 +38,7 @@ class FillDBCommand(BaseCommand):
         self.app_config = app_config or AppConfig.get_or_create()
         self.db_client = db_client or AsyncDatabaseClient(self.app_config)
 
-    async def initialize(self) -> None:
+    async def initialize(self, **_: Any) -> None:
         """Prepare the command. No async setup is required for this implementation.
 
         Returns:
@@ -63,16 +64,16 @@ class FillDBCommand(BaseCommand):
 
         """
         category = await CategoryDAO(self.db_client).create(
-            **PostCategoryBody(name="Category 1").model_dump(),
+            **PostCategoryBody(name="Category 1", description="Description 1", parent_id=None).model_dump(),
         )
         shop = await ShopDAO(self.db_client).create(
-            **PostShopBody(name="Shop 1", category_id=category.id).model_dump(),
+            **PostShopBody(name="Shop 1", category_id=category.id, description="Description 1", icon=None).model_dump(),
         )
         address = await AddressDAO(self.db_client).create(
             **PostAddressBody(local_name="Local name 1", address="Address 1", shop_id=shop.id).model_dump(),
         )
         product = await ProductDAO(self.db_client).create(
-            **PostProductBody(name="Product 1", category_id=category.id).model_dump(),
+            **PostProductBody(name="Product 1", description="Description 1", category_id=category.id).model_dump(),
         )
         await TransactionDAO(self.db_client).create(
             **PostTransactionBody(
