@@ -4,7 +4,7 @@ __all__ = ("router",)
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Path
+from fastapi import APIRouter, Depends, HTTPException, Path, status
 from fastapi.responses import FileResponse
 
 from expenses_counter.config import AppConfig
@@ -13,7 +13,7 @@ from expenses_counter.modules.middlewares.dependencies import get_config
 router = APIRouter()
 
 
-@router.get("/{_path:path}", include_in_schema=False)
+@router.get("/{_path:path}", include_in_schema=False, status_code=status.HTTP_200_OK)
 async def spa_fallback(
     _path: Annotated[
         str,
@@ -34,5 +34,7 @@ async def spa_fallback(
         FileResponse: The SPA entry HTML file from configured ``paths_info``.
 
     """
-    index_html = app_config.info.paths_info.index_html
+    if not (index_html := app_config.info.paths_info.index_html).exists():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Index HTML file not found")
+
     return FileResponse(index_html)
