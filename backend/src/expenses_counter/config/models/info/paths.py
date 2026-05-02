@@ -1,7 +1,7 @@
 """Filesystem path configuration for the application.
 
-This module defines the Pydantic model used to resolve standard directories
-under the project root (static assets, bundled JS/CSS, images, fonts).
+Defines ``PathsInfo``, which resolves standard directories under the backend
+package root (``static``, bundled frontend output, images, fonts, Alembic).
 """
 
 __all__ = ("PathsInfo",)
@@ -12,17 +12,21 @@ from pydantic import BaseModel, Field
 
 
 class PathsInfo(BaseModel):
-    """Resolved paths for application assets relative to the repository root.
+    """Resolved paths for backend assets and application sources.
 
-    The default ``root`` is inferred from this file's location so static paths
-    stay correct regardless of the current working directory.
+    The default ``root`` is the ``backend/`` directory (inferred from this
+    module's path via ``parents[5]``), so paths stay correct regardless of
+    the process working directory.
 
     Attributes:
-        root: Top-level project directory (parent chain from this module).
+        root: Backend package root (parent of ``src/`` and ``static/``).
 
     """
 
-    root: Path = Field(Path(__file__).resolve().parents[5], description="The root path of the application")
+    root: Path = Field(
+        Path(__file__).resolve().parents[5],
+        description="Backend package root (directory containing src/ and static/).",
+    )
 
     @property
     def static(self) -> Path:
@@ -36,17 +40,17 @@ class PathsInfo(BaseModel):
 
     @property
     def src(self) -> Path:
-        """Return the services directory.
+        """Return the ``expenses_counter`` Python package directory.
 
         Returns:
-            Path: ``root / "services"``.
+            Path: ``root / "src" / "expenses_counter"``.
 
         """
         return self.root / "src" / "expenses_counter"
 
     @property
     def assets(self) -> Path:
-        """Return the directory for Vite-bundled JS and CSS assets.
+        """Return the directory for bundled frontend assets (e.g. JS/CSS).
 
         Returns:
             Path: ``static / "assets"``.
@@ -106,10 +110,10 @@ class PathsInfo(BaseModel):
 
     @property
     def alembic_ini(self) -> Path:
-        """Return the alembic.ini file.
+        """Return the Alembic configuration file path.
 
         Returns:
-            Path: ``root / "services" / "alembic" / "alembic.ini"``.
+            Path: ``src / "services" / "alembic" / "alembic.ini"``.
 
         """
         return self.src / "services" / "alembic" / "alembic.ini"
