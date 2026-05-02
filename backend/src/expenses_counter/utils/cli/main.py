@@ -51,7 +51,7 @@ async def show_config(ctx: click.Context) -> None:
 
 @main.command(help="Start the Expenses Counter application server.")
 @click.option("--host", default="0.0.0.0", help="Host to bind the server to.")
-@click.option("--port", default=3000, help="Port to bind the server to.")
+@click.option("--port", default=8000, help="Port to bind the server to.")
 @click.option("--reload", is_flag=True, help="Enable auto-reload for development.")
 def run(host: str, port: int, reload: bool) -> None:
     """Start the Expenses Counter web server using Uvicorn.
@@ -62,7 +62,7 @@ def run(host: str, port: int, reload: bool) -> None:
 
     Args:
         host: The network interface to bind the server to (default: "0.0.0.0").
-        port: The port number to listen on (default: 3000).
+        port: The port number to listen on (default: 8000).
         reload: Enable auto-reload when code changes are detected (default: False).
 
     Returns:
