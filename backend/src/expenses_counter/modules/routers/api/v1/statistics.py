@@ -6,6 +6,7 @@ about expenses, including spending patterns and product popularity.
 
 __all__ = ("router",)
 
+from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -51,7 +52,10 @@ async def get_spendings_grouped_by_month(
             detail="Something went wrong while retrieving the spendings grouped by month",
         ) from e
 
-    return [SpendingsGroupedByMonthResponse(month=month, spendings=spendings) for month, spendings in data]
+    return [
+        SpendingsGroupedByMonthResponse(month=datetime.strptime(month, "%Y-%m-01").date(), spendings=spendings)
+        for month, spendings in data
+    ]
 
 
 @router.get("/most-popular-products", response_model=list[SimpleProductGet], status_code=status.HTTP_200_OK)
@@ -73,10 +77,12 @@ async def get_most_popular_products(
 
     """
     try:
-        return await transaction_dao.get_most_popular_products(limit=query.limit)
+        payload = await transaction_dao.get_most_popular_products(limit=query.limit)
     except SQLAlchemyError as e:
         logger.exception("Something went wrong while retrieving the most popular products", exc_info=e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Something went wrong while retrieving the most popular products",
         ) from e
+
+    return [SimpleProductGet.model_validate(product) for product in payload]

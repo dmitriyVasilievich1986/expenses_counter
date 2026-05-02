@@ -104,7 +104,7 @@ class BaseConfig(BaseSettings):
             Self: An instance of the configuration class.
 
         """
-        storage = SettingsStorage()
+        storage = SettingsStorage[Self]()
 
         if not reload and storage.settings:
             return storage.settings

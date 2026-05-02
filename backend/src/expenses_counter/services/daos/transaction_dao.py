@@ -3,6 +3,8 @@
 __all__ = ("TransactionDAO",)
 
 
+from typing import Sequence
+
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,7 +20,7 @@ class TransactionDAO(BaseDAO[Transaction]):
     select_in_options_single = (Transaction.product, Transaction.address)
     select_in_options_all = (Transaction.product, Transaction.address)
 
-    async def _get_spendings_grouped_by_month_raw(self, session: AsyncSession) -> list[tuple[str, float]]:
+    async def _get_spendings_grouped_by_month_raw(self, session: AsyncSession) -> Sequence[tuple[str, float]]:
         """Sum transaction prices grouped by calendar month using the given session.
 
         Month keys are normalized to the first day of each month as ``YYYY-MM-01``.
@@ -28,7 +30,7 @@ class TransactionDAO(BaseDAO[Transaction]):
             session (AsyncSession): Session used to run the aggregation query.
 
         Returns:
-            list[tuple[str, float]]: Pairs of month key and total spending for that month,
+            Sequence[tuple[str, float]]: Pairs of month key and total spending for that month,
                 ordered by month ascending.
 
         """
@@ -39,26 +41,26 @@ class TransactionDAO(BaseDAO[Transaction]):
 
         stmt = select(date_column, func.sum(Transaction.price)).group_by(date_column).order_by(date_column)
         result = await session.execute(stmt)
-        return result.all()
+        return result.tuples().all()
 
-    async def get_spendings_grouped_by_month(self) -> list[tuple[str, float]]:
+    async def get_spendings_grouped_by_month(self) -> Sequence[tuple[str, float]]:
         """Return total spending per month across all transactions.
 
         Uses ``self.session`` when the DAO was constructed with an active session;
         otherwise opens a short-lived session from ``database_client``.
 
         Returns:
-            list[tuple[str, float]]: Month keys (``YYYY-MM-01``) and summed prices,
+            Sequence[tuple[str, float]]: Month keys (``YYYY-MM-01``) and summed prices,
                 ordered by month ascending.
 
         """
         if self.session is not None:
             return await self._get_spendings_grouped_by_month_raw(self.session)
 
-        async with self.database_client.session_factory() as session:
+        async with self.database_client.session_factory() as session:  # type: ignore[union-attr]
             return await self._get_spendings_grouped_by_month_raw(session)
 
-    async def get_most_popular_products(self, limit: int = 10) -> list[Product]:
+    async def get_most_popular_products(self, limit: int = 10) -> Sequence[Product]:
         """Return products ranked by how often they appear in transactions.
 
         Args:
@@ -66,7 +68,7 @@ class TransactionDAO(BaseDAO[Transaction]):
                 Defaults to 10.
 
         Returns:
-            list[Product]: Products with the highest transaction counts,
+            Sequence[Product]: Products with the highest transaction counts,
                 most frequent first.
 
         """
@@ -84,6 +86,6 @@ class TransactionDAO(BaseDAO[Transaction]):
             result = await self.session.execute(stmt)
             return result.scalars().all()
 
-        async with self.database_client.session_factory() as session:
+        async with self.database_client.session_factory() as session:  # type: ignore[union-attr]
             result = await session.execute(stmt)
             return result.scalars().all()

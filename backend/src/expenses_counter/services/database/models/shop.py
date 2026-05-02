@@ -4,8 +4,8 @@ __all__ = ("Shop",)
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Column, ForeignKey, Integer, String, Text
-from sqlalchemy.orm import Mapped, relationship
+from sqlalchemy import ForeignKey, Integer, String, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
 
@@ -30,12 +30,12 @@ class Shop(Base):
 
     __tablename__ = "main_shop"
 
-    id: Column[int] = Column[int](Integer, primary_key=True, autoincrement=True)
-    name: Column[str] = Column[str](String(150), nullable=False)
-    icon: Column[str | None] = Column[str | None](String(150), nullable=True)
-    description: Column[str | None] = Column[str | None](Text, nullable=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String(150), nullable=False)
+    icon: Mapped[str | None] = mapped_column(String(150), nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     addresses: Mapped[list["Address"]] = relationship("Address", back_populates="shop")
 
-    category_id: Column[int | None] = Column[int | None](ForeignKey("main_category.id"), nullable=True)
+    category_id: Mapped[int | None] = mapped_column(ForeignKey("main_category.id"), nullable=True)
     category: Mapped["Category | None"] = relationship("Category", back_populates="shops")

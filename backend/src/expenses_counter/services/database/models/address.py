@@ -4,8 +4,8 @@ __all__ = ("Address",)
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Column, ForeignKey, Integer, String
-from sqlalchemy.orm import Mapped, relationship
+from sqlalchemy import ForeignKey, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
 
@@ -35,11 +35,11 @@ class Address(Base):
 
     __tablename__ = "main_shopaddress"
 
-    id: Column[int] = Column[int](Integer, primary_key=True, autoincrement=True)
-    local_name: Column[str] = Column[str](String(150), nullable=False)
-    address: Column[str] = Column[str](String(150), nullable=False)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    local_name: Mapped[str] = mapped_column(String(150), nullable=False)
+    address: Mapped[str] = mapped_column(String(150), nullable=False)
 
     transactions: Mapped[list["Transaction"]] = relationship("Transaction", back_populates="address")
 
-    shop_id: Column[int] = Column[int](ForeignKey("main_shop.id"), nullable=False)
+    shop_id: Mapped[int] = mapped_column(ForeignKey("main_shop.id"), nullable=False)
     shop: Mapped["Shop"] = relationship("Shop", back_populates="addresses")

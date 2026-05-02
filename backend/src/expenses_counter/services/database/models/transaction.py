@@ -3,10 +3,11 @@
 __all__ = ("Transaction",)
 
 import datetime
+from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Column, Date, ForeignKey, Integer, Numeric
-from sqlalchemy.orm import Mapped, relationship
+from sqlalchemy import Date, ForeignKey, Integer, Numeric
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
 
@@ -35,17 +36,17 @@ class Transaction(Base):
 
     __tablename__ = "main_transaction"
 
-    id: Column[int] = Column[int](Integer, primary_key=True, autoincrement=True)
-    date: Column[datetime.date] = Column[datetime.date](Date, nullable=False)
-    count: Column[float] = Column[float](
-        Numeric[float](precision=10, scale=3, asdecimal=True), nullable=False, default=0
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    date: Mapped[datetime.date] = mapped_column(Date, nullable=False)
+    count: Mapped[Decimal] = mapped_column(
+        Numeric[Decimal](precision=10, scale=3, asdecimal=True), nullable=False, default=0
     )
-    price: Column[float] = Column[float](
-        Numeric[float](precision=10, scale=2, asdecimal=True), nullable=False, default=0
+    price: Mapped[Decimal] = mapped_column(
+        Numeric[Decimal](precision=10, scale=2, asdecimal=True), nullable=False, default=0
     )
 
-    product_id: Column[int] = Column[int](ForeignKey("main_product.id"), nullable=False)
+    product_id: Mapped[int] = mapped_column(ForeignKey("main_product.id"), nullable=False)
     product: Mapped["Product"] = relationship("Product", back_populates="transactions")
 
-    address_id: Column[int] = Column[int](ForeignKey("main_shopaddress.id"), nullable=False)
+    address_id: Mapped[int] = mapped_column(ForeignKey("main_shopaddress.id"), nullable=False)
     address: Mapped["Address"] = relationship("Address", back_populates="transactions")

@@ -57,6 +57,10 @@ jobs:
         if: steps.changes.outputs.backend == 'true'
         run: uv run ruff format --check src/
 
+      - name: Run mypy
+        if: steps.changes.outputs.backend == 'true'
+        run: uv run mypy
+
       - name: Build release distributions
         if: steps.changes.outputs.backend == 'true'
         run: uv build

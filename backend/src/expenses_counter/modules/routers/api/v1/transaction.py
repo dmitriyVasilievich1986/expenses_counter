@@ -152,7 +152,7 @@ async def get_transaction_by_id(
 
     """
     try:
-        return await transaction_dao.get_by_pk(transaction_id)
+        payload = await transaction_dao.get_by_pk(transaction_id)
     except NoResultFound as e:
         logger.warning("Transaction not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Transaction not found") from e
@@ -162,6 +162,8 @@ async def get_transaction_by_id(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Something went wrong while retrieving the transaction",
         ) from e
+
+    return GetSingleTransactionResponse.model_validate(payload)
 
 
 @router.post("", response_model=GetSingleTransactionResponse, status_code=status.HTTP_201_CREATED)
@@ -184,7 +186,7 @@ async def create_transaction(
 
     """
     try:
-        return await transaction_dao.create(**body.model_dump())
+        payload = await transaction_dao.create(**body.model_dump())
     except IntegrityError as e:
         logger.exception("Related object not found", exc_info=e)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Related object not found") from e
@@ -194,6 +196,8 @@ async def create_transaction(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Something went wrong while creating the transaction",
         ) from e
+
+    return GetSingleTransactionResponse.model_validate(payload)
 
 
 @router.put("/{transaction_id}", response_model=GetSingleTransactionResponse, status_code=status.HTTP_200_OK)
@@ -219,7 +223,7 @@ async def update_transaction(
 
     """
     try:
-        return await transaction_dao.update(transaction_id, **body.model_dump())
+        payload = await transaction_dao.update(transaction_id, **body.model_dump())
     except IntegrityError as e:
         logger.exception("Related object not found", exc_info=e)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Related object not found") from e
@@ -232,6 +236,8 @@ async def update_transaction(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Something went wrong while updating the transaction",
         ) from e
+
+    return GetSingleTransactionResponse.model_validate(payload)
 
 
 @router.delete("/{transaction_id}", status_code=status.HTTP_204_NO_CONTENT)

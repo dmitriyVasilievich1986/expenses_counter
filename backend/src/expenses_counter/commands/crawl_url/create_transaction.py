@@ -2,6 +2,8 @@
 
 __all__ = ("CreateTransactionCommand",)
 
+from typing import Any
+
 import pandas as pd
 from loguru import logger
 from sqlalchemy.exc import NoResultFound
@@ -50,9 +52,9 @@ class CreateTransactionCommand(BaseCommand):
         self.default_category_id = default_category_id
         pd.options.display.max_columns = None
         pd.options.display.max_rows = None
-        pd.options.display.width = None
+        pd.options.display.width = None  # type: ignore[assignment]
 
-    async def initialize(self) -> None:
+    async def initialize(self, **_: Any) -> None:
         """Initialize command resources.
 
         Sets up the application configuration and async database client
@@ -76,17 +78,17 @@ class CreateTransactionCommand(BaseCommand):
             ValueError: If no categories exist in the database
 
         """
-        async with CategoryDAO(database_client=self.db_client) as category_dao:
-            if category_id:
-                try:
-                    return await category_dao.get_by_id(category_id)
-                except NoResultFound:
-                    logger.warning(f"Category {category_id} not found")
+        category_dao = CategoryDAO(database_client=self.db_client)
+        if category_id:
+            try:
+                return await category_dao.get_by_pk(category_id)
+            except NoResultFound:
+                logger.warning(f"Category {category_id} not found")
 
-            all_categories, _ = await category_dao.get_all()
-            if len(all_categories) == 0:
-                raise ValueError("No categories found")
-            return all_categories[0]
+        all_categories, _ = await category_dao.get_all()
+        if len(all_categories) == 0:
+            raise ValueError("No categories found")
+        return all_categories[0]
 
     async def _get_or_create_product(self, name: str) -> Product:
         """Get existing product by name or create a new one.
@@ -102,11 +104,11 @@ class CreateTransactionCommand(BaseCommand):
             during command initialization.
 
         """
-        async with ProductDAO(database_client=self.db_client) as product_dao:
-            try:
-                return await product_dao.get_by_name(name)
-            except NoResultFound:
-                return await product_dao.create(name=name, category_id=self.default_category_id)
+        product_dao = ProductDAO(database_client=self.db_client)
+        try:
+            return await product_dao.get_by_name(name)
+        except NoResultFound:
+            return await product_dao.create(name=name, category_id=self.default_category_id)
 
     async def _get_address(self, address: str) -> Address:
         """Get address by address string.
@@ -121,8 +123,8 @@ class CreateTransactionCommand(BaseCommand):
             ValueError: If the address is not found in the database
 
         """
-        async with AddressDAO(database_client=self.db_client) as address_dao:
-            return await address_dao.get_by_address(address)
+        address_dao = AddressDAO(database_client=self.db_client)
+        return await address_dao.get_by_address(address)
 
     async def execute(self) -> None:
         """Execute transaction creation from parsed receipt data.
@@ -140,9 +142,10 @@ class CreateTransactionCommand(BaseCommand):
         """
         address = await self._get_address(self.html_parser.address)
 
-        async with TransactionDAO(database_client=self.db_client) as transaction_dao:
+        async with self.db_client.session_factory() as session:
+            transaction_dao = TransactionDAO(session=session, database_client=None)
             for i, row in self.table_parser.iterrows():
-                logger.info(f"Processing row {i + 1} of {len(self.table_parser)}")
+                logger.info(f"Processing row {i + 1} of {len(self.table_parser)}")  # type: ignore[operator]
                 product = await self._get_or_create_product(row["name"])
                 await transaction_dao.create(
                     date=self.html_parser.date,

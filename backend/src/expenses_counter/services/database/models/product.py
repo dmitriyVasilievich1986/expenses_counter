@@ -4,8 +4,8 @@ __all__ = ("Product",)
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Column, ForeignKey, Integer, String, Text
-from sqlalchemy.orm import Mapped, relationship
+from sqlalchemy import ForeignKey, Integer, String, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
 
@@ -31,11 +31,11 @@ class Product(Base):
 
     __tablename__ = "main_product"
 
-    id: Column[int] = Column[int](Integer, primary_key=True, autoincrement=True)
-    name: Column[str] = Column[str](String(150), nullable=False)
-    description: Column[str | None] = Column[str | None](Text, nullable=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String(150), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     transactions: Mapped[list["Transaction"]] = relationship("Transaction", back_populates="product")
 
-    category_id: Column[int | None] = Column[int | None](ForeignKey("main_category.id"), nullable=True)
+    category_id: Mapped[int | None] = mapped_column(ForeignKey("main_category.id"), nullable=True)
     category: Mapped["Category | None"] = relationship("Category", back_populates="products")

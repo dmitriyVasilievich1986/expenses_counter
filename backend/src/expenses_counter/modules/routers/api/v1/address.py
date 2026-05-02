@@ -91,7 +91,7 @@ async def get_address_by_local_name(
 
     """
     try:
-        return await address_dao.get_by_address(local_name)
+        payload = await address_dao.get_by_address(local_name)
     except NoResultFound as e:
         logger.warning("Address not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Address not found") from e
@@ -101,6 +101,8 @@ async def get_address_by_local_name(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Something went wrong while retrieving the address",
         ) from e
+
+    return GetSingleAddressResponse.model_validate(payload)
 
 
 @router.get("/{address_id}", response_model=GetSingleAddressResponse, status_code=status.HTTP_200_OK)
@@ -122,7 +124,7 @@ async def get_address_by_id(
 
     """
     try:
-        return await address_dao.get_by_pk(address_id)
+        payload = await address_dao.get_by_pk(address_id)
     except NoResultFound as e:
         logger.warning("Address not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Address not found") from e
@@ -132,6 +134,8 @@ async def get_address_by_id(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Something went wrong while retrieving the address",
         ) from e
+
+    return GetSingleAddressResponse.model_validate(payload)
 
 
 @router.post("", response_model=GetSingleAddressResponse, status_code=status.HTTP_201_CREATED)
@@ -154,7 +158,7 @@ async def create_address(
 
     """
     try:
-        return await address_dao.create(**body.model_dump())
+        payload = await address_dao.create(**body.model_dump())
     except IntegrityError as e:
         logger.exception("Related object not found", exc_info=e)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Related object not found") from e
@@ -163,6 +167,8 @@ async def create_address(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Something went wrong while creating the address"
         ) from e
+
+    return GetSingleAddressResponse.model_validate(payload)
 
 
 @router.put("/{address_id}", response_model=GetSingleAddressResponse, status_code=status.HTTP_200_OK)
@@ -187,8 +193,7 @@ async def update_address(
 
     """
     try:
-        r = await address_dao.update(address_id, **body.model_dump())
-        return GetSingleAddressResponse.model_validate(r)
+        payload = await address_dao.update(address_id, **body.model_dump())
     except IntegrityError as e:
         logger.exception("Related object not found", exc_info=e)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Related object not found") from e
@@ -200,6 +205,8 @@ async def update_address(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Something went wrong while updating the address"
         ) from e
+
+    return GetSingleAddressResponse.model_validate(payload)
 
 
 @router.patch("/{address_id}", response_model=GetSingleAddressResponse, status_code=status.HTTP_200_OK)
@@ -224,7 +231,7 @@ async def patch_address(
 
     """
     try:
-        return await address_dao.update(address_id, **body.model_dump(exclude_unset=True))
+        payload = await address_dao.update(address_id, **body.model_dump(exclude_unset=True))
     except IntegrityError as e:
         logger.exception("Related object not found", exc_info=e)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Related object not found") from e
@@ -236,6 +243,8 @@ async def patch_address(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Something went wrong while updating the address"
         ) from e
+
+    return GetSingleAddressResponse.model_validate(payload)
 
 
 @router.delete("/{address_id}", status_code=status.HTTP_204_NO_CONTENT)
