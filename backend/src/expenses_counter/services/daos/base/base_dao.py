@@ -3,7 +3,7 @@
 __all__ = ("BaseDAO",)
 
 from abc import ABC
-from typing import Any, Literal, Sequence
+from typing import Any, Literal, overload, Sequence
 
 from sqlalchemy import asc, desc, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -25,6 +25,22 @@ class BaseDAO[DatabaseModel: Base](ABC):
     select_in_options_single: tuple[InstrumentedAttribute, ...] | None = None
     select_in_options_all: tuple[InstrumentedAttribute, ...] | None = None
     base_filters: list[ColumnElement[bool]] | None = None
+
+    @overload
+    def __init__(
+        self,
+        database_client: AsyncDatabaseClient,
+        session: None = None,
+        **_: Any,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        database_client: None,
+        session: AsyncSession,
+        **_: Any,
+    ) -> None: ...
 
     def __init__(
         self,
