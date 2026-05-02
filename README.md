@@ -7,4 +7,4 @@ A personal expense tracking application for monitoring and analyzing spending pa
 
 Expenses are organized by products, categories, shops, and addresses, allowing structured tracking and analysis over time.
 
-**Stack:** Python 3.13 / FastAPI / SQLAlchemy (async) / PostgreSQL — React 18 / Redux Toolkit / Material-UI
+**Stack:** Python 3.13 / FastAPI / SQLAlchemy (async) / SQLite (aiosqlite) / PostgreSQL — React 18 / Redux Toolkit / Material-UI
