@@ -102,7 +102,7 @@ async def get_product_by_id(
 
     """
     try:
-        return await product_dao.get_by_pk(product_id)
+        payload = await product_dao.get_by_pk(product_id)
     except NoResultFound as e:
         logger.warning("Product not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found") from e
@@ -112,6 +112,8 @@ async def get_product_by_id(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Something went wrong while retrieving the product",
         ) from e
+
+    return GetSingleProductResponse.model_validate(payload)
 
 
 @router.post("", response_model=GetSingleProductResponse, status_code=status.HTTP_201_CREATED)
@@ -134,7 +136,7 @@ async def create_product(
 
     """
     try:
-        return await product_dao.create(**body.model_dump())
+        payload = await product_dao.create(**body.model_dump())
     except IntegrityError as e:
         logger.exception("Related object not found", exc_info=e)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Related object not found") from e
@@ -144,6 +146,8 @@ async def create_product(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Something went wrong while creating the product",
         ) from e
+
+    return GetSingleProductResponse.model_validate(payload)
 
 
 @router.put("/{product_id}", response_model=GetSingleProductResponse, status_code=status.HTTP_200_OK)
@@ -169,7 +173,7 @@ async def update_product(
 
     """
     try:
-        return await product_dao.update(product_id, **body.model_dump())
+        payload = await product_dao.update(product_id, **body.model_dump())
     except IntegrityError as e:
         logger.exception("Related object not found", exc_info=e)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Related object not found") from e
@@ -182,6 +186,8 @@ async def update_product(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Something went wrong while updating the product",
         ) from e
+
+    return GetSingleProductResponse.model_validate(payload)
 
 
 @router.patch("/{product_id}", response_model=GetSingleProductResponse, status_code=status.HTTP_200_OK)
@@ -207,7 +213,7 @@ async def patch_product(
 
     """
     try:
-        return await product_dao.update(product_id, **body.model_dump(exclude_unset=True))
+        payload = await product_dao.update(product_id, **body.model_dump(exclude_unset=True))
     except IntegrityError as e:
         logger.exception("Related object not found", exc_info=e)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Related object not found") from e
@@ -220,6 +226,8 @@ async def patch_product(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Something went wrong while patching the product",
         ) from e
+
+    return GetSingleProductResponse.model_validate(payload)
 
 
 @router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT)

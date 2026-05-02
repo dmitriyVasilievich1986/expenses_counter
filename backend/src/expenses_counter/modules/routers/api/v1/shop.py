@@ -88,7 +88,7 @@ async def get_shop_by_id(
 
     """
     try:
-        return await shop_dao.get_by_pk(shop_id)
+        payload = await shop_dao.get_by_pk(shop_id)
     except NoResultFound as e:
         logger.warning("Shop not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Shop not found") from e
@@ -98,6 +98,8 @@ async def get_shop_by_id(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Something went wrong while retrieving the shop",
         ) from e
+
+    return GetSingleShopResponse.model_validate(payload)
 
 
 @router.post("", response_model=GetSingleShopResponse, status_code=status.HTTP_201_CREATED)
@@ -120,7 +122,7 @@ async def create_shop(
 
     """
     try:
-        return await shop_dao.create(**body.model_dump())
+        payload = await shop_dao.create(**body.model_dump())
     except IntegrityError as e:
         logger.exception("Related object not found", exc_info=e)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Related object not found") from e
@@ -130,6 +132,8 @@ async def create_shop(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Something went wrong while creating the shop",
         ) from e
+
+    return GetSingleShopResponse.model_validate(payload)
 
 
 @router.put("/{shop_id}", response_model=GetSingleShopResponse, status_code=status.HTTP_200_OK)
@@ -155,7 +159,7 @@ async def update_shop(
 
     """
     try:
-        return await shop_dao.update(shop_id, **body.model_dump())
+        payload = await shop_dao.update(shop_id, **body.model_dump())
     except IntegrityError as e:
         logger.exception("Related object not found", exc_info=e)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Related object not found") from e
@@ -168,6 +172,8 @@ async def update_shop(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Something went wrong while updating the shop",
         ) from e
+
+    return GetSingleShopResponse.model_validate(payload)
 
 
 @router.patch("/{shop_id}", response_model=GetSingleShopResponse, status_code=status.HTTP_200_OK)
@@ -193,7 +199,7 @@ async def patch_shop(
 
     """
     try:
-        return await shop_dao.update(shop_id, **body.model_dump(exclude_unset=True))
+        payload = await shop_dao.update(shop_id, **body.model_dump(exclude_unset=True))
     except IntegrityError as e:
         logger.exception("Related object not found", exc_info=e)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Related object not found") from e
@@ -206,6 +212,8 @@ async def patch_shop(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Something went wrong while patching the shop",
         ) from e
+
+    return GetSingleShopResponse.model_validate(payload)
 
 
 @router.delete("/{shop_id}", status_code=status.HTTP_204_NO_CONTENT)

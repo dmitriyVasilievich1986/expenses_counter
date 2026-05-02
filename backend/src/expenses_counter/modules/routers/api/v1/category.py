@@ -161,7 +161,7 @@ async def get_category_by_id(
 
     """
     try:
-        category = await category_dao.get_by_pk(category_id)
+        payload = await category_dao.get_by_pk(category_id)
     except NoResultFound as e:
         logger.warning("Category not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found") from e
@@ -172,7 +172,7 @@ async def get_category_by_id(
             detail="Something went wrong while retrieving the category",
         ) from e
 
-    return GetSingleCategoryResponse.model_validate(category)
+    return GetSingleCategoryResponse.model_validate(payload)
 
 
 @router.post("", response_model=GetSingleCategoryResponse, status_code=status.HTTP_201_CREATED)
