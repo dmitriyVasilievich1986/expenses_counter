@@ -28,8 +28,7 @@ export function Image(props: ImageProps) {
     <img
       src={props.src}
       loading="lazy"
-      width={props.width}
-      height={props.height}
+      style={{ width: props.width, height: props.height }}
       onError={() => setFailed(true)}
     />
   );
