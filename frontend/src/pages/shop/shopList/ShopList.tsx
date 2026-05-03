@@ -48,11 +48,15 @@ export function ShopList() {
 
   /** Keep `page` in the URL, then fetch the matching slice of shops. */
   useEffect(() => {
-    const page = parseInt(searchParams.get('page') ?? '0');
-    if (!searchParams.get('page')) {
+    const pageRaw = searchParams.get('page');
+    const pageParsed = parseInt(pageRaw ?? '0', 10);
+    const page = Number.isNaN(pageParsed) || pageParsed < 0 ? 0 : pageParsed;
+
+    if (!pageRaw) {
       setSearchParams({ page: '0' });
+    } else {
+      getShops(limit, page * limit);
     }
-    getShops(limit, page * limit);
   }, [searchParams]);
 
   /** Load category metadata once so table rows can resolve `categoryId` to a label. */

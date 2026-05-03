@@ -47,11 +47,15 @@ export function ProductList() {
 
   /** Keep `page` in the URL, then fetch the matching slice of products. */
   useEffect(() => {
-    const page = parseInt(searchParams.get('page') ?? '0');
-    if (!searchParams.get('page')) {
+    const pageRaw = searchParams.get('page');
+    const pageParsed = parseInt(pageRaw ?? '0', 10);
+    const page = Number.isNaN(pageParsed) || pageParsed < 0 ? 0 : pageParsed;
+
+    if (!pageRaw) {
       setSearchParams({ page: '0' });
+    } else {
+      getProducts(limit, page * limit);
     }
-    getProducts(limit, page * limit);
   }, [searchParams]);
 
   /** Load category metadata once so table rows can resolve `categoryId` to a label. */
