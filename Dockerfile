@@ -37,7 +37,6 @@ COPY ./backend/pyproject.toml ./
 
 # Add frontend
 COPY --from=frontend /opt/backend/static /opt/backend/static
-RUN ls -la /opt/backend/static
 
 # Add configurations
 COPY ./backend/configurations ./configurations
