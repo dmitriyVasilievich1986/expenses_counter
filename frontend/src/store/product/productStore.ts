@@ -23,7 +23,10 @@ export const useProductStore = create<ProductStoreStateType>()(
       set({ productListLoading: loading }, undefined, 'setProductListLoading'),
     addProducts: (products) =>
       set(
-        (state) => ({ products: [...(state.products ?? []), ...products] }),
+        (state) => ({
+          products: [...(state.products ?? []), ...products],
+          totalProducts: state.totalProducts + products.length,
+        }),
         undefined,
         'addProducts'
       ),
@@ -41,6 +44,7 @@ export const useProductStore = create<ProductStoreStateType>()(
       set(
         (state) => ({
           products: (state.products as ProductSimpleType[]).filter((p) => p.id !== id),
+          totalProducts: state.totalProducts - 1,
         }),
         undefined,
         'deleteProduct'
