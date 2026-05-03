@@ -100,7 +100,12 @@ export function ShopList() {
               <TableRow key={shop.id} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
                 <TableCell component="th" scope="row">
                   <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                    <Image src={shop.icon} width="20px" height="20px" />
+                    <Image
+                      src={shop.icon}
+                      width="20px"
+                      height="20px"
+                      alt={`${shop.name} shop icon`}
+                    />
                     <Link
                       to={`/shop/${shop.id}`}
                       style={{
