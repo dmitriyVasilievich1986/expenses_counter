@@ -8,6 +8,7 @@
  */
 
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
 import Paper from '@mui/material/Paper';
 import Skeleton from '@mui/material/Skeleton';
@@ -18,8 +19,9 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
+import Typography from '@mui/material/Typography';
 import { useEffect, useMemo } from 'react';
-import { Link, useSearchParams } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 
 import { Image } from '@components/image';
 import { useShopAPIClient, useCategoryAPIClient } from '@services/apiClient';
@@ -34,6 +36,7 @@ import { useShopStore } from '@store/shop';
 export function ShopList() {
   /** Fixed page size for shop list requests and MUI `TablePagination`. */
   const limit = 10;
+  const navigate = useNavigate();
   const shops = useShopStore((state) => state.shops);
   const totalShops = useShopStore((state) => state.totalShops);
   const shopListLoading = useShopStore((state) => state.shopListLoading);
@@ -65,12 +68,20 @@ export function ShopList() {
   if (shopListLoading) {
     return (
       <Container maxWidth="lg" sx={{ mt: 2 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'end', mb: 2 }}>
+          <Skeleton variant="rectangular" sx={{ width: '100px', height: '40px' }} />
+        </Box>
         <Skeleton variant="rectangular" sx={{ width: '100%', height: '400px' }} />
       </Container>
     );
   }
   return (
     <Container maxWidth="lg" sx={{ mt: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'end', mb: 2 }}>
+        <Button variant="contained" color="primary" onClick={() => navigate('/shop/create')}>
+          <Typography variant="button">Create</Typography>
+        </Button>
+      </Box>
       <TableContainer component={Paper}>
         <Table sx={{ width: '100%' }} aria-label="simple table">
           <TableHead>

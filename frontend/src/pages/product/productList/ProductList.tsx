@@ -7,6 +7,8 @@
  * @module pages/product/productList/ProductList
  */
 
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
 import Paper from '@mui/material/Paper';
 import Skeleton from '@mui/material/Skeleton';
@@ -17,8 +19,9 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
+import Typography from '@mui/material/Typography';
 import { useEffect, useMemo } from 'react';
-import { Link, useSearchParams } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 
 import { useProductAPIClient, useCategoryAPIClient } from '@services/apiClient';
 import { useCategoryStore } from '@store/category';
@@ -32,6 +35,7 @@ import { useProductStore } from '@store/product';
 export function ProductList() {
   /** Fixed page size for product list requests and MUI `TablePagination`. */
   const limit = 10;
+  const navigate = useNavigate();
   const products = useProductStore((state) => state.products);
   const totalProducts = useProductStore((state) => state.totalProducts);
   const categories = useCategoryStore((state) => state.categories);
@@ -63,12 +67,20 @@ export function ProductList() {
   if (productListLoading) {
     return (
       <Container maxWidth="lg" sx={{ mt: 2 }}>
-        <Skeleton variant="rectangular" sx={{ width: '100%', height: '400px' }} />
+        <Box sx={{ display: 'flex', justifyContent: 'end', mb: 2 }}>
+          <Skeleton variant="rectangular" sx={{ width: '100px', height: '40px' }} />
+        </Box>
+        <Skeleton variant="rectangular" sx={{ width: '100%', height: '600px' }} />
       </Container>
     );
   }
   return (
     <Container maxWidth="lg" sx={{ mt: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'end', mb: 2 }}>
+        <Button variant="contained" color="primary" onClick={() => navigate('/product/create')}>
+          <Typography variant="button">Create</Typography>
+        </Button>
+      </Box>
       <TableContainer component={Paper}>
         <Table sx={{ width: '100%' }} aria-label="simple table">
           <TableHead>
