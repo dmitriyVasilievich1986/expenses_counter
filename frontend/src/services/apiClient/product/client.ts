@@ -15,8 +15,15 @@ import type { PaginationMetadata } from '../types';
  * @returns Object with `getProduct`, `getProducts`, `postProduct`, `putProduct`, and `deleteProduct` methods.
  */
 export const useProductAPIClient = () => {
-  const { setProducts, addProducts, updateProduct, deleteProduct, setCurrentProduct, products } =
-    useProductStore();
+  const {
+    setProducts,
+    setProductListLoading,
+    addProducts,
+    updateProduct,
+    deleteProduct,
+    setCurrentProduct,
+    products,
+  } = useProductStore();
   const { wrapper } = useApiClientWrapper();
 
   return {
@@ -42,17 +49,22 @@ export const useProductAPIClient = () => {
      */
     getProducts: async (limit?: number, offset?: number): Promise<ProductSimpleType[]> => {
       return wrapper(async () => {
-        const response = await apiClientInstance.get<{
-          data: ProductSimpleType[];
-          metadata: PaginationMetadata;
-        }>(`/api/v1/product`, {
-          params: {
-            limit,
-            offset,
-          },
-        });
-        setProducts(response.data.data, response.data.metadata.total);
-        return response.data.data;
+        setProductListLoading(true);
+        try {
+          const response = await apiClientInstance.get<{
+            data: ProductSimpleType[];
+            metadata: PaginationMetadata;
+          }>(`/api/v1/product`, {
+            params: {
+              limit,
+              offset,
+            },
+          });
+          setProducts(response.data.data, response.data.metadata.total);
+          return response.data.data;
+        } finally {
+          setProductListLoading(false);
+        }
       });
     },
     /**
