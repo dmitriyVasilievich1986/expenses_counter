@@ -4,4 +4,4 @@
  * @module @components/images
  */
 
-export { Image, type ImageProps } from './Image';
+export { Image } from './Image';
