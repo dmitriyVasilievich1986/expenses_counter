@@ -1,59 +1,116 @@
 /**
- * Product list page: load products and categories, group products by category, and render stacks with navigation to detail and create.
+ * Product list route: paginated products table with category labels and navigation to each product.
+ *
+ * Syncs the current page with the `page` query parameter, fetches products via the product API client
+ * (loading state lives in the product store), and loads categories once for id-to-name lookup.
+ *
+ * @module pages/product/productList/ProductList
  */
 
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
-import Typography from '@mui/material/Typography';
-import _ from 'lodash';
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router';
+import Paper from '@mui/material/Paper';
+import Skeleton from '@mui/material/Skeleton';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TablePagination from '@mui/material/TablePagination';
+import TableRow from '@mui/material/TableRow';
+import { useEffect, useMemo } from 'react';
+import { Link, useSearchParams } from 'react-router';
 
-import { CardsStack } from '@components/cardsStack';
 import { useProductAPIClient, useCategoryAPIClient } from '@services/apiClient';
 import { useCategoryStore } from '@store/category';
 import { useProductStore } from '@store/product';
 
 /**
- * Render products grouped by category as card stacks and a create button.
+ * Renders the product catalog in a table with skeleton loading while the list request is in flight.
  *
- * @returns {JSX.Element} The product list layout inside a container.
+ * @returns The product list layout (loading skeleton or table with pagination).
  */
 export function ProductList() {
+  /** Fixed page size for product list requests and MUI `TablePagination`. */
+  const limit = 10;
   const products = useProductStore((state) => state.products);
+  const totalProducts = useProductStore((state) => state.totalProducts);
   const categories = useCategoryStore((state) => state.categories);
+  const productListLoading = useProductStore((state) => state.productListLoading);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const { getProducts } = useProductAPIClient();
   const { getCategories } = useCategoryAPIClient();
 
-  const navigate = useNavigate();
-
+  /** Keep `page` in the URL, then fetch the matching slice of products. */
   useEffect(() => {
-    if (products === null) getProducts();
-  }, [products]);
+    const page = parseInt(searchParams.get('page') ?? '0');
+    if (!searchParams.get('page')) {
+      setSearchParams({ page: '0' });
+    }
+    getProducts(limit, page * limit);
+  }, [searchParams]);
 
+  /** Load category metadata once so table rows can resolve `categoryId` to a label. */
   useEffect(() => {
     if (categories === null) getCategories();
   }, [categories]);
 
-  const productsByCategory = _.groupBy(products ?? [], (product) => product.categoryId);
+  /** Map from category id to display name for table cells. */
+  const groupedCategories = useMemo(() => {
+    return Object.fromEntries(categories?.map((category) => [category.id, category.name]) ?? []);
+  }, [categories]);
 
+  if (productListLoading) {
+    return (
+      <Container maxWidth="lg" sx={{ mt: 2 }}>
+        <Skeleton variant="rectangular" sx={{ width: '100%', height: '400px' }} />
+      </Container>
+    );
+  }
   return (
     <Container maxWidth="lg" sx={{ mt: 2 }}>
-      {Object.keys(productsByCategory).map((k) => (
-        <CardsStack
-          key={k}
-          categoryId={parseInt(k) ?? null}
-          items={productsByCategory[k]}
-          onClick={(item) => navigate(`/product/${item.id}`)}
+      <TableContainer component={Paper}>
+        <Table sx={{ width: '100%' }} aria-label="simple table">
+          <TableHead>
+            <TableRow>
+              <TableCell>Name</TableCell>
+              <TableCell>Category</TableCell>
+              <TableCell>Description</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {(products ?? []).map((product) => (
+              <TableRow key={product.id} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                <TableCell component="th" scope="row">
+                  <Link
+                    to={`/product/${product.id}`}
+                    style={{
+                      textDecoration: 'none',
+                      color: '#023e8a',
+                      fontWeight: 'bold',
+                      marginLeft: '0.25rem',
+                    }}
+                  >
+                    {product.name}
+                  </Link>
+                </TableCell>
+                <TableCell align="left">
+                  {groupedCategories[product.categoryId as number]}
+                </TableCell>
+                <TableCell align="left">{product.description}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        <TablePagination
+          component="div"
+          count={totalProducts}
+          rowsPerPage={limit}
+          page={parseInt(searchParams.get('page') ?? '0')}
+          onPageChange={(_, page) => setSearchParams({ page: page.toString() })}
+          rowsPerPageOptions={[]}
         />
-      ))}
-      <Box sx={{ display: 'flex', justifyContent: 'end', mt: 2 }}>
-        <Button variant="contained" color="primary" onClick={() => navigate('/product/create')}>
-          <Typography variant="button">Create</Typography>
-        </Button>
-      </Box>
+      </TableContainer>
     </Container>
   );
 }
