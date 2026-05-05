@@ -18,13 +18,13 @@ class ProductDAO(BaseDAO[Product]):
     select_in_options_single = (Product.category,)
 
     async def get_by_name(
-        self, name: str, filters: list[ColumnElement[bool] | dict[str, Any]] | None = None
+        self, name: str, filters: list[ColumnElement[bool]] | list[dict[str, Any]] | None = None
     ) -> Product:
         """Load one product row by its ``name`` column value.
 
         Args:
             name (str): Value of the ``name`` column to match.
-            filters (list[ColumnElement[bool] | dict[str, Any]] | None, optional): Extra WHERE
+            filters (list[ColumnElement[bool]] | list[dict[str, Any]] | None, optional): Extra WHERE
                 clauses merged with ``base_filters``. Defaults to None.
 
         Returns:

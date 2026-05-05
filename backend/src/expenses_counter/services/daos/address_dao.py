@@ -24,13 +24,13 @@ class AddressDAO(BaseDAO[Address]):
     select_in_options_single = (Address.shop,)
 
     async def get_by_address(
-        self, address: str, filters: list[ColumnElement[bool] | dict[str, Any]] | None = None
+        self, address: str, filters: list[ColumnElement[bool]] | list[dict[str, Any]] | None = None
     ) -> Address:
         """Load one address row by its ``address`` column value.
 
         Args:
             address (str): Value of the ``address`` column to match.
-            filters (list[ColumnElement[bool] | dict[str, Any]] | None, optional): Extra WHERE
+            filters (list[ColumnElement[bool]] | list[dict[str, Any]] | None, optional): Extra WHERE
                 clauses merged with ``base_filters``. Defaults to None.
 
         Returns:

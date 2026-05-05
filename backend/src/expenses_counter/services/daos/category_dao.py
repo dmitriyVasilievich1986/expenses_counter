@@ -25,7 +25,7 @@ class CategoryDAO(BaseDAO[Category]):
         session: AsyncSession,
         pk: int | str,
         pk_column_name: str,
-        filters: list[ColumnElement[bool] | dict[str, Any]] | None = None,
+        filters: list[ColumnElement[bool]] | list[dict[str, Any]] | None = None,
     ) -> Category:
         """Load one category by primary key with full ancestor chain loaded.
 
@@ -33,7 +33,7 @@ class CategoryDAO(BaseDAO[Category]):
             session (AsyncSession): Active async session.
             pk (int | str): Primary key value.
             pk_column_name (str): Attribute name of the PK column on the model.
-            filters (list[ColumnElement[bool] | dict[str, Any]] | None, optional): Extra WHERE
+            filters (list[ColumnElement[bool]] | list[dict[str, Any]] | None, optional): Extra WHERE
                 clauses merged with ``base_filters``. Defaults to None.
 
         Returns:
