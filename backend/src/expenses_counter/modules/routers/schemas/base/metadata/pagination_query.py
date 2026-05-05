@@ -4,14 +4,18 @@ __all__ = ("PaginationQuery",)
 
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, Json
+
+from expenses_counter.utils.filter import Filter
 
 from ..query import BaseQueryModel
 
 
-class PaginationQuery(BaseQueryModel):
+class PaginationQuery[SortByType: str, ColumnType: str](BaseQueryModel):
     """Query parameters for pagination."""
 
     limit: int = Field(default=100, ge=1, le=100, description="The number of items to return")
     offset: int = Field(default=0, ge=0, description="The number of items to skip")
     sort_order: Literal["asc", "desc"] = Field(default="asc", description="The order to sort the items by")
+    sort_by: SortByType = Field(default="id", description="The field to sort the items by")
+    filters: Json[list[Filter[ColumnType]]] | None = Field(None, description="The filters to apply to the parameters")

@@ -4,6 +4,8 @@ __all__ = ("PaginationMetadata",)
 
 from pydantic import Field
 
+from expenses_counter.utils.filter import Filter
+
 from ..response import BaseResponseModel
 
 
@@ -19,3 +21,4 @@ class PaginationMetadata(BaseResponseModel):
     limit: int | None = Field(..., description="The limit of the parameters")
     sort_by: str = Field(..., description="The field to sort the parameters by")
     sort_order: str = Field(..., description="The order to sort the parameters by")
+    filters: list[Filter[str]] | None = Field(..., description="The filters to apply to the parameters")
