@@ -4,10 +4,10 @@ __all__ = ("GetAllProductsQuery",)
 
 from typing import Literal
 
-from expenses_counter.modules.routers.schemas.base.metadata import PaginationQuery
+from expenses_counter.modules.routers.schemas.base.metadata import PaginationWithFiltersQuery
 
 
-class GetAllProductsQuery(PaginationQuery[Literal["id", "name"], Literal["id", "name"]]):
+class GetAllProductsQuery(PaginationWithFiltersQuery[Literal["id", "name"], Literal["id", "name"]]):
     """Query parameters for getting all products."""
 
     pass

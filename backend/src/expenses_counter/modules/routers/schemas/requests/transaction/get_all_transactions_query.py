@@ -4,11 +4,11 @@ __all__ = ("GetAllTransactionsQuery",)
 
 from typing import Literal
 
-from expenses_counter.modules.routers.schemas.base.metadata import PaginationQuery
+from expenses_counter.modules.routers.schemas.base.metadata import PaginationWithFiltersQuery
 
 
 class GetAllTransactionsQuery(
-    PaginationQuery[Literal["id", "date", "count", "price"], Literal["id", "date", "count", "price"]]
+    PaginationWithFiltersQuery[Literal["id", "date", "count", "price"], Literal["id", "date", "count", "price"]]
 ):
     """Query parameters for getting all transactions."""
 
