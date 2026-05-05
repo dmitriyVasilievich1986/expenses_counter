@@ -2,6 +2,7 @@
 
 __all__ = ("PaginationMetadata",)
 
+
 from pydantic import Field
 
 from expenses_counter.utils.filter import Filter
