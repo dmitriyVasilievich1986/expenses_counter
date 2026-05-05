@@ -87,7 +87,7 @@ class BaseDAO[DatabaseModel: Base](ABC):
 
         """
         if filters is None:
-            return cls.base_filters or []
+            return [*(cls.base_filters or [])]
 
         filters_: list[ColumnElement[bool]] = []
         for f in filters:
