@@ -52,7 +52,7 @@ from expenses_counter.utils.filter import Filter
 router = APIRouter(prefix="/transaction", tags=["Transaction"])
 
 
-@router.post("/monthly", response_model=GetAllTransactionsResponse, status_code=status.HTTP_200_OK)
+@router.post("/monthly", response_model=GetAllTransactionsResponse, status_code=status.HTTP_200_OK, deprecated=True)
 async def get_transactions_by_date_range(
     body: Annotated[MonthlyBodyRequest, Body(description="The body of the request")],
     query: Annotated[MonthlyQuery, Query(description="The query parameters")],

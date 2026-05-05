@@ -74,7 +74,7 @@ async def get_category_list(
     )
 
 
-@router.get("/parent", response_model=GetAllCategoriesResponse, status_code=status.HTTP_200_OK)
+@router.get("/parent", response_model=GetAllCategoriesResponse, status_code=status.HTTP_200_OK, deprecated=True)
 async def get_root_category_list(
     category_dao: Annotated[CategoryDAO, Depends(get_category)],
     query: Annotated[GetAllCategoriesByParentQuery, Query(description="Pagination and sorting parameters")],
@@ -108,7 +108,9 @@ async def get_root_category_list(
     )
 
 
-@router.get("/parent/{parent_id}", response_model=GetAllCategoriesResponse, status_code=status.HTTP_200_OK)
+@router.get(
+    "/parent/{parent_id}", response_model=GetAllCategoriesResponse, status_code=status.HTTP_200_OK, deprecated=True
+)
 async def get_category_list_by_parent(
     parent_id: Annotated[int, Path(description="The unique identifier of the parent category to retrieve")],
     category_dao: Annotated[CategoryDAO, Depends(get_category)],
