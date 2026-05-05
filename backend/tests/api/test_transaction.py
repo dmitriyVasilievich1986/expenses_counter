@@ -4,6 +4,7 @@ This module tests all transaction API endpoints without making direct database c
 It uses FastAPI's TestClient and mocks the TransactionDAO dependency.
 """
 
+import json
 from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock
 
@@ -479,3 +480,48 @@ class TestDeleteTransaction:
 
         # Assert
         assert response.status_code == 500
+
+
+@pytest.mark.api
+class TestGetTransactionListFilters:
+    """Test GET /api/v1/transaction with filters query param."""
+
+    def test_get_transaction_list_with_eq_filter(self, test_client, mock_transaction_dao):
+        """Test that a filter passed via query param reaches get_all."""
+        mock_transaction_dao.get_all.return_value = ([], 0)
+        filters = [{"column": "price", "operator": "ge", "value": 10.0}]
+
+        response = test_client.get("/api/v1/transaction", params={"filters": json.dumps(filters)})
+
+        assert response.status_code == 200
+        call_kwargs = mock_transaction_dao.get_all.call_args.kwargs
+        assert call_kwargs["filters"] is not None
+        assert len(call_kwargs["filters"]) == 1
+        assert call_kwargs["filters"][0]["column"] == "price"
+        assert call_kwargs["filters"][0]["operator"] == "ge"
+        assert call_kwargs["filters"][0]["value"] == 10.0
+
+    def test_get_transaction_list_without_filters_passes_none(self, test_client, mock_transaction_dao):
+        """Test that omitting filters passes None to get_all."""
+        mock_transaction_dao.get_all.return_value = ([], 0)
+
+        response = test_client.get("/api/v1/transaction")
+
+        assert response.status_code == 200
+        call_kwargs = mock_transaction_dao.get_all.call_args.kwargs
+        assert call_kwargs["filters"] is None
+
+    def test_get_transaction_list_with_multiple_filters(self, test_client, mock_transaction_dao):
+        """Test that multiple filters are all forwarded to get_all."""
+        mock_transaction_dao.get_all.return_value = ([], 0)
+        filters = [
+            {"column": "price", "operator": "ge", "value": 5.0},
+            {"column": "price", "operator": "le", "value": 100.0},
+        ]
+
+        response = test_client.get("/api/v1/transaction", params={"filters": json.dumps(filters)})
+
+        assert response.status_code == 200
+        call_kwargs = mock_transaction_dao.get_all.call_args.kwargs
+        assert call_kwargs["filters"] is not None
+        assert len(call_kwargs["filters"]) == 2

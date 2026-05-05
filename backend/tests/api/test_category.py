@@ -4,6 +4,7 @@ This module tests all category API endpoints without making direct database call
 It uses FastAPI's TestClient and mocks the CategoryDAO dependency.
 """
 
+import json
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -96,7 +97,9 @@ class TestGetCategoryList:
         assert data["metadata"]["total"] == 2
         assert data["metadata"]["limit"] == 10
         assert data["metadata"]["offset"] == 0
-        mock_category_dao.get_all.assert_called_once_with(limit=10, offset=0, sort_by="id", sort_order="asc")
+        mock_category_dao.get_all.assert_called_once_with(
+            limit=10, offset=0, sort_by="id", sort_order="asc", filters=None
+        )
 
     def test_get_category_list_with_pagination(self, test_client, mock_category_dao):
         """Test category list with pagination parameters.
@@ -632,3 +635,63 @@ class TestDeleteCategory:
         # Assert
         assert response.status_code == 500
         assert "deleting" in response.json()["detail"].lower()
+
+
+@pytest.mark.api
+class TestGetCategoryListFilters:
+    """Test GET /api/v1/category with filters query param."""
+
+    def test_get_category_list_with_eq_filter(self, test_client, mock_category_dao):
+        """Test that a filter passed via query param reaches get_all.
+
+        Args:
+            test_client: FastAPI test client fixture.
+            mock_category_dao: Mocked CategoryDAO fixture.
+
+        """
+        mock_category_dao.get_all.return_value = ([], 0)
+        filters = [{"column": "name", "operator": "eq", "value": "Food"}]
+
+        response = test_client.get("/api/v1/category", params={"filters": json.dumps(filters)})
+
+        assert response.status_code == 200
+        call_kwargs = mock_category_dao.get_all.call_args.kwargs
+        assert call_kwargs["filters"] is not None
+        assert len(call_kwargs["filters"]) == 1
+        assert call_kwargs["filters"][0]["column"] == "name"
+        assert call_kwargs["filters"][0]["operator"] == "eq"
+        assert call_kwargs["filters"][0]["value"] == "Food"
+
+    def test_get_category_list_with_isnull_filter(self, test_client, mock_category_dao):
+        """Test that an isnull filter is forwarded to get_all.
+
+        Args:
+            test_client: FastAPI test client fixture.
+            mock_category_dao: Mocked CategoryDAO fixture.
+
+        """
+        mock_category_dao.get_all.return_value = ([], 0)
+        filters = [{"column": "parent_id", "operator": "isnull", "value": None}]
+
+        response = test_client.get("/api/v1/category", params={"filters": json.dumps(filters)})
+
+        assert response.status_code == 200
+        call_kwargs = mock_category_dao.get_all.call_args.kwargs
+        assert call_kwargs["filters"] is not None
+        assert call_kwargs["filters"][0]["operator"] == "isnull"
+
+    def test_get_category_list_without_filters_passes_none(self, test_client, mock_category_dao):
+        """Test that omitting filters passes None to get_all.
+
+        Args:
+            test_client: FastAPI test client fixture.
+            mock_category_dao: Mocked CategoryDAO fixture.
+
+        """
+        mock_category_dao.get_all.return_value = ([], 0)
+
+        response = test_client.get("/api/v1/category")
+
+        assert response.status_code == 200
+        call_kwargs = mock_category_dao.get_all.call_args.kwargs
+        assert call_kwargs["filters"] is None

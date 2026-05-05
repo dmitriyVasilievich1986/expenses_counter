@@ -13,6 +13,7 @@ from sqlalchemy.sql import ColumnElement
 
 from expenses_counter.services.database import AsyncDatabaseClient
 from expenses_counter.services.database.models.base import Base
+from expenses_counter.utils.filter import Filter
 
 
 class BaseDAO[DatabaseModel: Base](ABC):
@@ -72,25 +73,38 @@ class BaseDAO[DatabaseModel: Base](ABC):
         self.session = session
 
     @classmethod
-    def concat_filters(cls, filters: list[ColumnElement[bool]] | None) -> list[ColumnElement[bool]]:
+    def concat_filters(
+        cls, filters: list[ColumnElement[bool]] | list[dict[str, Any]] | None
+    ) -> list[ColumnElement[bool]]:
         """Return ``base_filters`` followed by optional caller filters.
 
         Args:
-            filters (list[ColumnElement[bool]] | None, optional): Extra WHERE
+            filters (list[ColumnElement[bool]] | list[dict[str, Any]] | None, optional): Extra WHERE
                 predicates. Defaults to None.
 
         Returns:
             list[ColumnElement[bool]]: Combined filter list, never None.
 
         """
-        return [*(cls.base_filters or []), *(filters or [])]
+        if filters is None:
+            return [*(cls.base_filters or [])]
+
+        filters_: list[ColumnElement[bool]] = []
+        for f in filters:
+            if isinstance(f, dict):
+                filter_: Filter[str] = Filter.model_validate(f)
+                filters_.append(filter_.to_sqlalchemy_filter(cls.database_model))
+            else:
+                filters_.append(f)
+
+        return [*(cls.base_filters or []), *filters_]
 
     async def _get_by_pk_raw(
         self,
         session: AsyncSession,
         pk: int | str,
         pk_column_name: str,
-        filters: list[ColumnElement[bool]] | None = None,
+        filters: list[ColumnElement[bool]] | list[dict[str, Any]] | None = None,
     ) -> DatabaseModel:
         """Load one model row by primary key using the given session.
 
@@ -98,7 +112,7 @@ class BaseDAO[DatabaseModel: Base](ABC):
             session (AsyncSession): Active async session.
             pk (int | str): Primary key value.
             pk_column_name (str): Attribute name of the PK column on the model.
-            filters (list[ColumnElement[bool]] | None, optional): Extra WHERE
+            filters (list[ColumnElement[bool]] | list[dict[str, Any]] | None, optional): Extra WHERE
                 clauses merged with ``base_filters``. Defaults to None.
 
         Returns:
@@ -120,7 +134,7 @@ class BaseDAO[DatabaseModel: Base](ABC):
         self,
         pk: int | str,
         pk_column_name: str | None = None,
-        filters: list[ColumnElement[bool]] | None = None,
+        filters: list[ColumnElement[bool]] | list[dict[str, Any]] | None = None,
     ) -> DatabaseModel:
         """Load one row by primary key using injected or factory-opened session.
 
@@ -128,7 +142,7 @@ class BaseDAO[DatabaseModel: Base](ABC):
             pk (int | str): Primary key value.
             pk_column_name (str | None, optional): PK column attribute name.
                 Defaults to ``self.pk_column_name``.
-            filters (list[ColumnElement[bool]] | None, optional): Extra WHERE
+            filters (list[ColumnElement[bool]] | list[dict[str, Any]] | None, optional): Extra WHERE
                 clauses. Defaults to None.
 
         Returns:
@@ -143,12 +157,14 @@ class BaseDAO[DatabaseModel: Base](ABC):
         async with self.database_client.session_factory() as session:  # type: ignore[union-attr]
             return await self._get_by_pk_raw(session, pk, pk_column_name, filters)
 
-    async def _get_total_raw(self, session: AsyncSession, filters: list[ColumnElement[bool]] | None = None) -> int:
+    async def _get_total_raw(
+        self, session: AsyncSession, filters: list[ColumnElement[bool]] | list[dict[str, Any]] | None = None
+    ) -> int:
         """Count rows for this model with optional filters.
 
         Args:
             session (AsyncSession): Active async session.
-            filters (list[ColumnElement[bool]] | None, optional): Extra WHERE
+            filters (list[ColumnElement[bool]] | list[dict[str, Any]] | None, optional): Extra WHERE
                 clauses. Defaults to None.
 
         Returns:
@@ -163,11 +179,11 @@ class BaseDAO[DatabaseModel: Base](ABC):
         result = await session.execute(stmt)
         return result.scalar_one()
 
-    async def get_total(self, filters: list[ColumnElement[bool]] | None = None) -> int:
+    async def get_total(self, filters: list[ColumnElement[bool]] | list[dict[str, Any]] | None = None) -> int:
         """Return the row count for this model with optional filters.
 
         Args:
-            filters (list[ColumnElement[bool]] | None, optional): Extra WHERE
+            filters (list[ColumnElement[bool]] | list[dict[str, Any]] | None, optional): Extra WHERE
                 clauses. Defaults to None.
 
         Returns:
@@ -187,7 +203,7 @@ class BaseDAO[DatabaseModel: Base](ABC):
         offset: int | None,
         sort_by: str | None,
         sort_order: Literal["asc", "desc"],
-        filters: list[ColumnElement[bool]] | None,
+        filters: list[ColumnElement[bool]] | list[dict[str, Any]] | None,
     ) -> tuple[Sequence[DatabaseModel], int]:
         """List rows with pagination, sorting, eager loads, and total count.
 
@@ -197,7 +213,7 @@ class BaseDAO[DatabaseModel: Base](ABC):
             offset (int | None): Number of rows to skip.
             sort_by (str | None): Model attribute name to order by, or None.
             sort_order (Literal["asc", "desc"]): Sort direction.
-            filters (list[ColumnElement[bool]] | None): Extra WHERE clauses.
+            filters (list[ColumnElement[bool]] | list[dict[str, Any]] | None): Extra WHERE clauses.
 
         Returns:
             tuple[Sequence[DatabaseModel], int]: Page of instances and total count
@@ -233,7 +249,7 @@ class BaseDAO[DatabaseModel: Base](ABC):
         offset: int | None = 0,
         sort_by: str = "id",
         sort_order: Literal["asc", "desc"] = "asc",
-        filters: list[ColumnElement[bool]] | None = None,
+        filters: list[ColumnElement[bool]] | list[dict[str, Any]] | None = None,
     ) -> tuple[Sequence[DatabaseModel], int]:
         """List rows with pagination and return the filtered total count.
 
@@ -244,7 +260,7 @@ class BaseDAO[DatabaseModel: Base](ABC):
                 "id".
             sort_order (Literal["asc", "desc"], optional): Sort direction.
                 Defaults to "asc".
-            filters (list[ColumnElement[bool]] | None, optional): Extra WHERE
+            filters (list[ColumnElement[bool]] | list[dict[str, Any]] | None, optional): Extra WHERE
                 clauses. Defaults to None.
 
         Returns:
