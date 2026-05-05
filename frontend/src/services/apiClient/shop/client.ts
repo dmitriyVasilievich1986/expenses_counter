@@ -40,7 +40,12 @@ export const useShopAPIClient = () => {
      * @param {number} [offset] - Skip offset passed as a query parameter.
      * @returns {Promise<ShopSimpleType[]>} Shops for the requested page.
      */
-    getShops: async (limit?: number, offset?: number): Promise<ShopSimpleType[]> => {
+    getShops: async (
+      limit?: number,
+      offset?: number,
+      sortBy?: string,
+      sortOrder?: string
+    ): Promise<ShopSimpleType[]> => {
       setShopListLoading(true);
       try {
         return await wrapper(async () => {
@@ -51,6 +56,8 @@ export const useShopAPIClient = () => {
             params: {
               limit,
               offset,
+              sortBy,
+              sortOrder,
             },
           });
           setShops(response.data.data, response.data.metadata.total);

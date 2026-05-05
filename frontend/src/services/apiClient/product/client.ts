@@ -47,7 +47,12 @@ export const useProductAPIClient = () => {
      * @param {number} [offset] - Skip offset passed as a query parameter.
      * @returns {Promise<ProductSimpleType[]>} Products for the requested page.
      */
-    getProducts: async (limit?: number, offset?: number): Promise<ProductSimpleType[]> => {
+    getProducts: async (
+      limit?: number,
+      offset?: number,
+      sortBy?: string,
+      sortOrder?: string
+    ): Promise<ProductSimpleType[]> => {
       return wrapper(async () => {
         setProductListLoading(true);
         try {
@@ -58,6 +63,8 @@ export const useProductAPIClient = () => {
             params: {
               limit,
               offset,
+              sortBy,
+              sortOrder,
             },
           });
           setProducts(response.data.data, response.data.metadata.total);
