@@ -8,7 +8,9 @@ from expenses_counter.modules.routers.schemas.base.metadata import PaginationWit
 
 
 class GetAllAddressesQuery(
-    PaginationWithFiltersQuery[Literal["id", "local_name", "address"], Literal["id", "local_name", "address"]]
+    PaginationWithFiltersQuery[
+        Literal["id", "local_name", "address"], Literal["id", "local_name", "address", "shop_id"]
+    ]
 ):
     """Query parameters for getting all addresses."""
 

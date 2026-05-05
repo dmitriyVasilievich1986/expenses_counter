@@ -8,7 +8,9 @@ from expenses_counter.modules.routers.schemas.base.metadata import PaginationWit
 
 
 class GetAllTransactionsQuery(
-    PaginationWithFiltersQuery[Literal["id", "date", "count", "price"], Literal["id", "date", "count", "price"]]
+    PaginationWithFiltersQuery[
+        Literal["id", "date", "count", "price"], Literal["id", "date", "count", "price", "product_id", "address_id"]
+    ]
 ):
     """Query parameters for getting all transactions."""
 
