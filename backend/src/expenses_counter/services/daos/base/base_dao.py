@@ -5,7 +5,6 @@ __all__ = ("BaseDAO",)
 from abc import ABC
 from typing import Any, Literal, overload, Sequence
 
-from loguru import logger
 from sqlalchemy import asc, desc, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import load_only, selectinload
