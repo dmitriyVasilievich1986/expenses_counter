@@ -2,7 +2,7 @@
 
 __all__ = ("Filter",)
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import DeclarativeBase
@@ -34,12 +34,14 @@ class Filter[ColumnType: str](BaseModel):
                 occur when the model is validated).
 
         """
+        column: ColumnElement[Any] = getattr(cls, self.column)
+
         match self.operator:
             case "eq":
-                return getattr(cls, self.column) == self.value
+                return column == self.value
             case "like":
-                return getattr(cls, self.column).like(f"%{self.value}%")
+                return column.like(f"%{self.value}%")
             case "ilike":
-                return getattr(cls, self.column).ilike(f"%{self.value}%")
+                return column.ilike(f"%{self.value}%")
             case _:
                 raise ValueError(f"Invalid operator: {self.operator}")
