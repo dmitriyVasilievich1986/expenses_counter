@@ -21,7 +21,7 @@ class Filter[ColumnType: str](BaseModel):
     operator: Literal["isnull", "notnull", "eq", "ge", "gt", "le", "lt", "like", "ilike"] = Field(
         ..., description="The operator to use for the filter"
     )
-    value: str | int | None | datetime | date = Field(..., description="The value to filter by")
+    value: str | int | None | datetime | date | float = Field(..., description="The value to filter by")
 
     def to_sqlalchemy_filter(self, cls: type[DeclarativeBase]) -> ColumnElement[bool]:
         """Build a SQL expression that applies this filter to ``cls``.
