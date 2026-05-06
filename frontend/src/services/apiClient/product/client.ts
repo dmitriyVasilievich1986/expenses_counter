@@ -7,7 +7,7 @@ import { useProductStore, type ProductSimpleType, type ProductType } from '@stor
 import { apiClientInstance, useApiClientWrapper } from '../base';
 
 import type { ProductPostRequest, ProductPutRequest } from './types';
-import type { PaginationMetadata } from '../types';
+import type { FilterType, PaginationMetadata } from '../types';
 
 /**
  * Hook that returns product API functions wired to the global product store.
@@ -51,7 +51,8 @@ export const useProductAPIClient = () => {
       limit?: number,
       offset?: number,
       sortBy?: string,
-      sortOrder?: string
+      sortOrder?: string,
+      filters?: FilterType[]
     ): Promise<ProductSimpleType[]> => {
       return wrapper(async () => {
         setProductListLoading(true);
@@ -65,6 +66,7 @@ export const useProductAPIClient = () => {
               offset,
               sortBy,
               sortOrder,
+              filters: filters ? JSON.stringify(filters) : undefined,
             },
           });
           setProducts(response.data.data, response.data.metadata.total);
