@@ -2,6 +2,8 @@
  * Shared API-related type definitions used across service clients.
  */
 
+import type { Dayjs } from 'dayjs';
+
 /**
  * Pagination and sorting metadata returned with paginated list responses.
  *
@@ -17,4 +19,17 @@ export type PaginationMetadata = {
   limit: number;
   sort_by: string;
   sort_order: string;
+};
+
+/**
+ * Single column filter sent to list endpoints that support server-side filtering.
+ *
+ * @property {string} column - Name of the field to filter on (API column identifier).
+ * @property {string} operator - Comparison operator (e.g. equals, contains) as expected by the API.
+ * @property {string | number | null | Date | boolean | Dayjs} value - Right-hand value for the comparison; type depends on column and operator.
+ */
+export type FilterType = {
+  column: string;
+  operator: string;
+  value: string | number | null | Date | boolean | Dayjs;
 };
