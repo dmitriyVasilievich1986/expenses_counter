@@ -24,6 +24,7 @@ from sqlalchemy.exc import IntegrityError, NoResultFound, SQLAlchemyError
 from expenses_counter.modules.middlewares.dependencies.daos import get_category
 from expenses_counter.modules.routers.schemas.base.metadata import PaginationMetadata
 from expenses_counter.modules.routers.schemas.requests.category import (
+    GetAllCategoriesByParentQuery,
     GetAllCategoriesQuery,
     PatchCategoryBody,
     PostCategoryBody,
@@ -35,7 +36,7 @@ from expenses_counter.modules.routers.schemas.responses.category import (
     SimpleCategoryGet,
 )
 from expenses_counter.services.daos import CategoryDAO
-from expenses_counter.services.database.models.category import Category
+from expenses_counter.utils.filter import Filter
 
 router = APIRouter(prefix="/category", tags=["Category"])
 
@@ -73,16 +74,16 @@ async def get_category_list(
     )
 
 
-@router.get("/parent", response_model=GetAllCategoriesResponse, status_code=status.HTTP_200_OK)
+@router.get("/parent", response_model=GetAllCategoriesResponse, status_code=status.HTTP_200_OK, deprecated=True)
 async def get_root_category_list(
     category_dao: Annotated[CategoryDAO, Depends(get_category)],
-    query: Annotated[GetAllCategoriesQuery, Query(description="Pagination and sorting parameters")],
+    query: Annotated[GetAllCategoriesByParentQuery, Query(description="Pagination and sorting parameters")],
 ) -> GetAllCategoriesResponse:
     """Return top-level categories (those with no parent).
 
     Args:
         category_dao (CategoryDAO): Category data access object.
-        query (GetAllCategoriesQuery): Pagination and sort parameters.
+        query (GetAllCategoriesByParentQuery): Pagination and sort parameters.
 
     Returns:
         GetAllCategoriesResponse: Root categories and pagination metadata.
@@ -92,8 +93,9 @@ async def get_root_category_list(
 
     """
     try:
-        data, total = await category_dao.get_all(filters=[Category.parent_id.is_(None)], **query.model_dump())
-        metadata = PaginationMetadata(total=total, **query.model_dump())
+        filters = [Filter[str](column="parent_id", operator="isnull", value=None)]
+        data, total = await category_dao.get_all(filters=[f.model_dump() for f in filters], **query.model_dump())
+        metadata = PaginationMetadata(total=total, **query.model_dump(), filters=filters)
     except SQLAlchemyError as e:
         logger.exception("Something went wrong while retrieving the category list by parent", exc_info=e)
         raise HTTPException(
@@ -106,18 +108,20 @@ async def get_root_category_list(
     )
 
 
-@router.get("/parent/{parent_id}", response_model=GetAllCategoriesResponse, status_code=status.HTTP_200_OK)
+@router.get(
+    "/parent/{parent_id}", response_model=GetAllCategoriesResponse, status_code=status.HTTP_200_OK, deprecated=True
+)
 async def get_category_list_by_parent(
     parent_id: Annotated[int, Path(description="The unique identifier of the parent category to retrieve")],
     category_dao: Annotated[CategoryDAO, Depends(get_category)],
-    query: Annotated[GetAllCategoriesQuery, Query(description="Pagination and sorting parameters")],
+    query: Annotated[GetAllCategoriesByParentQuery, Query(description="Pagination and sorting parameters")],
 ) -> GetAllCategoriesResponse:
     """Return direct child categories of the given parent.
 
     Args:
         parent_id (int): Parent category primary key.
         category_dao (CategoryDAO): Category data access object.
-        query (GetAllCategoriesQuery): Pagination and sort parameters.
+        query (GetAllCategoriesByParentQuery): Pagination and sort parameters.
 
     Returns:
         GetAllCategoriesResponse: Child categories and pagination metadata.
@@ -127,8 +131,9 @@ async def get_category_list_by_parent(
 
     """
     try:
-        data, total = await category_dao.get_all(filters=[Category.parent_id == parent_id], **query.model_dump())
-        metadata = PaginationMetadata(total=total, **query.model_dump())
+        filters = [Filter[str](column="parent_id", operator="eq", value=parent_id)]
+        data, total = await category_dao.get_all(filters=[f.model_dump() for f in filters], **query.model_dump())
+        metadata = PaginationMetadata(total=total, **query.model_dump(), filters=filters)
     except SQLAlchemyError as e:
         logger.exception("Something went wrong while retrieving the category list by parent", exc_info=e)
         raise HTTPException(

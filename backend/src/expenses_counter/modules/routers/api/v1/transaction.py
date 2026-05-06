@@ -47,12 +47,12 @@ from expenses_counter.modules.routers.schemas.responses.transaction import (
     SimpleTransactionGet,
 )
 from expenses_counter.services.daos import TransactionDAO
-from expenses_counter.services.database.models.transaction import Transaction
+from expenses_counter.utils.filter import Filter
 
 router = APIRouter(prefix="/transaction", tags=["Transaction"])
 
 
-@router.post("/monthly", response_model=GetAllTransactionsResponse, status_code=status.HTTP_200_OK)
+@router.post("/monthly", response_model=GetAllTransactionsResponse, status_code=status.HTTP_200_OK, deprecated=True)
 async def get_transactions_by_date_range(
     body: Annotated[MonthlyBodyRequest, Body(description="The body of the request")],
     query: Annotated[MonthlyQuery, Query(description="The query parameters")],
@@ -76,9 +76,13 @@ async def get_transactions_by_date_range(
     """
     start_date = body.date.replace(day=1)
     end_date = start_date + relativedelta(months=1)
+    filters = [
+        Filter[str](column="date", operator="ge", value=start_date),
+        Filter[str](column="date", operator="lt", value=end_date),
+    ]
     try:
         data, total = await transaction_dao.get_all(
-            filters=[Transaction.date >= start_date, Transaction.date < end_date],
+            filters=[f.model_dump() for f in filters],
             limit=None,
             offset=None,
             sort_by=query.sort_by,
@@ -92,7 +96,7 @@ async def get_transactions_by_date_range(
         ) from e
 
     metadata = PaginationMetadata(
-        total=total, offset=None, limit=None, sort_by=query.sort_by, sort_order=query.sort_order
+        total=total, offset=None, limit=None, sort_by=query.sort_by, sort_order=query.sort_order, filters=filters
     )
     return GetAllTransactionsResponse(
         data=[SimpleTransactionGet.model_validate(transaction) for transaction in data], metadata=metadata
