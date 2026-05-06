@@ -34,6 +34,7 @@ export function Search(props: { label: string; paramName?: string }) {
       } else {
         previous.delete(paramName);
       }
+      previous.set('page', '0');
       return previous;
     });
   };
