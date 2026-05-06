@@ -25,10 +25,10 @@ import { useEffect, useMemo } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 
 import { Image } from '@components/image';
+import { Search } from '@components/search';
 import { useShopAPIClient, useCategoryAPIClient } from '@services/apiClient';
 import { useCategoryStore } from '@store/category';
 import { useShopStore } from '@store/shop';
-
 /**
  * Renders the shop catalog in a table with skeleton loading while the list request is in flight.
  *
@@ -79,11 +79,15 @@ export function ShopList() {
     } else {
       const pageParsed = parseInt(pageRaw ?? '0', 10);
       const page = Number.isNaN(pageParsed) || pageParsed < 0 ? 0 : pageParsed;
+      const filters = searchParams.get('search')
+        ? [{ column: 'name', operator: 'ilike', value: searchParams.get('search') }]
+        : undefined;
       getShops(
         limit,
         page * limit,
         searchParams.get('sortBy') ?? undefined,
-        searchParams.get('sortOrder') ?? undefined
+        searchParams.get('sortOrder') ?? undefined,
+        filters
       );
     }
   }, [searchParams]);
@@ -101,7 +105,8 @@ export function ShopList() {
   if (shopListLoading) {
     return (
       <Container maxWidth="lg" sx={{ mt: 2 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'end', mb: 2 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+          <Skeleton variant="rectangular" sx={{ width: '300px', height: '40px' }} />
           <Skeleton variant="rectangular" sx={{ width: '100px', height: '40px' }} />
         </Box>
         <Skeleton variant="rectangular" sx={{ width: '100%', height: '400px' }} />
@@ -110,7 +115,8 @@ export function ShopList() {
   }
   return (
     <Container maxWidth="lg" sx={{ mt: 2 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'end', mb: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+        <Search label="Search by name" />
         <Button variant="contained" color="primary" onClick={() => navigate('/shop/create')}>
           <Typography variant="button">Create</Typography>
         </Button>
