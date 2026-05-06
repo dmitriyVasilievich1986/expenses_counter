@@ -24,6 +24,7 @@ import Typography from '@mui/material/Typography';
 import { useEffect, useMemo } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 
+import { Search } from '@components/search';
 import { useProductAPIClient, useCategoryAPIClient } from '@services/apiClient';
 import { useCategoryStore } from '@store/category';
 import { useProductStore } from '@store/product';
@@ -78,11 +79,15 @@ export function ProductList() {
     } else {
       const pageParsed = parseInt(pageRaw ?? '0', 10);
       const page = Number.isNaN(pageParsed) || pageParsed < 0 ? 0 : pageParsed;
+      const filters = searchParams.get('search')
+        ? [{ column: 'name', operator: 'ilike', value: searchParams.get('search') }]
+        : undefined;
       getProducts(
         limit,
         page * limit,
         searchParams.get('sortBy') ?? undefined,
-        searchParams.get('sortOrder') ?? undefined
+        searchParams.get('sortOrder') ?? undefined,
+        filters
       );
     }
   }, [searchParams]);
@@ -100,7 +105,8 @@ export function ProductList() {
   if (productListLoading) {
     return (
       <Container maxWidth="lg" sx={{ mt: 2 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'end', mb: 2 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+          <Skeleton variant="rectangular" sx={{ width: '300px', height: '40px' }} />
           <Skeleton variant="rectangular" sx={{ width: '100px', height: '40px' }} />
         </Box>
         <Skeleton variant="rectangular" sx={{ width: '100%', height: '600px' }} />
@@ -109,7 +115,8 @@ export function ProductList() {
   }
   return (
     <Container maxWidth="lg" sx={{ mt: 2 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'end', mb: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+        <Search label="Search by name" />
         <Button variant="contained" color="primary" onClick={() => navigate('/product/create')}>
           <Typography variant="button">Create</Typography>
         </Button>
