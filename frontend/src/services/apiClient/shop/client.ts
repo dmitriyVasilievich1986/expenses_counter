@@ -7,7 +7,7 @@ import { useShopStore, type ShopSimpleType, type ShopType } from '@store/shop';
 import { apiClientInstance, useApiClientWrapper } from '../base';
 
 import type { ShopPostRequest, ShopPutRequest } from './types';
-import type { PaginationMetadata } from '../types';
+import type { PaginationMetadata, FilterType } from '../types';
 
 /**
  * Hook that returns shop API functions wired to the global shop store.
@@ -38,10 +38,20 @@ export const useShopAPIClient = () => {
      *
      * @param {number} [limit] - Page size passed as a query parameter.
      * @param {number} [offset] - Skip offset passed as a query parameter.
+     * @param {string} [sortBy] - Field name used for ordering results.
+     * @param {string} [sortOrder] - Sort direction (e.g. ascending or descending).
+     * @param {FilterType[]} [filters] - Filters to apply to the query.
      * @returns {Promise<ShopSimpleType[]>} Shops for the requested page.
      */
-    getShops: async (limit?: number, offset?: number): Promise<ShopSimpleType[]> => {
+    getShops: async (
+      limit?: number,
+      offset?: number,
+      sortBy?: string,
+      sortOrder?: string,
+      filters?: FilterType[]
+    ): Promise<ShopSimpleType[]> => {
       setShopListLoading(true);
+      const filtersQueryParam = filters ? JSON.stringify(filters) : undefined;
       try {
         return await wrapper(async () => {
           const response = await apiClientInstance.get<{
@@ -51,6 +61,9 @@ export const useShopAPIClient = () => {
             params: {
               limit,
               offset,
+              sortBy,
+              sortOrder,
+              filters: filtersQueryParam,
             },
           });
           setShops(response.data.data, response.data.metadata.total);
