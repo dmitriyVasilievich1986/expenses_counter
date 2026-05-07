@@ -41,7 +41,7 @@ export function AddressesList(props: { addresses: AddressType[] }) {
 
   if (!shopId) return null;
   return (
-    <Paper sx={{ p: 2, mt: 2 }}>
+    <Paper sx={{ p: 2, mt: 2, mb: 4 }}>
       <Typography textAlign="center" variant="h4">
         {'Addresses'}
       </Typography>
