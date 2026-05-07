@@ -27,11 +27,14 @@ export const useShopAPIClient = () => {
      * @returns {Promise<ShopType>} Full shop entity from the API.
      */
     getShop: async (id: number): Promise<ShopType> => {
-      return wrapper(async () => {
+      setShopListLoading(true);
+      try {
         const response = await apiClientInstance.get<ShopType>(`/api/v1/shop/${id}`);
         setCurrentShop(response.data);
         return response.data;
-      });
+      } finally {
+        setShopListLoading(false);
+      }
     },
     /**
      * Loads a paginated list of shops, updates the store with items and total count, and toggles list loading state.
@@ -53,22 +56,20 @@ export const useShopAPIClient = () => {
       setShopListLoading(true);
       const filtersQueryParam = filters ? JSON.stringify(filters) : undefined;
       try {
-        return await wrapper(async () => {
-          const response = await apiClientInstance.get<{
-            data: ShopSimpleType[];
-            metadata: PaginationMetadata;
-          }>(`/api/v1/shop`, {
-            params: {
-              limit,
-              offset,
-              sortBy,
-              sortOrder,
-              filters: filtersQueryParam,
-            },
-          });
-          setShops(response.data.data, response.data.metadata.total);
-          return response.data.data;
+        const response = await apiClientInstance.get<{
+          data: ShopSimpleType[];
+          metadata: PaginationMetadata;
+        }>(`/api/v1/shop`, {
+          params: {
+            limit,
+            offset,
+            sortBy,
+            sortOrder,
+            filters: filtersQueryParam,
+          },
         });
+        setShops(response.data.data, response.data.metadata.total);
+        return response.data.data;
       } finally {
         setShopListLoading(false);
       }
