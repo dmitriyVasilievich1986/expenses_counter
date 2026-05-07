@@ -93,8 +93,14 @@ export function CreateTransaction() {
           </Stack>
           <Box sx={{ display: 'flex', justifyContent: 'end', mt: 2 }}>
             <Stack direction="row" spacing={1}>
-              {transactionId && <SubmitButton variant="delete" onClick={deleteHandler} />}
-              <SubmitButton variant={transactionId ? 'update' : 'create'} onClick={clickHandler} />
+              {transactionId && (
+                <SubmitButton label="Delete" color="error" onClick={deleteHandler} />
+              )}
+              <SubmitButton
+                label={transactionId ? 'Update' : 'Create'}
+                color={transactionId ? 'secondary' : 'primary'}
+                onClick={clickHandler}
+              />
             </Stack>
           </Box>
         </form>
