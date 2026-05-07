@@ -34,11 +34,14 @@ export const useProductAPIClient = () => {
      * @returns {Promise<ProductType>} Full product entity from the API.
      */
     getProduct: async (id: number): Promise<ProductType> => {
-      return wrapper(async () => {
+      try {
+        setProductListLoading(true);
         const response = await apiClientInstance.get<ProductType>(`/api/v1/product/${id}`);
         setCurrentProduct(response.data);
         return response.data;
-      });
+      } finally {
+        setProductListLoading(false);
+      }
     },
     /**
      * Loads a paginated list of products and updates the store with items and total count.
@@ -54,27 +57,25 @@ export const useProductAPIClient = () => {
       sortOrder?: string,
       filters?: FilterType[]
     ): Promise<ProductSimpleType[]> => {
-      return wrapper(async () => {
-        setProductListLoading(true);
-        try {
-          const response = await apiClientInstance.get<{
-            data: ProductSimpleType[];
-            metadata: PaginationMetadata;
-          }>(`/api/v1/product`, {
-            params: {
-              limit,
-              offset,
-              sortBy,
-              sortOrder,
-              filters: filters ? JSON.stringify(filters) : undefined,
-            },
-          });
-          setProducts(response.data.data, response.data.metadata.total);
-          return response.data.data;
-        } finally {
-          setProductListLoading(false);
-        }
-      });
+      setProductListLoading(true);
+      try {
+        const response = await apiClientInstance.get<{
+          data: ProductSimpleType[];
+          metadata: PaginationMetadata;
+        }>(`/api/v1/product`, {
+          params: {
+            limit,
+            offset,
+            sortBy,
+            sortOrder,
+            filters: filters ? JSON.stringify(filters) : undefined,
+          },
+        });
+        setProducts(response.data.data, response.data.metadata.total);
+        return response.data.data;
+      } finally {
+        setProductListLoading(false);
+      }
     },
     /**
      * Creates a product and appends it to the in-memory list when the list is already loaded.
