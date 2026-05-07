@@ -38,9 +38,7 @@ export function ShopList() {
   /** Fixed page size for shop list requests and MUI `TablePagination`. */
   const limit = 10;
   const navigate = useNavigate();
-  const shops = useShopStore((state) => state.shops);
-  const totalShops = useShopStore((state) => state.totalShops);
-  const shopListLoading = useShopStore((state) => state.shopListLoading);
+  const { shops, totalShops, shopListLoading } = useShopStore();
   const categories = useCategoryStore((state) => state.categories);
   const [searchParams, setSearchParams] = useSearchParams();
 

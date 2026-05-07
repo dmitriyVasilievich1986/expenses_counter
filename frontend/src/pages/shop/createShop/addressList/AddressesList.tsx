@@ -52,7 +52,7 @@ export function AddressesList(props: { addresses: AddressType[] }) {
       </Stack>
       <form onSubmit={(e) => e.preventDefault()}>
         <Box sx={{ display: 'flex', justifyContent: 'end', mt: 2 }}>
-          <SubmitButton variant="create" onClick={createHandler} />
+          <SubmitButton label="Add Address" color="primary" onClick={createHandler} />
         </Box>
       </form>
     </Paper>
