@@ -56,11 +56,10 @@ export function ProductList() {
   /** Fixed page size for product list requests and MUI `TablePagination`. */
   const limit = 10;
   const navigate = useNavigate();
-  const products = useProductStore((state) => state.products);
-  const totalProducts = useProductStore((state) => state.totalProducts);
-  const categories = useCategoryStore((state) => state.categories);
-  const productListLoading = useProductStore((state) => state.productListLoading);
   const [searchParams, setSearchParams] = useSearchParams();
+
+  const { products, totalProducts, productListLoading } = useProductStore();
+  const categories = useCategoryStore((state) => state.categories);
 
   const { getProducts } = useProductAPIClient();
   const { getCategories } = useCategoryAPIClient();
