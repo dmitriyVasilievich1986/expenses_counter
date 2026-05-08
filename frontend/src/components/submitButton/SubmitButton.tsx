@@ -30,7 +30,7 @@ export function SubmitButton(props: {
     <Button
       variant="contained"
       color={props.color}
-      disabled={props.disabled}
+      disabled={props.disabled || isLoading}
       onClick={props.onClick}
     >
       {isLoading ? <CircularProgress size={20} /> : props.label}
