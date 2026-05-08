@@ -94,11 +94,18 @@ export function ProductList() {
       searchParams.get('sortBy') ?? undefined,
       searchParams.get('sortOrder') ?? undefined,
       filters
-    ).then(({ data, total }) => {
-      if (cancelled) return;
-      setProducts(data);
-      setTotalProducts(total);
-    });
+    )
+      .then(({ data, total }) => {
+        if (cancelled) return;
+        setProducts(data);
+        setTotalProducts(total);
+      })
+      .catch((error) => {
+        setProducts([] as ProductSimpleType[]);
+        setTotalProducts(0);
+        console.error('Error fetching products:', error);
+      });
+
     return () => {
       cancelled = true;
     };

@@ -94,11 +94,17 @@ export function ShopList() {
       searchParams.get('sortBy') ?? undefined,
       searchParams.get('sortOrder') ?? undefined,
       filters
-    ).then(({ data, total }) => {
-      if (cancelled) return;
-      setShops(data);
-      setTotalShops(total);
-    });
+    )
+      .then(({ data, total }) => {
+        if (cancelled) return;
+        setShops(data);
+        setTotalShops(total);
+      })
+      .catch((error) => {
+        setShops([] as ShopSimpleType[]);
+        setTotalShops(0);
+        console.error('Error fetching shops:', error);
+      });
 
     return () => {
       cancelled = true;
