@@ -1,5 +1,6 @@
 /**
- * Shop REST API client hook: HTTP calls to `/api/v1/shop` and syncing results into the shop store.
+ * Shop REST API client hook: HTTP calls to `/api/v1/shop`; single-entity and mutating operations
+ * sync the global shop store, while paginated listing returns data without writing the shop list slice.
  */
 
 import { useShopStore, type ShopSimpleType, type ShopType } from '@store/shop';
@@ -10,40 +11,12 @@ import type { ShopPostRequest, ShopPutRequest } from './types';
 import type { PaginationMetadata, FilterType } from '../types';
 
 /**
- * Plain (non-hook) fetcher for paginated shops. No store side effects — callers manage their own state.
- *
- * @returns Page payload with `data` (shops) and `total` (overall match count).
- */
-export const fetchShops = async (
-  limit?: number,
-  offset?: number,
-  sortBy?: string,
-  sortOrder?: string,
-  filters?: FilterType[]
-): Promise<{ data: ShopSimpleType[]; total: number }> => {
-  const response = await apiClientInstance.get<{
-    data: ShopSimpleType[];
-    metadata: PaginationMetadata;
-  }>(`/api/v1/shop`, {
-    params: {
-      limit,
-      offset,
-      sortBy,
-      sortOrder,
-      filters: filters ? JSON.stringify(filters) : undefined,
-    },
-  });
-  return { data: response.data.data, total: response.data.metadata.total };
-};
-
-/**
  * Hook that returns shop API functions wired to the global shop store.
  *
  * @returns Object with `getShop`, `getShops`, `postShop`, `putShop`, and `deleteShop` methods.
  */
 export const useShopAPIClient = () => {
-  const { addShops, setShops, setShopListLoading, updateShop, deleteShop, setCurrentShop, shops } =
-    useShopStore();
+  const { addShops, updateShop, deleteShop, setCurrentShop, shops } = useShopStore();
   const { wrapper } = useApiClientWrapper();
 
   return {
@@ -54,40 +27,40 @@ export const useShopAPIClient = () => {
      * @returns {Promise<ShopType>} Full shop entity from the API.
      */
     getShop: async (id: number): Promise<ShopType> => {
-      setShopListLoading(true);
-      try {
-        const response = await apiClientInstance.get<ShopType>(`/api/v1/shop/${id}`);
-        setCurrentShop(response.data);
-        return response.data;
-      } finally {
-        setShopListLoading(false);
-      }
+      const response = await apiClientInstance.get<ShopType>(`/api/v1/shop/${id}`);
+      setCurrentShop(response.data);
+      return response.data;
     },
-    /**
-     * Loads a paginated list of shops, updates the store with items and total count, and toggles list loading state.
-     *
-     * @param {number} [limit] - Page size passed as a query parameter.
-     * @param {number} [offset] - Skip offset passed as a query parameter.
-     * @param {string} [sortBy] - Field name used for ordering results.
-     * @param {string} [sortOrder] - Sort direction (e.g. ascending or descending).
-     * @param {FilterType[]} [filters] - Filters to apply to the query.
-     * @returns {Promise<ShopSimpleType[]>} Shops for the requested page.
-     */
+/**
+ * Fetches a paginated list of shops. Does not update the global shop store — callers own list/total state.
+ *
+ * @param {number} [limit] - Page size passed as a query parameter.
+ * @param {number} [offset] - Skip offset passed as a query parameter.
+ * @param {string} [sortBy] - Field name used for ordering results.
+ * @param {string} [sortOrder] - Sort direction (e.g. ascending or descending).
+ * @param {FilterType[]} [filters] - Filters to apply to the query.
+ * @returns {Promise<{ data: ShopSimpleType[]; metadata: PaginationMetadata }>} Page items and pagination metadata from the API.
+ */
     getShops: async (
       limit?: number,
       offset?: number,
       sortBy?: string,
       sortOrder?: string,
       filters?: FilterType[]
-    ): Promise<ShopSimpleType[]> => {
-      setShopListLoading(true);
-      try {
-        const { data, total } = await fetchShops(limit, offset, sortBy, sortOrder, filters);
-        setShops(data, total);
-        return data;
-      } finally {
-        setShopListLoading(false);
-      }
+    ): Promise<{ data: ShopSimpleType[]; metadata: PaginationMetadata }> => {
+      const response = await apiClientInstance.get<{
+        data: ShopSimpleType[];
+        metadata: PaginationMetadata;
+      }>(`/api/v1/shop`, {
+        params: {
+          limit,
+          offset,
+          sortBy,
+          sortOrder,
+          filters: filters ? JSON.stringify(filters) : undefined,
+        },
+      });
+      return { data: response.data.data, metadata: response.data.metadata };
     },
     /**
      * Creates a shop and appends it to the in-memory list when the list is already loaded.
