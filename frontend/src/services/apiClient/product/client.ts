@@ -10,6 +10,33 @@ import type { ProductPostRequest, ProductPutRequest } from './types';
 import type { FilterType, PaginationMetadata } from '../types';
 
 /**
+ * Plain (non-hook) fetcher for paginated products. No store side effects — callers manage their own state.
+ *
+ * @returns Page payload with `data` (products) and `total` (overall match count).
+ */
+export const fetchProducts = async (
+  limit?: number,
+  offset?: number,
+  sortBy?: string,
+  sortOrder?: string,
+  filters?: FilterType[]
+): Promise<{ data: ProductSimpleType[]; total: number }> => {
+  const response = await apiClientInstance.get<{
+    data: ProductSimpleType[];
+    metadata: PaginationMetadata;
+  }>(`/api/v1/product`, {
+    params: {
+      limit,
+      offset,
+      sortBy,
+      sortOrder,
+      filters: filters ? JSON.stringify(filters) : undefined,
+    },
+  });
+  return { data: response.data.data, total: response.data.metadata.total };
+};
+
+/**
  * Hook that returns product API functions wired to the global product store.
  *
  * @returns Object with `getProduct`, `getProducts`, `postProduct`, `putProduct`, and `deleteProduct` methods.
@@ -59,20 +86,9 @@ export const useProductAPIClient = () => {
     ): Promise<ProductSimpleType[]> => {
       setProductListLoading(true);
       try {
-        const response = await apiClientInstance.get<{
-          data: ProductSimpleType[];
-          metadata: PaginationMetadata;
-        }>(`/api/v1/product`, {
-          params: {
-            limit,
-            offset,
-            sortBy,
-            sortOrder,
-            filters: filters ? JSON.stringify(filters) : undefined,
-          },
-        });
-        setProducts(response.data.data, response.data.metadata.total);
-        return response.data.data;
+        const { data, total } = await fetchProducts(limit, offset, sortBy, sortOrder, filters);
+        setProducts(data, total);
+        return data;
       } finally {
         setProductListLoading(false);
       }
