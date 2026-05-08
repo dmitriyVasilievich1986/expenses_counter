@@ -80,7 +80,7 @@ export function ProductList() {
       return;
     }
 
-    const pageParsed = parseInt(pageRaw ?? '0', limit);
+    const pageParsed = parseInt(pageRaw ?? '0', 10);
     const page = Number.isNaN(pageParsed) || pageParsed < 0 ? 0 : pageParsed;
     const filters = searchParams.get('search')
       ? [{ column: 'name', operator: 'ilike', value: searchParams.get('search') }]
