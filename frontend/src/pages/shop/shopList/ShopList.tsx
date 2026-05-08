@@ -1,8 +1,8 @@
 /**
  * Shop list route: paginated shops table with category labels and navigation to each shop.
  *
- * Syncs the current page with the `page` query parameter, fetches shops via the shop API client
- * (loading state lives in the shop store), and loads categories once for id-to-name lookup.
+ * Syncs the current page with the `page` query parameter, fetches shops into local component
+ * state, and loads categories once for id-to-name lookup.
  *
  * @module pages/shop/shopList/ShopList
  */
@@ -21,14 +21,15 @@ import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
 import TableSortLabel from '@mui/material/TableSortLabel';
 import Typography from '@mui/material/Typography';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 
 import { Image } from '@components/image';
 import { Search } from '@components/search';
-import { useShopAPIClient, useCategoryAPIClient } from '@services/apiClient';
+import { useCategoryAPIClient } from '@services/apiClient';
+import { fetchShops } from '@services/apiClient/shop';
 import { useCategoryStore } from '@store/category';
-import { useShopStore } from '@store/shop';
+import type { ShopSimpleType } from '@store/shop';
 /**
  * Renders the shop catalog in a table with skeleton loading while the list request is in flight.
  *
@@ -37,14 +38,6 @@ import { useShopStore } from '@store/shop';
 export function ShopList() {
   /** Fixed page size for shop list requests and MUI `TablePagination`. */
   const limit = 10;
-  const navigate = useNavigate();
-  const { shops, totalShops, shopListLoading } = useShopStore();
-  const categories = useCategoryStore((state) => state.categories);
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  const { getShops } = useShopAPIClient();
-  const { getCategories } = useCategoryAPIClient();
-
   const columnHeaders = [
     {
       label: 'Name',
@@ -63,6 +56,16 @@ export function ShopList() {
     },
   ];
 
+  const [shops, setShops] = useState<ShopSimpleType[] | null>(null);
+  const [totalShops, setTotalShops] = useState<number>(0);
+
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const categories = useCategoryStore((state) => state.categories);
+
+  const { getCategories } = useCategoryAPIClient();
+
   /** Keep `page` in the URL, then fetch the matching slice of shops. */
   useEffect(() => {
     const pageRaw = searchParams.get('page');
@@ -74,20 +77,32 @@ export function ShopList() {
         if (!searchParams.get('sortOrder')) previous.set('sortOrder', 'asc');
         return previous;
       });
-    } else {
-      const pageParsed = parseInt(pageRaw ?? '0', 10);
-      const page = Number.isNaN(pageParsed) || pageParsed < 0 ? 0 : pageParsed;
-      const filters = searchParams.get('search')
-        ? [{ column: 'name', operator: 'ilike', value: searchParams.get('search') }]
-        : undefined;
-      getShops(
-        limit,
-        page * limit,
-        searchParams.get('sortBy') ?? undefined,
-        searchParams.get('sortOrder') ?? undefined,
-        filters
-      );
+      return;
     }
+
+    const pageParsed = parseInt(pageRaw ?? '0', limit);
+    const page = Number.isNaN(pageParsed) || pageParsed < 0 ? 0 : pageParsed;
+    const filters = searchParams.get('search')
+      ? [{ column: 'name', operator: 'ilike', value: searchParams.get('search') }]
+      : undefined;
+
+    // Guard against out-of-order responses when params change faster than the network.
+    let cancelled = false;
+    fetchShops(
+      limit,
+      page * limit,
+      searchParams.get('sortBy') ?? undefined,
+      searchParams.get('sortOrder') ?? undefined,
+      filters
+    ).then(({ data, total }) => {
+      if (cancelled) return;
+      setShops(data);
+      setTotalShops(total);
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [searchParams]);
 
   /** Load category metadata once so table rows can resolve `categoryId` to a label. */
@@ -100,7 +115,7 @@ export function ShopList() {
     return Object.fromEntries(categories?.map((category) => [category.id, category.name]) ?? []);
   }, [categories]);
 
-  if (shopListLoading) {
+  if (shops === null) {
     return (
       <Container maxWidth="lg" sx={{ mt: 2 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
