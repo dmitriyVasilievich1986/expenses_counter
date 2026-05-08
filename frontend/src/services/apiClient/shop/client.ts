@@ -10,6 +10,33 @@ import type { ShopPostRequest, ShopPutRequest } from './types';
 import type { PaginationMetadata, FilterType } from '../types';
 
 /**
+ * Plain (non-hook) fetcher for paginated shops. No store side effects — callers manage their own state.
+ *
+ * @returns Page payload with `data` (shops) and `total` (overall match count).
+ */
+export const fetchShops = async (
+  limit?: number,
+  offset?: number,
+  sortBy?: string,
+  sortOrder?: string,
+  filters?: FilterType[]
+): Promise<{ data: ShopSimpleType[]; total: number }> => {
+  const response = await apiClientInstance.get<{
+    data: ShopSimpleType[];
+    metadata: PaginationMetadata;
+  }>(`/api/v1/shop`, {
+    params: {
+      limit,
+      offset,
+      sortBy,
+      sortOrder,
+      filters: filters ? JSON.stringify(filters) : undefined,
+    },
+  });
+  return { data: response.data.data, total: response.data.metadata.total };
+};
+
+/**
  * Hook that returns shop API functions wired to the global shop store.
  *
  * @returns Object with `getShop`, `getShops`, `postShop`, `putShop`, and `deleteShop` methods.
@@ -54,22 +81,10 @@ export const useShopAPIClient = () => {
       filters?: FilterType[]
     ): Promise<ShopSimpleType[]> => {
       setShopListLoading(true);
-      const filtersQueryParam = filters ? JSON.stringify(filters) : undefined;
       try {
-        const response = await apiClientInstance.get<{
-          data: ShopSimpleType[];
-          metadata: PaginationMetadata;
-        }>(`/api/v1/shop`, {
-          params: {
-            limit,
-            offset,
-            sortBy,
-            sortOrder,
-            filters: filtersQueryParam,
-          },
-        });
-        setShops(response.data.data, response.data.metadata.total);
-        return response.data.data;
+        const { data, total } = await fetchShops(limit, offset, sortBy, sortOrder, filters);
+        setShops(data, total);
+        return data;
       } finally {
         setShopListLoading(false);
       }
