@@ -1,8 +1,8 @@
 /**
  * Shop list route: paginated shops table with category labels and navigation to each shop.
  *
- * Syncs the current page with the `page` query parameter, fetches shops into local component
- * state, and loads categories once for id-to-name lookup.
+ * Syncs `page`, `sortBy`, `sortOrder`, and optional `search` with the URL, fetches shops into local component
+ * state using {@link useShopAPIClient} (`getShops`), and loads categories once for id-to-name lookup.
  *
  * @module pages/shop/shopList/ShopList
  */
@@ -27,7 +27,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router';
 import { Image } from '@components/image';
 import { Search } from '@components/search';
 import { useCategoryAPIClient } from '@services/apiClient';
-import { fetchShops } from '@services/apiClient/shop';
+import { useShopAPIClient } from '@services/apiClient/shop';
 import { useCategoryStore } from '@store/category';
 import type { ShopSimpleType } from '@store/shop';
 /**
@@ -65,6 +65,7 @@ export function ShopList() {
   const categories = useCategoryStore((state) => state.categories);
 
   const { getCategories } = useCategoryAPIClient();
+  const { getShops } = useShopAPIClient();
 
   /** Keep `page` in the URL, then fetch the matching slice of shops. */
   useEffect(() => {
@@ -88,17 +89,17 @@ export function ShopList() {
 
     // Guard against out-of-order responses when params change faster than the network.
     let cancelled = false;
-    fetchShops(
+    getShops(
       limit,
       page * limit,
       searchParams.get('sortBy') ?? undefined,
       searchParams.get('sortOrder') ?? undefined,
       filters
     )
-      .then(({ data, total }) => {
+      .then(({ data, metadata }) => {
         if (cancelled) return;
         setShops(data);
-        setTotalShops(total);
+        setTotalShops(metadata.total);
       })
       .catch((error) => {
         setShops([] as ShopSimpleType[]);

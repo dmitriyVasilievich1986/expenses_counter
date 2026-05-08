@@ -9,7 +9,7 @@ import Container from '@mui/material/Container';
 import Paper from '@mui/material/Paper';
 import Skeleton from '@mui/material/Skeleton';
 import Typography from '@mui/material/Typography';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 
 import { useShopAPIClient } from '@services/apiClient';
@@ -26,20 +26,32 @@ import { CreateShopForm } from './CreateShopForm';
 export function CreateShop() {
   const { shopId } = useParams();
 
-  const { currentShop, setCurrentShop, shopListLoading } = useShopStore();
+  const { currentShop, setCurrentShop } = useShopStore();
+
+  const [isLoading, setIsLoading] = useState<boolean>(!!shopId);
 
   const { getShop } = useShopAPIClient();
 
   useEffect(() => {
-    if (shopId && currentShop === null) getShop(parseInt(shopId));
+    if (shopId && currentShop === null) {
+      getShop(parseInt(shopId))
+        .then((shop) => {
+          setCurrentShop(shop);
+        })
+        .catch((error) => {
+          console.error(error);
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    }
 
-    // Cleanup function: clear currentShop when component unmounts
     return () => {
       setCurrentShop(null);
     };
   }, [shopId]);
 
-  if (shopListLoading) {
+  if (isLoading) {
     return (
       <Container maxWidth="md" sx={{ mt: 2 }}>
         <Skeleton variant="rectangular" sx={{ width: '100%', height: '400px' }} />
