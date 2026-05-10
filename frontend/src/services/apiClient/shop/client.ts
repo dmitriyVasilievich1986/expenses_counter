@@ -31,16 +31,16 @@ export const useShopAPIClient = () => {
       setCurrentShop(response.data);
       return response.data;
     },
-/**
- * Fetches a paginated list of shops. Does not update the global shop store — callers own list/total state.
- *
- * @param {number} [limit] - Page size passed as a query parameter.
- * @param {number} [offset] - Skip offset passed as a query parameter.
- * @param {string} [sortBy] - Field name used for ordering results.
- * @param {string} [sortOrder] - Sort direction (e.g. ascending or descending).
- * @param {FilterType[]} [filters] - Filters to apply to the query.
- * @returns {Promise<{ data: ShopSimpleType[]; metadata: PaginationMetadata }>} Page items and pagination metadata from the API.
- */
+    /**
+     * Fetches a paginated list of shops. Does not update the global shop store — callers own list/total state.
+     *
+     * @param {number} [limit] - Page size passed as a query parameter.
+     * @param {number} [offset] - Skip offset passed as a query parameter.
+     * @param {string} [sortBy] - Field name used for ordering results.
+     * @param {string} [sortOrder] - Sort direction (e.g. ascending or descending).
+     * @param {FilterType[]} [filters] - Filters to apply to the query.
+     * @returns {Promise<{ data: ShopSimpleType[]; metadata: PaginationMetadata }>} Page items and pagination metadata from the API.
+     */
     getShops: async (
       limit?: number,
       offset?: number,
