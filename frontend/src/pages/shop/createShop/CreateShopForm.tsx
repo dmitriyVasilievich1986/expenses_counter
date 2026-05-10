@@ -17,7 +17,6 @@ import { useShopAPIClient, useCategoryAPIClient } from '@services/apiClient';
 import type { ShopPostRequest } from '@services/apiClient/shop/types';
 import type { CategorySimpleType } from '@store/category';
 import { useCategoryStore } from '@store/category';
-import { useMainStore } from '@store/main';
 import { useShopStore } from '@store/shop';
 
 /**
@@ -28,18 +27,18 @@ import { useShopStore } from '@store/shop';
 export function CreateShopForm() {
   const navigate = useNavigate();
   const { shopId } = useParams();
-  const formRef = useRef<HTMLFormElement>(null);
+
   const { getCategories } = useCategoryAPIClient();
-  const { categories } = useCategoryStore();
 
   const currentShop = useShopStore((state) => state.currentShop);
+  const { categories, setCategories } = useCategoryStore();
+
+  const formRef = useRef<HTMLFormElement>(null);
   const [category, setCategory] = useState<CategorySimpleType | null>(
     currentShop?.category ?? null
   );
 
   const { postShop, putShop } = useShopAPIClient();
-
-  const isLoading = useMainStore((state) => state.isLoading);
 
   /** Creates a shop and navigates to its page, or updates the shop identified by `shopId`. */
   const clickHandler = async () => {
@@ -74,12 +73,12 @@ export function CreateShopForm() {
           onChange={setCategory}
           items={categories}
           getItems={getCategories}
+          setItems={setCategories}
           label="Category"
         />
       </Stack>
       <Box sx={{ display: 'flex', justifyContent: 'end', mt: 2 }}>
         <SubmitButton
-          disabled={isLoading}
           label={!shopId ? 'Create' : 'Update'}
           color={!shopId ? 'primary' : 'secondary'}
           onClick={clickHandler}
