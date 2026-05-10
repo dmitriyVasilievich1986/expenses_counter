@@ -9,7 +9,7 @@ import Container from '@mui/material/Container';
 import Paper from '@mui/material/Paper';
 import Skeleton from '@mui/material/Skeleton';
 import Typography from '@mui/material/Typography';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 
 import { useProductAPIClient } from '@services/apiClient';
@@ -25,12 +25,25 @@ import { CreateProductForm } from './CreateProductForm';
 export function CreateProduct() {
   const { productId } = useParams();
 
-  const { currentProduct, setCurrentProduct, productListLoading } = useProductStore();
+  const { currentProduct, setCurrentProduct } = useProductStore();
 
   const { getProduct } = useProductAPIClient();
 
+  const [isLoading, setIsLoading] = useState<boolean>(!!productId);
+
   useEffect(() => {
-    if (productId && currentProduct === null) getProduct(parseInt(productId));
+    if (productId && currentProduct === null) {
+      getProduct(parseInt(productId))
+        .then((product) => {
+          setCurrentProduct(product);
+        })
+        .catch((error) => {
+          console.error(error);
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    }
 
     // Cleanup function: clear currentProduct when component unmounts
     return () => {
@@ -38,7 +51,7 @@ export function CreateProduct() {
     };
   }, [productId]);
 
-  if (productListLoading) {
+  if (isLoading) {
     return (
       <Container maxWidth="md" sx={{ mt: 2 }}>
         <Skeleton variant="rectangular" sx={{ width: '100%', height: '400px' }} />

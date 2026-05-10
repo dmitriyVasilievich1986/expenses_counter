@@ -18,7 +18,6 @@ import { useProductAPIClient } from '@services/apiClient/product/client';
 import type { ProductPostRequest } from '@services/apiClient/product/types';
 import type { CategorySimpleType } from '@store/category';
 import { useCategoryStore } from '@store/category';
-import { useMainStore } from '@store/main';
 import { useProductStore } from '@store/product';
 
 /**
@@ -36,8 +35,7 @@ export function CreateProductForm() {
   const { postProduct, putProduct } = useProductAPIClient();
 
   const currentProduct = useProductStore((state) => state.currentProduct);
-  const categories = useCategoryStore((state) => state.categories);
-  const isLoading = useMainStore((state) => state.isLoading);
+  const { categories, setCategories } = useCategoryStore();
 
   const [category, setCategory] = useState<CategorySimpleType | null>(
     currentProduct?.category ?? null
@@ -75,12 +73,12 @@ export function CreateProductForm() {
           onChange={setCategory}
           items={categories}
           getItems={getCategories}
+          setItems={setCategories}
           label="Category"
         />
       </Stack>
       <Box sx={{ display: 'flex', justifyContent: 'end', mt: 2 }}>
         <SubmitButton
-          disabled={isLoading}
           label={!productId ? 'Create' : 'Update'}
           color={!productId ? 'primary' : 'secondary'}
           onClick={clickHandler}

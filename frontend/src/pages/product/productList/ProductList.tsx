@@ -26,7 +26,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router';
 
 import { Search } from '@components/search';
 import { useCategoryAPIClient } from '@services/apiClient';
-import { fetchProducts } from '@services/apiClient/product';
+import { useProductAPIClient } from '@services/apiClient/product/client';
 import { useCategoryStore } from '@store/category';
 import type { ProductSimpleType } from '@store/product';
 
@@ -59,12 +59,13 @@ export function ProductList() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [products, setProducts] = useState<ProductSimpleType[] | null>(null);
-  const [totalProducts, setTotalProducts] = useState<number>(0);
+  const [productsTable, setProductsTable] = useState<ProductSimpleType[] | null>(null);
+  const [totalProductsTable, setTotalProductsTable] = useState<number>(0);
 
   const categories = useCategoryStore((state) => state.categories);
 
   const { getCategories } = useCategoryAPIClient();
+  const { getProducts } = useProductAPIClient();
 
   /** Keep `page` in the URL, then fetch the matching slice of products. */
   useEffect(() => {
@@ -88,21 +89,21 @@ export function ProductList() {
 
     // Guard against out-of-order responses when params change faster than the network.
     let cancelled = false;
-    fetchProducts(
+    getProducts(
       limit,
       page * limit,
       searchParams.get('sortBy') ?? undefined,
       searchParams.get('sortOrder') ?? undefined,
       filters
     )
-      .then(({ data, total }) => {
+      .then(({ data, metadata }) => {
         if (cancelled) return;
-        setProducts(data);
-        setTotalProducts(total);
+        setProductsTable(data);
+        setTotalProductsTable(metadata.total);
       })
       .catch((error) => {
-        setProducts([] as ProductSimpleType[]);
-        setTotalProducts(0);
+        setProductsTable([] as ProductSimpleType[]);
+        setTotalProductsTable(0);
         console.error('Error fetching products:', error);
       });
 
@@ -121,7 +122,7 @@ export function ProductList() {
     return Object.fromEntries(categories?.map((category) => [category.id, category.name]) ?? []);
   }, [categories]);
 
-  if (products === null) {
+  if (productsTable === null) {
     return (
       <Container maxWidth="lg" sx={{ mt: 2 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
@@ -172,7 +173,7 @@ export function ProductList() {
             ))}
           </TableHead>
           <TableBody>
-            {(products ?? []).map((product) => (
+            {(productsTable ?? []).map((product) => (
               <TableRow key={product.id} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
                 <TableCell component="th" scope="row">
                   <Link
@@ -197,7 +198,7 @@ export function ProductList() {
         </Table>
         <TablePagination
           component="div"
-          count={totalProducts}
+          count={totalProductsTable}
           rowsPerPage={limit}
           page={parseInt(searchParams.get('page') ?? '0')}
           onPageChange={(_, page) => setSearchParams({ page: page.toString() })}
