@@ -1,3 +1,10 @@
+/**
+ * Transaction create/update form: address and product async pickers, price and count inputs, and submit/delete actions.
+ * Uses `currentTransaction` and `currentDate` from the transaction store when editing; parent route supplies `transactionId`.
+ *
+ * @module pages/transaction/createTransaction/CreateTransaction
+ */
+
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Paper from '@mui/material/Paper';
@@ -16,6 +23,11 @@ import { useProductStore, type ProductSimpleType } from '@store/product';
 import { useShopStore, type AddressType } from '@store/shop';
 import { useTransactionStore } from '@store/transaction';
 
+/**
+ * Renders the transaction form with async-loaded addresses and products; creates via POST or updates via PUT.
+ *
+ * @returns The transaction form wrapped in MUI `Container` / `Paper`.
+ */
 export function CreateTransaction() {
   const navigate = useNavigate();
   const { transactionId } = useParams();
@@ -35,6 +47,7 @@ export function CreateTransaction() {
     currentTransaction?.product ?? null
   );
 
+  /** Builds payload from the form and store date, then POST (navigate to new id) or PUT when `transactionId` is set. */
   const clickHandler = async () => {
     const formData = new FormData(formRef.current as HTMLFormElement);
     const data = Object.fromEntries(formData.entries()) as unknown as TransactionPostRequest;
@@ -54,6 +67,7 @@ export function CreateTransaction() {
     }
   };
 
+  /** Deletes the transaction for the route id and navigates back to the transaction list. */
   const deleteHandler = async () => {
     await deleteTransaction(parseInt(transactionId as string));
     navigate('/transaction');
