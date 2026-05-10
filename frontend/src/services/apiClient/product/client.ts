@@ -10,52 +10,13 @@ import type { ProductPostRequest, ProductPutRequest } from './types';
 import type { FilterType, PaginationMetadata } from '../types';
 
 /**
- * Plain (non-hook) fetcher for paginated products. No store side effects — callers manage their own state.
- *
- * @param {number} [limit] - Page size query parameter.
- * @param {number} [offset] - Skip offset query parameter.
- * @param {string} [sortBy] - Field name used for ordering results.
- * @param {string} [sortOrder] - Sort direction (e.g. ascending or descending).
- * @param {FilterType[]} [filters] - Filters to apply to the query.
- * @returns Page payload with `data` (products) and `total` (overall match count from API metadata).
- */
-export const fetchProducts = async (
-  limit?: number,
-  offset?: number,
-  sortBy?: string,
-  sortOrder?: string,
-  filters?: FilterType[]
-): Promise<{ data: ProductSimpleType[]; total: number }> => {
-  const response = await apiClientInstance.get<{
-    data: ProductSimpleType[];
-    metadata: PaginationMetadata;
-  }>(`/api/v1/product`, {
-    params: {
-      limit,
-      offset,
-      sortBy,
-      sortOrder,
-      filters: filters ? JSON.stringify(filters) : undefined,
-    },
-  });
-  return { data: response.data.data, total: response.data.metadata.total };
-};
-
-/**
  * Hook that returns product API functions wired to the global product store.
  *
  * @returns Object with `getProduct`, `getProducts`, `postProduct`, `putProduct`, and `deleteProduct` methods.
  */
 export const useProductAPIClient = () => {
-  const {
-    setProducts,
-    setProductListLoading,
-    addProducts,
-    updateProduct,
-    deleteProduct,
-    setCurrentProduct,
-    products,
-  } = useProductStore();
+  const { addProducts, updateProduct, deleteProduct, setCurrentProduct, products } =
+    useProductStore();
   const { wrapper } = useApiClientWrapper();
 
   return {
@@ -66,14 +27,8 @@ export const useProductAPIClient = () => {
      * @returns {Promise<ProductType>} Full product entity from the API.
      */
     getProduct: async (id: number): Promise<ProductType> => {
-      try {
-        setProductListLoading(true);
-        const response = await apiClientInstance.get<ProductType>(`/api/v1/product/${id}`);
-        setCurrentProduct(response.data);
-        return response.data;
-      } finally {
-        setProductListLoading(false);
-      }
+      const response = await apiClientInstance.get<ProductType>(`/api/v1/product/${id}`);
+      return response.data;
     },
     /**
      * Loads a paginated list of products and updates the store with items and total count.
@@ -91,15 +46,20 @@ export const useProductAPIClient = () => {
       sortBy?: string,
       sortOrder?: string,
       filters?: FilterType[]
-    ): Promise<ProductSimpleType[]> => {
-      setProductListLoading(true);
-      try {
-        const { data, total } = await fetchProducts(limit, offset, sortBy, sortOrder, filters);
-        setProducts(data, total);
-        return data;
-      } finally {
-        setProductListLoading(false);
-      }
+    ): Promise<{ data: ProductSimpleType[]; metadata: PaginationMetadata }> => {
+      const response = await apiClientInstance.get<{
+        data: ProductSimpleType[];
+        metadata: PaginationMetadata;
+      }>(`/api/v1/product`, {
+        params: {
+          limit,
+          offset,
+          sortBy,
+          sortOrder,
+          filters: filters ? JSON.stringify(filters) : undefined,
+        },
+      });
+      return response.data;
     },
     /**
      * Creates a product and appends it to the in-memory list when the list is already loaded.
