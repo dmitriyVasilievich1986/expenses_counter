@@ -1,5 +1,6 @@
 /**
- * Public entry for the product API client: re-exports the REST hook and request payload types used by callers.
+ * Public entry for the product API client: re-exports {@link fetchProducts}, {@link useProductAPIClient},
+ * and request payload types used by callers.
  *
  * @module services/apiClient/product
  */

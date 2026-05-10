@@ -12,7 +12,12 @@ import type { FilterType, PaginationMetadata } from '../types';
 /**
  * Plain (non-hook) fetcher for paginated products. No store side effects — callers manage their own state.
  *
- * @returns Page payload with `data` (products) and `total` (overall match count).
+ * @param {number} [limit] - Page size query parameter.
+ * @param {number} [offset] - Skip offset query parameter.
+ * @param {string} [sortBy] - Field name used for ordering results.
+ * @param {string} [sortOrder] - Sort direction (e.g. ascending or descending).
+ * @param {FilterType[]} [filters] - Filters to apply to the query.
+ * @returns Page payload with `data` (products) and `total` (overall match count from API metadata).
  */
 export const fetchProducts = async (
   limit?: number,
@@ -75,6 +80,9 @@ export const useProductAPIClient = () => {
      *
      * @param {number} [limit] - Page size passed as a query parameter.
      * @param {number} [offset] - Skip offset passed as a query parameter.
+     * @param {string} [sortBy] - Field name used for ordering results.
+     * @param {string} [sortOrder] - Sort direction (e.g. ascending or descending).
+     * @param {FilterType[]} [filters] - Filters to apply to the query.
      * @returns {Promise<ProductSimpleType[]>} Products for the requested page.
      */
     getProducts: async (
