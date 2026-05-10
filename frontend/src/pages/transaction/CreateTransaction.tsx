@@ -22,15 +22,15 @@ export function CreateTransaction() {
   const formRef = useRef<HTMLFormElement>(null);
 
   const { currentTransaction, currentDate } = useTransactionStore();
+  const { products, setProducts } = useProductStore();
+  const { addresses, setAddresses } = useShopStore();
 
   const { postTransaction, putTransaction, deleteTransaction } = useTransactionAPIClient();
-
   const { getAddresses } = useAddressAPIClient();
-  const { addresses } = useShopStore();
+  const { getProducts } = useProductAPIClient();
+
   const [address, setAddress] = useState<AddressType | null>(currentTransaction?.address ?? null);
 
-  const { getProducts } = useProductAPIClient();
-  const { products } = useProductStore();
   const [product, setProduct] = useState<ProductSimpleType | null>(
     currentTransaction?.product ?? null
   );
@@ -69,6 +69,7 @@ export function CreateTransaction() {
               onChange={setAddress}
               items={addresses}
               getItems={getAddresses}
+              setItems={setAddresses}
               label="Address"
               nameColumn="localName"
             />
@@ -77,6 +78,7 @@ export function CreateTransaction() {
               onChange={setProduct}
               items={products}
               getItems={getProducts}
+              setItems={setProducts}
               label="Product"
               link="/product"
             />
