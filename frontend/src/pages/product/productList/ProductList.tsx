@@ -1,8 +1,8 @@
 /**
  * Product list route: paginated products table with category labels and navigation to each product.
  *
- * Syncs the current page with the `page` query parameter, fetches products into local component
- * state, and loads categories once for id-to-name lookup.
+ * Syncs `page`, `sortBy`, `sortOrder`, and optional `search` with the URL, fetches products into local component
+ * state via {@link fetchProducts}, and loads categories once for id-to-name lookup.
  *
  * @module pages/product/productList/ProductList
  */
