@@ -1,0 +1,31 @@
+*.env
+*.sqlite3
+
+logs/
+venv/
+.venv/
+.ruff_cache/
+.DS_Store
+build/
+htmlcov/
+.pytest_cache/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+notebooks/
+
+### Python template
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+# C extensions
+*.so

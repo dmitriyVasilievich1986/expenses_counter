@@ -1,53 +1,59 @@
-# frontend build
+FROM node:24-slim AS frontend
 
-ARG DOCKER_DEFAULT_PLATFORM=linux/amd64
-ARG BUILDPLATFORM=${BUILDPLATFORM:-amd64}
-FROM --platform=${BUILDPLATFORM} node:18-bullseye-slim AS frontend
+WORKDIR /opt/frontend
 
-LABEL author="dmitriyvasil@gmail.com"
+COPY ./frontend /opt/frontend
 
-WORKDIR /app/frontend
-RUN --mount=type=bind,target=/app/frontend/package.json,src=./frontend/package.json \
-    --mount=type=bind,target=/app/frontend/package-lock.json,src=./frontend/package-lock.json \
-    npm ci
+RUN mkdir -p /opt/backend/static
+RUN npm ci
+RUN npm run build
 
-COPY ./frontend /app/frontend
-RUN mkdir -p /app/expense_counter/static/js && npm run build
+FROM python:3.13-slim-bookworm AS build
 
-# backend build
+ENV UV_COMPILE_BYTECODE=1
+ENV UV_LINK_MODE=copy
+ENV UV_PYTHON_DOWNLOADS=0
 
-FROM python:3.10-slim-bookworm AS backend
+# Install UV
+COPY --from=ghcr.io/astral-sh/uv:0.6 /uv /bin/uv
 
-LABEL author="dmitriyvasil@gmail.com"
+WORKDIR /opt/backend
 
-ENV LANG=C.UTF-8 \
-    LC_ALL=C.UTF-8 \
-    PYTHONPATH="/app/pythonpath" \
-    HOME_FOLDER="/app/ecounter" \
-    DJANGO_SETTINGS_MODULE=expense_counter.settings
+# Install dependencies from pyproject.toml
+COPY ./backend/pyproject.toml ./
+COPY ./backend/uv.lock ./
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --no-dev --no-install-project --link-mode=copy --no-editable
 
-WORKDIR /app
-RUN mkdir -p ${PYTHONPATH} static requirements frontend requirements \
-    && useradd --user-group -d ${HOME_FOLDER} -m --no-log-init --shell /bin/bash ecounter \
-    && apt-get update -qq \
-    && chown -R ecounter:ecounter ./* \
-    && rm -rf /var/lib/apt/lists/*
+FROM python:3.13-slim-bookworm AS development
 
-COPY --chown=ecounter:ecounter ./LICENSE /app
-COPY --chown=ecounter:ecounter ./README.md /app
-COPY --chown=ecounter:ecounter ./pyproject.toml /app
-COPY --chown=ecounter:ecounter ./frontend/package.json /app/frontend
-COPY --chown=ecounter:ecounter ./requirements/base.txt /app/requirements
+COPY --from=build /opt/backend/.venv /opt/backend/.venv
 
-COPY --chown=ecounter:ecounter ./expense_counter /app/expense_counter
-RUN --mount=type=cache,target=/root/.cache/pip \
-pip install --upgrade pip \
-&& pip install -r requirements/base.txt
+WORKDIR /opt/backend
 
-COPY --chown=ecounter:ecounter --from=frontend /app/expense_counter/static/js /app/expense_counter/static/js
+# Add application
+COPY ./backend/src ./src
+COPY ./backend/pyproject.toml ./
 
-EXPOSE 3000
+# Add frontend
+COPY --from=frontend /opt/backend/static /opt/backend/static
 
-COPY --chown=ecounter:ecounter --chmod=755 ./runserver.py /app/
+# Add configurations
+COPY ./backend/configurations ./configurations
 
-CMD ["python", "/app/runserver.py"]
+ENV PYTHONPATH="/opt/backend/src"
+ENV PATH="/opt/backend/.venv/bin:${PATH}"
+
+FROM python:3.13-slim-bookworm AS production
+
+WORKDIR /opt/backend
+
+COPY --from=development /opt/backend /opt/backend
+
+# Add binaries for run inside container
+ENV PYTHONPATH="/opt/backend/src"
+ENV PATH="/opt/backend/.venv/bin:${PATH}"
+
+EXPOSE 8000
+
+ENTRYPOINT ["python", "-m", "uvicorn", "expenses_counter.modules.app:get_app", "--host", "0.0.0.0", "--port", "8000"]

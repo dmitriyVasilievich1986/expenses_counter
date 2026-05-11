@@ -1,0 +1,1 @@
+"""Responses schemas module."""
