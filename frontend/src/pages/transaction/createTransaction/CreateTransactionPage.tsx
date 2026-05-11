@@ -8,7 +8,7 @@
 
 import Container from '@mui/material/Container';
 import Skeleton from '@mui/material/Skeleton';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useParams } from 'react-router';
 
 import { useTransactionAPIClient } from '@services/apiClient/transaction';
@@ -26,27 +26,33 @@ export function CreateTransactionPage() {
 
   const { getTransaction } = useTransactionAPIClient();
 
-  const { setCurrentTransaction } = useTransactionStore();
+  const { currentTransaction, setCurrentTransaction } = useTransactionStore();
 
-  const [isLoading, setIsLoading] = useState<boolean>(!!transactionId);
+  const isLoading =
+    (transactionId === undefined && currentTransaction !== null) ||
+    (transactionId !== undefined && currentTransaction?.id !== parseInt(transactionId as string));
 
   useEffect(() => {
-    if (transactionId) {
-      getTransaction(parseInt(transactionId))
-        .then((transaction) => {
-          setCurrentTransaction(transaction);
-        })
-        .catch((error) => {
-          console.error(error);
-        })
-        .finally(() => {
-          setIsLoading(false);
-        });
-    } else {
+    if (!transactionId) {
       setCurrentTransaction(null);
+      return;
     }
 
+    let cancelled = false;
+
+    void getTransaction(parseInt(transactionId, 10))
+      .then((transaction) => {
+        if (!cancelled) {
+          setCurrentTransaction(transaction);
+        }
+      })
+      .catch((error) => {
+        console.error(error);
+        setCurrentTransaction(null);
+      });
+
     return () => {
+      cancelled = true;
       setCurrentTransaction(null);
     };
   }, [transactionId]);
