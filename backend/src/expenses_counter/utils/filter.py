@@ -3,9 +3,9 @@
 __all__ = ("Filter",)
 
 from datetime import date, datetime
-from typing import Any, Literal
+from typing import Any, Literal, Self
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.sql import ColumnElement
 
@@ -21,7 +21,25 @@ class Filter[ColumnType: str](BaseModel):
     operator: Literal["isnull", "notnull", "eq", "ge", "gt", "le", "lt", "like", "ilike"] = Field(
         ..., description="The operator to use for the filter"
     )
-    value: str | int | None | datetime | date | float = Field(..., description="The value to filter by")
+    value: str | int | float | date | None = Field(..., description="The value to filter by")
+
+    @model_validator(mode="after")
+    def coerce_iso_date_strings_for_comparison(self) -> Self:
+        """Parse ``YYYY-MM-DD`` string values as ``date`` for comparison operators only.
+
+        ``like`` and ``ilike`` keep the original string so patterns stay intact.
+        """
+        if self.operator in ("like", "ilike", "isnull", "notnull"):
+            return self
+
+        if isinstance(self.value, str):
+            try:
+                parsed = datetime.strptime(self.value, "%Y-%m-%d").date()
+                return self.model_copy(update={"value": parsed})
+            except ValueError:
+                return self
+
+        return self
 
     def to_sqlalchemy_filter(self, cls: type[DeclarativeBase]) -> ColumnElement[bool]:
         """Build a SQL expression that applies this filter to ``cls``.
