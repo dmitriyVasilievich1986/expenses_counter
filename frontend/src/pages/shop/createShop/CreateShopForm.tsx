@@ -1,3 +1,10 @@
+/**
+ * Shop name/description/icon and category form: creates a new shop or updates the current one from the route,
+ * using `currentShop` from the store for defaults when editing.
+ *
+ * @module pages/shop/createShop/CreateShopForm
+ */
+
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import { useRef, useState } from 'react';
@@ -10,25 +17,30 @@ import { useShopAPIClient, useCategoryAPIClient } from '@services/apiClient';
 import type { ShopPostRequest } from '@services/apiClient/shop/types';
 import type { CategorySimpleType } from '@store/category';
 import { useCategoryStore } from '@store/category';
-import { useMainStore } from '@store/main';
 import { useShopStore } from '@store/shop';
 
+/**
+ * Renders the shop fields, category picker, and a submit button wired to POST or PUT via the shop API.
+ *
+ * @returns The shop create/update form.
+ */
 export function CreateShopForm() {
   const navigate = useNavigate();
   const { shopId } = useParams();
-  const formRef = useRef<HTMLFormElement>(null);
+
   const { getCategories } = useCategoryAPIClient();
-  const { categories } = useCategoryStore();
 
   const currentShop = useShopStore((state) => state.currentShop);
+  const { categories, setCategories } = useCategoryStore();
+
+  const formRef = useRef<HTMLFormElement>(null);
   const [category, setCategory] = useState<CategorySimpleType | null>(
     currentShop?.category ?? null
   );
 
   const { postShop, putShop } = useShopAPIClient();
 
-  const isLoading = useMainStore((state) => state.isLoading);
-
+  /** Creates a shop and navigates to its page, or updates the shop identified by `shopId`. */
   const clickHandler = async () => {
     const formData = new FormData(formRef.current as HTMLFormElement);
     const data = Object.fromEntries(formData.entries()) as unknown as ShopPostRequest;
@@ -61,13 +73,14 @@ export function CreateShopForm() {
           onChange={setCategory}
           items={categories}
           getItems={getCategories}
+          setItems={setCategories}
           label="Category"
         />
       </Stack>
       <Box sx={{ display: 'flex', justifyContent: 'end', mt: 2 }}>
         <SubmitButton
-          disabled={isLoading}
-          variant={!shopId ? 'create' : 'update'}
+          label={!shopId ? 'Create' : 'Update'}
+          color={!shopId ? 'primary' : 'secondary'}
           onClick={clickHandler}
         />
       </Box>

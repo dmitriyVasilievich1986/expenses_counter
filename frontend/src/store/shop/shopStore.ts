@@ -14,19 +14,13 @@ export const useShopStore = create<ShopStoreStateType>()(
   devtools((set) => ({
     shops: null,
     currentShop: null,
-    totalShops: 0,
-    shopListLoading: false,
     addresses: null,
     setCurrentShop: (shop) => set({ currentShop: shop }, undefined, 'setCurrentShop'),
-    setShops: (shops, totalShops) =>
-      set({ shops: shops, totalShops: totalShops }, undefined, 'setShops'),
-    setShopListLoading: (loading) =>
-      set({ shopListLoading: loading }, undefined, 'setShopListLoading'),
+    setShops: (shops) => set({ shops: shops }, undefined, 'setShops'),
     addShops: (shops) =>
       set(
         (state) => ({
           shops: [...(state.shops ?? []), ...shops],
-          totalShops: state.totalShops + shops.length,
         }),
         undefined,
         'addShops'
@@ -43,7 +37,6 @@ export const useShopStore = create<ShopStoreStateType>()(
       set(
         (state) => ({
           shops: (state.shops as ShopSimpleType[]).filter((s) => s.id !== id),
-          totalShops: state.totalShops - 1,
         }),
         undefined,
         'deleteShop'

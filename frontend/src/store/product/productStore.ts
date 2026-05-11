@@ -13,19 +13,13 @@ export const useProductStore = create<ProductStoreStateType>()(
   devtools((set) => ({
     products: null,
     currentProduct: null,
-    totalProducts: 0,
-    productListLoading: false,
     setCurrentProduct: (product) =>
       set({ currentProduct: product }, undefined, 'setCurrentProduct'),
-    setProducts: (products, totalProducts) =>
-      set({ products: products, totalProducts: totalProducts }, undefined, 'setProducts'),
-    setProductListLoading: (loading) =>
-      set({ productListLoading: loading }, undefined, 'setProductListLoading'),
+    setProducts: (products) => set({ products: products }, undefined, 'setProducts'),
     addProducts: (products) =>
       set(
         (state) => ({
           products: [...(state.products ?? []), ...products],
-          totalProducts: state.totalProducts + products.length,
         }),
         undefined,
         'addProducts'
@@ -44,7 +38,6 @@ export const useProductStore = create<ProductStoreStateType>()(
       set(
         (state) => ({
           products: (state.products as ProductSimpleType[]).filter((p) => p.id !== id),
-          totalProducts: state.totalProducts - 1,
         }),
         undefined,
         'deleteProduct'

@@ -1,3 +1,10 @@
+/**
+ * Single-address editor card: shows fields for one shop address and triggers update/delete via the address API,
+ * using `shopId` from the route params.
+ *
+ * @module pages/shop/createShop/addressList/AddressCard
+ */
+
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
@@ -11,11 +18,19 @@ import { useAddressAPIClient } from '@services/apiClient';
 import type { AddressPutRequest } from '@services/apiClient/address/types';
 import type { AddressType } from '@store/shop';
 
+/**
+ * Renders a paper card with a form to edit an address and buttons to persist or remove it.
+ *
+ * @param props - Component props.
+ * @param props.address - Address row to display and submit updates for.
+ * @returns The address edit card UI.
+ */
 export function AddressCard(props: { address: AddressType }) {
   const { shopId } = useParams();
   const { putCurrentShopAddress, deleteCurrentShopAddress } = useAddressAPIClient();
   const formRef = useRef<HTMLFormElement>(null);
 
+  /** Submits the form as a PUT update for this card's address. */
   const updateHandler = () => {
     const formData = new FormData(formRef.current as HTMLFormElement);
     const data = Object.fromEntries(formData.entries()) as unknown as AddressPutRequest;
@@ -23,6 +38,7 @@ export function AddressCard(props: { address: AddressType }) {
     putCurrentShopAddress(addressId, data);
   };
 
+  /** Deletes this card's address via the API. */
   const deleteHandler = () => {
     const addressId = props.address.id;
     deleteCurrentShopAddress(addressId);
@@ -41,8 +57,8 @@ export function AddressCard(props: { address: AddressType }) {
         </Stack>
         <Box sx={{ display: 'flex', justifyContent: 'end', mt: 2 }}>
           <Stack direction="row" spacing={1}>
-            <SubmitButton variant="delete" onClick={deleteHandler} />
-            <SubmitButton variant="update" onClick={updateHandler} />
+            <SubmitButton label="Delete" color="error" onClick={deleteHandler} />
+            <SubmitButton label="Update" color="secondary" onClick={updateHandler} />
           </Stack>
         </Box>
       </form>

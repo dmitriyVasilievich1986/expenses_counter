@@ -33,10 +33,8 @@ export type ProductType = ProductSimpleType & {
  *
  * @property {(ProductSimpleType[] | null)} products - Cached list page; null until loaded.
  * @property {(ProductType | null)} currentProduct - Product selected for detail/edit flows.
- * @property {number} totalProducts - Total count from the server for pagination (not necessarily `products.length`).
- * @property {boolean} productListLoading - True while a product list request is in flight.
  * @property {(product: ProductType | null) => void} setCurrentProduct - Sets or clears the detail product.
- * @property {(products: ProductSimpleType[], totalProducts: number) => void} setProducts - Replaces the list and total count.
+ * @property {(products: ProductSimpleType[]) => void} setProducts - Replaces the list and total count.
  * @property {(loading: boolean) => void} setProductListLoading - Updates list loading flag.
  * @property {(products: ProductSimpleType[]) => void} addProducts - Appends products to the cached list.
  * @property {(product: ProductSimpleType) => void} updateProduct - Merges one product into the cached list by id.
@@ -45,11 +43,8 @@ export type ProductType = ProductSimpleType & {
 export type ProductStoreStateType = {
   products: ProductSimpleType[] | null;
   currentProduct: ProductType | null;
-  totalProducts: number;
-  productListLoading: boolean;
   setCurrentProduct: (product: ProductType | null) => void;
-  setProducts: (products: ProductSimpleType[], totalProducts: number) => void;
-  setProductListLoading: (loading: boolean) => void;
+  setProducts: (products: ProductSimpleType[]) => void;
   addProducts: (products: ProductSimpleType[]) => void;
   updateProduct: (product: ProductSimpleType) => void;
   deleteProduct: (id: number) => void;

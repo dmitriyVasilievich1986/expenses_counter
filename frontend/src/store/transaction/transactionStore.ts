@@ -1,9 +1,16 @@
+/**
+ * Zustand store for transactions: list (`null` until loaded), calendar date selection, and the transaction in focus.
+ *
+ * Wrapped with Redux DevTools middleware for debugging.
+ */
+
 import dayjs from 'dayjs';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
 import type { TransactionType, TransactionStoreStateType } from './types';
 
+/** Hook returning transaction store state and actions (see {@link TransactionStoreStateType}). */
 export const useTransactionStore = create<TransactionStoreStateType>()(
   devtools((set) => ({
     transactions: null,

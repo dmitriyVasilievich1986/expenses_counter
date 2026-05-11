@@ -1,8 +1,8 @@
 /**
  * Product list route: paginated products table with category labels and navigation to each product.
  *
- * Syncs the current page with the `page` query parameter, fetches products via the product API client
- * (loading state lives in the product store), and loads categories once for id-to-name lookup.
+ * Syncs `page`, `sortBy`, `sortOrder`, and optional `search` with the URL, fetches products into local component
+ * state via {@link fetchProducts}, and loads categories once for id-to-name lookup.
  *
  * @module pages/product/productList/ProductList
  */
@@ -21,31 +21,14 @@ import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
 import TableSortLabel from '@mui/material/TableSortLabel';
 import Typography from '@mui/material/Typography';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 
 import { Search } from '@components/search';
-import { useProductAPIClient, useCategoryAPIClient } from '@services/apiClient';
+import { useCategoryAPIClient } from '@services/apiClient';
+import { useProductAPIClient } from '@services/apiClient/product/client';
 import { useCategoryStore } from '@store/category';
-import { useProductStore } from '@store/product';
-
-const columnHeaders = [
-  {
-    label: 'Name',
-    key: 'name',
-    isSortable: true,
-  },
-  {
-    label: 'Category',
-    key: 'category',
-    isSortable: false,
-  },
-  {
-    label: 'Description',
-    key: 'description',
-    isSortable: false,
-  },
-];
+import type { ProductSimpleType } from '@store/product';
 
 /**
  * Renders the product catalog in a table with skeleton loading while the list request is in flight.
@@ -55,15 +38,34 @@ const columnHeaders = [
 export function ProductList() {
   /** Fixed page size for product list requests and MUI `TablePagination`. */
   const limit = 10;
+  const columnHeaders = [
+    {
+      label: 'Name',
+      key: 'name',
+      isSortable: true,
+    },
+    {
+      label: 'Category',
+      key: 'category',
+      isSortable: false,
+    },
+    {
+      label: 'Description',
+      key: 'description',
+      isSortable: false,
+    },
+  ];
+
   const navigate = useNavigate();
-  const products = useProductStore((state) => state.products);
-  const totalProducts = useProductStore((state) => state.totalProducts);
-  const categories = useCategoryStore((state) => state.categories);
-  const productListLoading = useProductStore((state) => state.productListLoading);
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const { getProducts } = useProductAPIClient();
+  const [productsTable, setProductsTable] = useState<ProductSimpleType[] | null>(null);
+  const [totalProductsTable, setTotalProductsTable] = useState<number>(0);
+
+  const categories = useCategoryStore((state) => state.categories);
+
   const { getCategories } = useCategoryAPIClient();
+  const { getProducts } = useProductAPIClient();
 
   /** Keep `page` in the URL, then fetch the matching slice of products. */
   useEffect(() => {
@@ -76,20 +78,38 @@ export function ProductList() {
         if (!searchParams.get('sortOrder')) previous.set('sortOrder', 'asc');
         return previous;
       });
-    } else {
-      const pageParsed = parseInt(pageRaw ?? '0', 10);
-      const page = Number.isNaN(pageParsed) || pageParsed < 0 ? 0 : pageParsed;
-      const filters = searchParams.get('search')
-        ? [{ column: 'name', operator: 'ilike', value: searchParams.get('search') }]
-        : undefined;
-      getProducts(
-        limit,
-        page * limit,
-        searchParams.get('sortBy') ?? undefined,
-        searchParams.get('sortOrder') ?? undefined,
-        filters
-      );
+      return;
     }
+
+    const pageParsed = parseInt(pageRaw ?? '0', 10);
+    const page = Number.isNaN(pageParsed) || pageParsed < 0 ? 0 : pageParsed;
+    const filters = searchParams.get('search')
+      ? [{ column: 'name', operator: 'ilike', value: searchParams.get('search') }]
+      : undefined;
+
+    // Guard against out-of-order responses when params change faster than the network.
+    let cancelled = false;
+    getProducts(
+      limit,
+      page * limit,
+      searchParams.get('sortBy') ?? undefined,
+      searchParams.get('sortOrder') ?? undefined,
+      filters
+    )
+      .then(({ data, metadata }) => {
+        if (cancelled) return;
+        setProductsTable(data);
+        setTotalProductsTable(metadata.total);
+      })
+      .catch((error) => {
+        setProductsTable([] as ProductSimpleType[]);
+        setTotalProductsTable(0);
+        console.error('Error fetching products:', error);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [searchParams]);
 
   /** Load category metadata once so table rows can resolve `categoryId` to a label. */
@@ -102,7 +122,7 @@ export function ProductList() {
     return Object.fromEntries(categories?.map((category) => [category.id, category.name]) ?? []);
   }, [categories]);
 
-  if (productListLoading) {
+  if (productsTable === null) {
     return (
       <Container maxWidth="lg" sx={{ mt: 2 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
@@ -153,7 +173,7 @@ export function ProductList() {
             ))}
           </TableHead>
           <TableBody>
-            {(products ?? []).map((product) => (
+            {(productsTable ?? []).map((product) => (
               <TableRow key={product.id} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
                 <TableCell component="th" scope="row">
                   <Link
@@ -178,7 +198,7 @@ export function ProductList() {
         </Table>
         <TablePagination
           component="div"
-          count={totalProducts}
+          count={totalProductsTable}
           rowsPerPage={limit}
           page={parseInt(searchParams.get('page') ?? '0')}
           onPageChange={(_, page) => setSearchParams({ page: page.toString() })}
