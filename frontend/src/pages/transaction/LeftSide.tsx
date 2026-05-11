@@ -1,3 +1,10 @@
+/**
+ * Transaction calendar column: month-scoped fetch into the transaction store, selected day in the URL (`date` query),
+ * and per-day spend totals under each `PickersDay`.
+ *
+ * @module pages/transaction/LeftSide
+ */
+
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -9,34 +16,72 @@ import _ from 'lodash';
 import { useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 
+import type { TransactionType } from '@store/transaction';
+
 import { useTransactionAPIClient } from '../../services/apiClient/transaction';
 import { useTransactionStore } from '../../store/transaction';
 
 import type { Dayjs } from 'dayjs';
 
+/**
+ * Renders MUI `DateCalendar` wired to `?date=YYYY-MM-DD`, loads all transactions for the visible month into the store,
+ * and shows line totals (`price * count`) under days that have activity.
+ *
+ * @returns The localized date calendar and custom day slots.
+ */
 export function LeftSide() {
-  const { transactions } = useTransactionStore();
-  const { getTransactions } = useTransactionAPIClient();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+
+  const { transactions, setTransactions } = useTransactionStore();
+
+  const { getTransactions } = useTransactionAPIClient();
 
   const currentDate = useMemo(() => {
     const dateParam = searchParams.get('date');
     return dateParam ? dayjs(dateParam) : dayjs();
   }, [searchParams]);
 
+  /** Fetches every page of transactions between the month's start and end (inclusive) and replaces the store list. */
+  const handleMonthChange = async (date: Dayjs | null) => {
+    if (date === null) return;
+
+    const startDate = date.startOf('month').format('YYYY-MM-DD');
+    const endDate = date.endOf('month').format('YYYY-MM-DD');
+    let total = 1000;
+    const payload: TransactionType[] = [];
+    const filters = [
+      { column: 'date', operator: 'ge', value: startDate },
+      { column: 'date', operator: 'le', value: endDate },
+    ];
+
+    while (payload.length < total) {
+      try {
+        const { data, metadata } = await getTransactions(
+          100,
+          payload.length,
+          undefined,
+          undefined,
+          filters
+        );
+        payload.push(...data);
+        total = metadata.total;
+      } catch (error) {
+        console.error(error);
+        break;
+      }
+    }
+
+    setTransactions(payload);
+  };
+
   useEffect(() => {
     if (transactions === null) {
-      getTransactions(currentDate);
+      handleMonthChange(currentDate);
     }
   }, [currentDate, transactions]);
 
-  const handleMonthChange = (date: Dayjs | null) => {
-    if (date) {
-      getTransactions(date);
-    }
-  };
-
+  /** Updates the `date` search param and navigates to the same route with the new day selected. */
   const handleDateChange = (date: Dayjs | null) => {
     if (date) {
       setSearchParams({ date: date.format('YYYY-MM-DD') });
@@ -44,6 +89,7 @@ export function LeftSide() {
     }
   };
 
+  /** Sums `price * count` for transactions matching the calendar day; returns a formatted euro string or null when zero. */
   const getTransactionsSumByDate = (date: Dayjs) => {
     const sum = _.sumBy(
       (transactions ?? []).filter((t) => t.date === date.format('YYYY-MM-DD')),
