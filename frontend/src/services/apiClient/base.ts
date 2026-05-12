@@ -3,7 +3,6 @@ import Cookies from 'js-cookie';
 
 import { useMainStore } from '@store/main';
 
-
 export const apiClientInstance = axios.create({
   baseURL: import.meta.env.VITE_API_HOST,
   headers: {
