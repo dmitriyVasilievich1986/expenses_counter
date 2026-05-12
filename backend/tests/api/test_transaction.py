@@ -6,13 +6,14 @@ It uses FastAPI's TestClient and mocks the TransactionDAO dependency.
 
 import json
 from datetime import datetime
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.exc import DatabaseError, IntegrityError, NoResultFound
 
 from expenses_counter.modules.app import get_app
+from expenses_counter.modules.middlewares.dependencies import get_db, user_authorized
 from expenses_counter.modules.middlewares.dependencies.daos import get_transaction
 
 
@@ -39,11 +40,17 @@ def mock_transaction_dao():
 
 
 @pytest.fixture
-def test_client(mock_transaction_dao, test_config):
+def test_client(mock_transaction_dao, mock_user, test_config):
     """Create a test client with mocked dependencies.
+
+    The ``create_transaction`` route instantiates ``TransactionDAO`` directly
+    rather than using ``get_transaction``, so we patch the class in the router
+    module to return the same mock and override ``get_db`` with a stand-in
+    database client.
 
     Args:
         mock_transaction_dao: Mocked TransactionDAO instance.
+        mock_user: Mocked authenticated user.
         test_config: Test configuration fixture.
 
     Returns:
@@ -53,9 +60,15 @@ def test_client(mock_transaction_dao, test_config):
     app = get_app(test_config)
 
     app.dependency_overrides[get_transaction] = lambda: mock_transaction_dao
+    app.dependency_overrides[user_authorized] = lambda: mock_user
+    app.dependency_overrides[get_db] = lambda: MagicMock()
 
-    client = TestClient(app)
-    yield client
+    with patch(
+        "expenses_counter.modules.routers.api.v1.transaction.TransactionDAO",
+        return_value=mock_transaction_dao,
+    ):
+        client = TestClient(app)
+        yield client
 
     # Clean up
     app.dependency_overrides.clear()

@@ -13,20 +13,25 @@ from fastapi.testclient import TestClient
 
 from expenses_counter.config import AppConfig
 from expenses_counter.modules.app import get_app
+from expenses_counter.modules.middlewares.dependencies import user_authorized
 
 
 @pytest.fixture
-def test_app(test_config: AppConfig):
-    """Create a test FastAPI application.
+def test_app(test_config: AppConfig, test_user_in_db):
+    """Create a test FastAPI application with the test user wired into auth.
 
     Args:
         test_config: Test configuration with database settings.
+        test_user_in_db: Real ``User`` row used as the authenticated principal.
 
     Returns:
         FastAPI: Application instance for testing.
 
     """
-    return get_app(test_config)
+    app = get_app(test_config)
+    app.dependency_overrides[user_authorized] = lambda: test_user_in_db
+    yield app
+    app.dependency_overrides.clear()
 
 
 @pytest.fixture
