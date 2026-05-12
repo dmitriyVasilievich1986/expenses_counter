@@ -32,6 +32,7 @@ from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, status
 from loguru import logger
 from sqlalchemy.exc import IntegrityError, NoResultFound, SQLAlchemyError
 
+from expenses_counter.modules.middlewares.dependencies import get_db, user_authorized
 from expenses_counter.modules.middlewares.dependencies.daos import get_transaction
 from expenses_counter.modules.routers.schemas.base.metadata import PaginationMetadata
 from expenses_counter.modules.routers.schemas.requests.transaction import (
@@ -47,6 +48,8 @@ from expenses_counter.modules.routers.schemas.responses.transaction import (
     SimpleTransactionGet,
 )
 from expenses_counter.services.daos import TransactionDAO
+from expenses_counter.services.database import AsyncDatabaseClient
+from expenses_counter.services.database.models.user import User
 from expenses_counter.utils.filter import Filter
 
 router = APIRouter(prefix="/transaction", tags=["Transaction"])
@@ -173,13 +176,15 @@ async def get_transaction_by_id(
 @router.post("", response_model=GetSingleTransactionResponse, status_code=status.HTTP_201_CREATED)
 async def create_transaction(
     body: Annotated[PostTransactionBody, Body(description="The transaction data to create")],
-    transaction_dao: Annotated[TransactionDAO, Depends(get_transaction)],
+    db: Annotated[AsyncDatabaseClient, Depends(get_db)],
+    user: Annotated[User, Depends(user_authorized)],
 ) -> GetSingleTransactionResponse:
     """Create a new transaction.
 
     Args:
         body (PostTransactionBody): Fields for the new transaction (e.g. product and address).
-        transaction_dao (TransactionDAO): Transaction data access object.
+        db (AsyncDatabaseClient): Database client.
+        user (User): User who is authorized to access the transactions.
 
     Returns:
         GetSingleTransactionResponse: The created transaction payload.
@@ -189,8 +194,9 @@ async def create_transaction(
         HTTPException: 500 if a database error occurs while creating the transaction.
 
     """
+    transaction_dao = TransactionDAO(database_client=db, user_id=user.id)
     try:
-        payload = await transaction_dao.create(**body.model_dump())
+        payload = await transaction_dao.create(**body.model_dump(), user_id=user.id)
     except IntegrityError as e:
         logger.exception("Related object not found", exc_info=e)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Related object not found") from e
