@@ -38,12 +38,6 @@ def upgrade():
         sa.Index("idx_main_user_username", "username"),
     )
 
-    with op.batch_alter_table("main_transaction") as batch_op:
-        batch_op.add_column(sa.Column("user_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=False))
-        batch_op.create_foreign_key(
-            "main_transaction_user_id_fkey", "main_user", ["user_id"], ["id"], ondelete="CASCADE"
-        )
-
 
 def downgrade():
     """Drop the transaction ``user_id`` FK and remove ``main_user``.
@@ -52,8 +46,4 @@ def downgrade():
         None
 
     """
-    with op.batch_alter_table("main_transaction") as batch_op:
-        batch_op.drop_constraint("main_transaction_user_id_fkey", type_="foreignkey")
-        batch_op.drop_column("user_id")
-
     op.drop_table("main_user")
