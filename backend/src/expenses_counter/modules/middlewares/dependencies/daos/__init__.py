@@ -7,4 +7,4 @@ from .get_category import get_category
 from .get_product import get_product
 from .get_shop import get_shop
 from .get_transaction import get_transaction
-from .get_user_dao import get_user_dao
+from .user_dao import get_user_dao
