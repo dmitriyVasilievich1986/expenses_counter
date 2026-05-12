@@ -1,0 +1,44 @@
+"""HMAC-SHA256 password hashing and verification using a server secret."""
+
+__all__ = ("PasswordService",)
+
+import hashlib
+import hmac
+
+
+class PasswordService:
+    """Derive deterministic password digests for storage and comparison."""
+
+    def __init__(self, secret_key: str | bytes):
+        """Store the HMAC key used for hashing.
+
+        Args:
+            secret_key (str | bytes): Shared secret; strings are encoded as UTF-8.
+
+        """
+        self.secret_key = secret_key.encode("utf-8") if isinstance(secret_key, str) else secret_key
+
+    def hash_password(self, password: str) -> str:
+        """Return a lowercase hex digest of the password.
+
+        Args:
+            password (str): Plain text password to hash.
+
+        Returns:
+            str: Hex-encoded HMAC-SHA256 digest.
+
+        """
+        return hmac.new(self.secret_key, password.encode("utf-8"), hashlib.sha256).hexdigest()
+
+    def check_password(self, password: str, hashed_password: str) -> bool:
+        """Return whether the password matches the stored digest.
+
+        Args:
+            password (str): Plain text password to verify.
+            hashed_password (str): Previously stored hex digest from ``hash_password``.
+
+        Returns:
+            bool: True if the digests are equal.
+
+        """
+        return self.hash_password(password) == hashed_password
