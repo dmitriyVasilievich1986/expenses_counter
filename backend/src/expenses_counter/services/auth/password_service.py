@@ -2,8 +2,7 @@
 
 __all__ = ("PasswordService",)
 
-import hashlib
-import hmac
+import bcrypt
 
 
 class PasswordService:
@@ -28,7 +27,7 @@ class PasswordService:
             str: Hex-encoded HMAC-SHA256 digest.
 
         """
-        return hmac.new(self.secret_key, password.encode("utf-8"), hashlib.sha256).hexdigest()
+        return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
     def check_password(self, password: str, hashed_password: str) -> bool:
         """Return whether the password matches the stored digest.
@@ -41,4 +40,4 @@ class PasswordService:
             bool: True if the digests are equal.
 
         """
-        return hmac.compare_digest(self.hash_password(password), hashed_password)
+        return bcrypt.checkpw(password.encode("utf-8"), hashed_password.encode("utf-8"))
