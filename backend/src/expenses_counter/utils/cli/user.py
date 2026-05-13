@@ -31,7 +31,7 @@ async def user(ctx: click.Context):
 @user.command(help="Create a user")
 @click.option("--username", help="Username", required=True)
 @click.option("--email", help="Email", required=True)
-@click.option("--password", help="Password", required=True)
+@click.option("--password", help="Password", required=True, prompt=True, hide_input=True)
 @click.pass_context
 async def create_user(ctx: click.Context, username: str, email: str, password: str):
     """Create a new user with hashed credentials and print the result.
@@ -40,7 +40,7 @@ async def create_user(ctx: click.Context, username: str, email: str, password: s
         ctx (click.Context): Click context with ``user_dao`` from the ``user`` group.
         username (str): Unique login name.
         email (str): Email address stored for the user.
-        password (str): Plain password; stored hashed via the DAO.
+        password (str): Plain password; stored hashed via the DAO. Prompted if not provided.
 
     Returns:
         None
@@ -52,27 +52,25 @@ async def create_user(ctx: click.Context, username: str, email: str, password: s
 
 
 @user.command(help="Check password")
-@click.option("--password", help="Password", required=True)
 @click.option("--username", help="Username", required=True)
+@click.option("--password", help="Password", required=True, prompt=True, hide_input=True)
 @click.pass_context
-async def check_password(ctx: click.Context, password: str, username: str):
+async def check_password(ctx: click.Context, username: str, password: str):
     """Verify a plaintext password against the stored hash for a username.
 
     Args:
         ctx (click.Context): Click context with ``user_dao`` and ``config``.
-        password (str): Plain password to verify.
         username (str): User whose stored hash is checked.
+        password (str): Plain password to verify. Prompted if not provided.
 
     Returns:
         None
 
     """
     user_dao: UserDAO = ctx.obj["user_dao"]
-    app_config: AppConfig = ctx.obj["config"]
     user = await user_dao.get_by_username(username)
-    password_service = PasswordService(app_config.services.auth.password_secret_key.get_secret_value())
 
-    if password_service.check_password(password, user.password):
+    if PasswordService.check_password(password, user.password):
         click.echo("Password is correct")
     else:
         click.echo("Password is incorrect")
@@ -98,3 +96,26 @@ async def generate_jwt_token(ctx: click.Context, username: str):
     jwt_token_service = JWTTokenService(app_config.services.auth.jwt_secret_key.get_secret_value())
     jwt_token = jwt_token_service.generate_token(user.id)
     click.echo(f"JWT token: {jwt_token}")
+
+
+@user.command(help="Re-generate password hash")
+@click.option("--username", help="Username", required=True)
+@click.option("--password", help="Password", required=True, prompt=True, hide_input=True)
+@click.pass_context
+async def re_generate_password(ctx: click.Context, username: str, password: str):
+    """Re-generate the password hash for a user.
+
+    Args:
+        ctx (click.Context): Click context with ``user_dao`` and ``config``.
+        username (str): User to re-generate the password hash for.
+        password (str): Password to use to re-generate the password hash.
+
+    Returns:
+        None
+
+    """
+    user_dao: UserDAO = ctx.obj["user_dao"]
+    user = await user_dao.get_by_username(username)
+    hashed_password = PasswordService.hash_password(password)
+    await user_dao.update(pk=user.id, password=hashed_password)
+    click.echo(f"Password hash re-generated for user {username}")
