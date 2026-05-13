@@ -13,12 +13,17 @@ from uuid import uuid4
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy.sql import column, table
 
 # revision identifiers, used by Alembic.
 revision = "486d96f38303"
 down_revision = "c4e805302f9c"
 branch_labels = None
 depends_on = None
+
+
+user = table("main_user", column("id"), column("username"), column("email"), column("password"))
+transaction = table("main_transaction", column("id"), column("user_id"))
 
 
 def upgrade():
@@ -37,23 +42,12 @@ def upgrade():
 
     # Create a dummy user with a random password
     password = uuid4().hex
-    op.execute(
-        sa.text(
-            """
-            INSERT INTO main_user (username, email, password)
-            VALUES ('dummy', 'dummy@example.com', :password)
-        """,
-            password=password,
-        )
-    )
 
-    op.execute(
-        sa.text("""
-            UPDATE main_transaction
-            SET user_id = (SELECT id FROM main_user ORDER BY id ASC LIMIT 1)
-            WHERE user_id IS NULL
-        """)
-    )
+    connection = op.get_bind()
+    user_id = connection.execute(
+        user.insert().values(username="dummy", email="dummy@example.com", password=password).returning(user.c.id)
+    ).fetchone()[0]
+    connection.execute(transaction.update().values(user_id=user_id))
 
     with op.batch_alter_table("main_transaction") as batch_op:
         batch_op.alter_column("user_id", nullable=False)
@@ -76,9 +70,6 @@ def downgrade():
         batch_op.drop_constraint("main_transaction_user_id_fkey", type_="foreignkey")
         batch_op.drop_column("user_id")
 
-    op.execute(
-        sa.text("""
-            DELETE FROM main_user
-            WHERE username = 'dummy'
-        """)
-    )
+    connection = op.get_bind()
+    user_id = connection.execute(user.select().where(user.c.username == "dummy")).fetchone()[0]
+    connection.execute(user.delete().where(user.c.id == user_id))
