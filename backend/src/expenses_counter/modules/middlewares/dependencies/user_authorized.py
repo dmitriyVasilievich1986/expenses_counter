@@ -45,7 +45,10 @@ async def user_authorized(
 
     """
     user_dao = UserDAO(database_client=db)
-    jwt_token_service = JWTTokenService(AppConfig.get_or_create().services.auth.jwt_secret_key.get_secret_value())
+    jwt_token_service = JWTTokenService(
+        secret_key=AppConfig.get_or_create().services.auth.jwt_secret_key.get_secret_value(),
+        algorithm=AppConfig.get_or_create().services.auth.jwt_algorithm,
+    )
     try:
         jwt_token_metadata = jwt_token_service.decode_token(token_header.credentials)
     except ExpiredSignatureError as e:

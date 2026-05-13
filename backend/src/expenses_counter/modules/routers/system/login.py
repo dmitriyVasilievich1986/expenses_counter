@@ -58,7 +58,10 @@ async def login(
         logger.warning("Invalid username or password")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid username or password")
 
-    jwt_token_service = JWTTokenService(config.services.auth.jwt_secret_key.get_secret_value())
+    jwt_token_service = JWTTokenService(
+        secret_key=config.services.auth.jwt_secret_key.get_secret_value(),
+        algorithm=config.services.auth.jwt_algorithm,
+    )
     access_token = jwt_token_service.generate_token(user.id)
 
     return LoginResponse(access_token=access_token.token, expires_at=access_token.expires_at)
