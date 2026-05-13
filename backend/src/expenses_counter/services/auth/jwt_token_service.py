@@ -36,7 +36,7 @@ class JWTTokenService:
         """
         expiration = datetime.now(timezone.utc) + timedelta(days=1)
         payload = JWTTokenMetadata(user_id=user_id, exp=expiration)
-        token = jwt.encode(payload.model_dump(), self.secret_key, self.algorithm)
+        token = jwt.encode(payload=payload.model_dump(), key=self.secret_key, algorithm=self.algorithm)
         return AccessToken(token=token, expires_at=expiration)
 
     def decode_token(self, token: str, verify_signature: bool = True) -> JWTTokenMetadata:
@@ -52,7 +52,7 @@ class JWTTokenService:
 
         """
         options = Options(verify_signature=verify_signature, verify_exp=True)
-        payload = jwt.decode(token, self.secret_key, self.algorithm, options=options)
+        payload = jwt.decode(jwt=token, key=self.secret_key, algorithms=[self.algorithm], options=options)
         return JWTTokenMetadata(
             user_id=payload["user_id"],
             exp=datetime.fromtimestamp(payload["exp"], timezone.utc),
