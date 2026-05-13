@@ -8,16 +8,8 @@ import bcrypt
 class PasswordService:
     """Derive deterministic password digests for storage and comparison."""
 
-    def __init__(self, secret_key: str | bytes):
-        """Store the HMAC key used for hashing.
-
-        Args:
-            secret_key (str | bytes): Shared secret; strings are encoded as UTF-8.
-
-        """
-        self.secret_key = secret_key.encode("utf-8") if isinstance(secret_key, str) else secret_key
-
-    def hash_password(self, password: str) -> str:
+    @staticmethod
+    def hash_password(password: str) -> str:
         """Return a lowercase hex digest of the password.
 
         Args:
@@ -29,7 +21,8 @@ class PasswordService:
         """
         return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
-    def check_password(self, password: str, hashed_password: str) -> bool:
+    @staticmethod
+    def check_password(password: str, hashed_password: str) -> bool:
         """Return whether the password matches the stored digest.
 
         Args:

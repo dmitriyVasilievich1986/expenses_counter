@@ -52,9 +52,7 @@ async def login(
             detail="Something went wrong while retrieving the user",
         ) from e
 
-    password_service = PasswordService(config.services.auth.password_secret_key.get_secret_value())
-
-    if not password_service.check_password(body.password, user.password):
+    if not PasswordService.check_password(body.password, user.password):
         logger.warning("Invalid username or password")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid username or password")
 

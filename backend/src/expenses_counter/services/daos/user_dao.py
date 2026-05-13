@@ -3,7 +3,6 @@
 __all__ = ("UserDAO",)
 
 
-from expenses_counter.config import AppConfig
 from expenses_counter.services.auth import PasswordService
 from expenses_counter.services.daos.base import BaseDAO
 from expenses_counter.services.database.models.user import User
@@ -38,9 +37,7 @@ class UserDAO(BaseDAO[User]):
             User: Newly created row.
 
         """
-        app_config = AppConfig.get_or_create()
-        password_service = PasswordService(app_config.services.auth.password_secret_key.get_secret_value())
-        hashed_password = password_service.hash_password(kwargs["password"])
+        hashed_password = PasswordService.hash_password(kwargs["password"])
 
         if self.session is not None:
             return await self._create_raw(self.session, **(kwargs | {"password": hashed_password}))
