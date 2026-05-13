@@ -14,6 +14,7 @@ from .base import Base
 if TYPE_CHECKING:
     from expenses_counter.services.database.models.address import Address
     from expenses_counter.services.database.models.product import Product
+    from expenses_counter.services.database.models.user import User
 
 
 class Transaction(Base):
@@ -50,3 +51,6 @@ class Transaction(Base):
 
     address_id: Mapped[int] = mapped_column(ForeignKey("main_shopaddress.id"), nullable=False)
     address: Mapped["Address"] = relationship("Address", back_populates="transactions")
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("main_user.id"), nullable=False)
+    user: Mapped["User"] = relationship("User", back_populates="transactions")

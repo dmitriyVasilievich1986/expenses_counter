@@ -7,6 +7,7 @@ test database creation, migration execution, and database client setup.
 import asyncio
 from pathlib import Path
 from typing import AsyncGenerator
+from unittest.mock import MagicMock
 
 import pytest
 import pytest_asyncio
@@ -15,8 +16,14 @@ from alembic.config import Config as AlembicConfig
 
 from expenses_counter.config import AppConfig
 from expenses_counter.config.base.storage import SettingsStorage
+from expenses_counter.services.auth import JWTTokenService
+from expenses_counter.services.daos import UserDAO
 from expenses_counter.services.database import AsyncDatabaseClient
+from expenses_counter.services.database.models.user import User
 from expenses_counter.utils.singleton import Singleton
+
+TEST_JWT_SECRET = "test-jwt-secret-key-only-for-tests"  # noqa: S105
+TEST_PASSWORD_SECRET = "test-password-secret-key-only-for-tests"  # noqa: S105
 
 
 @pytest.fixture(scope="session")
@@ -71,6 +78,7 @@ def test_config(test_db_path: Path) -> AppConfig:
     from expenses_counter.config.models.info.api import APIInfo
     from expenses_counter.config.models.info.cors import CORSInfo
     from expenses_counter.config.models.services import Services
+    from expenses_counter.config.models.services.auth import Auth
     from expenses_counter.config.models.services.database import Database
 
     # Create config without loading from YAML
@@ -94,6 +102,10 @@ def test_config(test_db_path: Path) -> AppConfig:
             database=Database(
                 provider="sqlite+aiosqlite",
                 host=str(test_db_path),
+            ),
+            auth=Auth(
+                jwt_secret_key=TEST_JWT_SECRET,
+                password_secret_key=TEST_PASSWORD_SECRET,
             ),
         ),
     )
@@ -172,6 +184,13 @@ async def async_db_client(
     # Clear any existing singleton instances
     Singleton._instances.clear()  # noqa: SLF001
 
+    # Re-store test config: ``Singleton._instances.clear()`` also wiped the
+    # ``SettingsStorage`` populated by the ``test_config`` fixture, and
+    # dependencies that call ``AppConfig.get_or_create()`` (e.g. ``user_authorized``)
+    # would otherwise fall back to loading the prod YAML.
+    storage = SettingsStorage()
+    storage.settings = test_config
+
     # Create the database client
     client = AsyncDatabaseClient(app_config=test_config)
 
@@ -187,6 +206,75 @@ async def async_db_client(
     # Clear settings storage
     storage = SettingsStorage()
     storage.settings = None
+
+
+@pytest.fixture
+def mock_user() -> MagicMock:
+    """Return a mock ``User`` for tests that override ``user_authorized``.
+
+    Returns:
+        MagicMock: A mock user with stable ``id``, ``username``, and ``email``.
+
+    """
+    user = MagicMock(spec=User)
+    user.id = 1
+    user.username = "testuser"
+    user.email = "test@example.com"
+    return user
+
+
+@pytest_asyncio.fixture(scope="session")
+async def test_user_in_db(
+    async_db_client: AsyncDatabaseClient,
+) -> User:
+    """Create a real ``User`` in the test database and return it.
+
+    The user is created once per session and reused across integration tests.
+    Tests that need authentication can override ``user_authorized`` to return
+    this user so that ``user_id`` foreign keys resolve correctly.
+
+    Args:
+        async_db_client: Session-scoped database client.
+
+    Returns:
+        User: Persisted user instance with a real primary key.
+
+    """
+    user_dao = UserDAO(database_client=async_db_client)
+    return await user_dao.create(
+        username="integration-user",
+        email="integration@example.com",
+        password="integration-password",
+    )
+
+
+@pytest.fixture(scope="session")
+def test_user_token(test_user_in_db: User) -> str:
+    """Generate a signed JWT for the persistent test user.
+
+    Args:
+        test_user_in_db: Persisted user backing the token's ``user_id`` claim.
+
+    Returns:
+        str: Bearer-ready JWT signed with the test secret.
+
+    """
+    jwt_service = JWTTokenService(TEST_JWT_SECRET)
+    return jwt_service.generate_token(test_user_in_db.id).token
+
+
+@pytest.fixture(scope="session")
+def auth_headers(test_user_token: str) -> dict[str, str]:
+    """Return ``Authorization`` headers for the test user.
+
+    Args:
+        test_user_token: Signed JWT for the persistent test user.
+
+    Returns:
+        dict[str, str]: HTTP headers carrying the Bearer token.
+
+    """
+    return {"Authorization": f"Bearer {test_user_token}"}
 
 
 @pytest_asyncio.fixture

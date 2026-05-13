@@ -10,6 +10,7 @@ from expenses_counter.config import AppConfig
 
 from .crawler import crawler
 from .db import db
+from .user import user
 
 
 @click.group(help="CLI for managing the Expenses Counter.")
@@ -81,3 +82,4 @@ def run(host: str, port: int, reload: bool) -> None:
 
 main.add_command(crawler)
 main.add_command(db)
+main.add_command(user)

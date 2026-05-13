@@ -1,5 +1,5 @@
 import { Navbar } from '@components';
-import { Home, ShopList, CreateShop, TransactionPage } from '@pages';
+import { Home, ShopList, CreateShop, TransactionPage, Login } from '@pages';
 import { ProductList, CreateProduct } from '@pages/product';
 import { Routes, Route } from 'react-router';
 
@@ -9,6 +9,7 @@ function App() {
       <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/shop">
           <Route index element={<ShopList />} />
           <Route path="create" element={<CreateShop />} />

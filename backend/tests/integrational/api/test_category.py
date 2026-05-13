@@ -16,32 +16,39 @@ from expenses_counter.modules.app import get_app
 
 
 @pytest.fixture
-def test_app(test_config: AppConfig):
-    """Create a test FastAPI application.
+def test_app(test_config: AppConfig, test_user_in_db):  # noqa: ARG001
+    """Create a test FastAPI application backed by the persistent test user.
+
+    ``test_user_in_db`` is required so the JWT in ``auth_headers`` resolves to
+    a real row when ``user_authorized`` runs against the real database.
 
     Args:
         test_config: Test configuration with database settings.
+        test_user_in_db: Real ``User`` row used as the authenticated principal.
 
     Returns:
         FastAPI: Application instance for testing.
 
     """
-    return get_app(test_config)
+    app = get_app(test_config)
+    yield app
+    app.dependency_overrides.clear()
 
 
 @pytest.fixture
-def client(test_app, test_database_with_migrations):  # noqa: ARG001
-    """Create a test client for the FastAPI application.
+def client(test_app, test_database_with_migrations, auth_headers):  # noqa: ARG001
+    """Create a test client that authenticates every request with a real JWT.
 
     Args:
         test_app: The test FastAPI application.
         test_database_with_migrations: Ensure database is set up.
+        auth_headers: ``Authorization: Bearer <token>`` for the persistent test user.
 
     Returns:
-        TestClient: FastAPI test client for making requests.
+        TestClient: FastAPI test client for making authenticated requests.
 
     """
-    return TestClient(test_app)
+    return TestClient(test_app, headers=auth_headers)
 
 
 @pytest.mark.integration

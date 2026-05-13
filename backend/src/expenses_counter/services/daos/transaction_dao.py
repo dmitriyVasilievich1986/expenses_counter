@@ -3,12 +3,13 @@
 __all__ = ("TransactionDAO",)
 
 
-from typing import Sequence
+from typing import Any, Sequence
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from expenses_counter.services.daos.base import BaseDAO
+from expenses_counter.services.database import AsyncDatabaseClient
 from expenses_counter.services.database.models.product import Product
 from expenses_counter.services.database.models.transaction import Transaction
 
@@ -19,6 +20,40 @@ class TransactionDAO(BaseDAO[Transaction]):
     database_model = Transaction
     select_in_options_single = (Transaction.product, Transaction.address)
     select_in_options_all = (Transaction.product, Transaction.address)
+
+    def __init__(
+        self,
+        database_client: AsyncDatabaseClient | None = None,
+        session: AsyncSession | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """Initialize the DAO with either a shared session or a database client.
+
+        Args:
+            database_client (AsyncDatabaseClient | None, optional): Opens
+                short-lived sessions when ``session`` is omitted. Defaults to
+                None.
+            session (AsyncSession | None, optional): Reused async session for
+                all operations. Defaults to None.
+            kwargs (Any): Ignored keyword arguments for subclass constructors.
+
+        Raises:
+            ValueError: If both ``database_client`` and ``session`` are None.
+
+        Returns:
+            None
+
+        """
+        if database_client is None and session is None:
+            raise ValueError("Either database_client or session must be provided")
+
+        if (user_id := kwargs.get("user_id")) is None:
+            raise ValueError("user_id is required")
+
+        self.base_filters = [Transaction.user_id == user_id]
+        self.database_client = database_client
+        self.session = session
+        self.user_id = user_id
 
     async def _get_spendings_grouped_by_month_raw(self, session: AsyncSession) -> Sequence[tuple[str, float]]:
         """Sum transaction prices grouped by calendar month using the given session.
