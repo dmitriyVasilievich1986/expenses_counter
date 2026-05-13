@@ -41,4 +41,4 @@ class PasswordService:
             bool: True if the digests are equal.
 
         """
-        return self.hash_password(password) == hashed_password
+        return hmac.compare_digest(self.hash_password(password), hashed_password)
