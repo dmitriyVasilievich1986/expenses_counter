@@ -184,6 +184,13 @@ async def async_db_client(
     # Clear any existing singleton instances
     Singleton._instances.clear()  # noqa: SLF001
 
+    # Re-store test config: ``Singleton._instances.clear()`` also wiped the
+    # ``SettingsStorage`` populated by the ``test_config`` fixture, and
+    # dependencies that call ``AppConfig.get_or_create()`` (e.g. ``user_authorized``)
+    # would otherwise fall back to loading the prod YAML.
+    storage = SettingsStorage()
+    storage.settings = test_config
+
     # Create the database client
     client = AsyncDatabaseClient(app_config=test_config)
 

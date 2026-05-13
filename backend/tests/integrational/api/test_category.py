@@ -13,12 +13,14 @@ from fastapi.testclient import TestClient
 
 from expenses_counter.config import AppConfig
 from expenses_counter.modules.app import get_app
-from expenses_counter.modules.middlewares.dependencies import user_authorized
 
 
 @pytest.fixture
-def test_app(test_config: AppConfig, test_user_in_db):
-    """Create a test FastAPI application with the test user wired into auth.
+def test_app(test_config: AppConfig, test_user_in_db):  # noqa: ARG001
+    """Create a test FastAPI application backed by the persistent test user.
+
+    ``test_user_in_db`` is required so the JWT in ``auth_headers`` resolves to
+    a real row when ``user_authorized`` runs against the real database.
 
     Args:
         test_config: Test configuration with database settings.
@@ -29,24 +31,24 @@ def test_app(test_config: AppConfig, test_user_in_db):
 
     """
     app = get_app(test_config)
-    app.dependency_overrides[user_authorized] = lambda: test_user_in_db
     yield app
     app.dependency_overrides.clear()
 
 
 @pytest.fixture
-def client(test_app, test_database_with_migrations):  # noqa: ARG001
-    """Create a test client for the FastAPI application.
+def client(test_app, test_database_with_migrations, auth_headers):  # noqa: ARG001
+    """Create a test client that authenticates every request with a real JWT.
 
     Args:
         test_app: The test FastAPI application.
         test_database_with_migrations: Ensure database is set up.
+        auth_headers: ``Authorization: Bearer <token>`` for the persistent test user.
 
     Returns:
-        TestClient: FastAPI test client for making requests.
+        TestClient: FastAPI test client for making authenticated requests.
 
     """
-    return TestClient(test_app)
+    return TestClient(test_app, headers=auth_headers)
 
 
 @pytest.mark.integration
