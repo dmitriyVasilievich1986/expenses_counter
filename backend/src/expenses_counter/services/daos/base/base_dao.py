@@ -72,9 +72,8 @@ class BaseDAO[DatabaseModel: Base](ABC):
         self.database_client = database_client
         self.session = session
 
-    @classmethod
     def concat_filters(
-        cls, filters: list[ColumnElement[bool]] | list[dict[str, Any]] | None
+        self, filters: list[ColumnElement[bool]] | list[dict[str, Any]] | None
     ) -> list[ColumnElement[bool]]:
         """Return ``base_filters`` followed by optional caller filters.
 
@@ -87,17 +86,17 @@ class BaseDAO[DatabaseModel: Base](ABC):
 
         """
         if filters is None:
-            return [*(cls.base_filters or [])]
+            return [*(self.base_filters or [])]
 
         filters_: list[ColumnElement[bool]] = []
         for f in filters:
             if isinstance(f, dict):
                 filter_: Filter[str] = Filter.model_validate(f)
-                filters_.append(filter_.to_sqlalchemy_filter(cls.database_model))
+                filters_.append(filter_.to_sqlalchemy_filter(self.database_model))
             else:
                 filters_.append(f)
 
-        return [*(cls.base_filters or []), *filters_]
+        return [*(self.base_filters or []), *filters_]
 
     async def _get_by_pk_raw(
         self,
