@@ -6,7 +6,7 @@ export const useAuthAPIClient = () => {
   return {
     login: async (username: string, password: string) => {
       const response = await axios.post<LoginResponse>(
-        `${import.meta.env.VITE_API_HOST}/login`,
+        `${import.meta.env.VITE_API_HOST}/api/login`,
         {
           username,
           password,
