@@ -9,6 +9,8 @@ Create Date: 2026-05-12 12:49:27.940695
 
 """
 
+from uuid import uuid4
+
 import sqlalchemy as sa
 from alembic import op
 
@@ -28,6 +30,18 @@ def upgrade():
     """
     with op.batch_alter_table("main_transaction") as batch_op:
         batch_op.add_column(sa.Column("user_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=True))
+
+    # Create a dummy user with a random password
+    password = uuid4().hex
+    op.execute(
+        sa.text(
+            """
+            INSERT INTO main_user (username, email, password)
+            VALUES ('dummy', 'dummy@example.com', :password)
+        """,
+            password=password,
+        )
+    )
 
     op.execute(
         sa.text("""
@@ -54,3 +68,10 @@ def downgrade():
     with op.batch_alter_table("main_transaction") as batch_op:
         batch_op.drop_constraint("main_transaction_user_id_fkey", type_="foreignkey")
         batch_op.drop_column("user_id")
+
+    op.execute(
+        sa.text("""
+            DELETE FROM main_user
+            WHERE username = 'dummy'
+        """)
+    )
