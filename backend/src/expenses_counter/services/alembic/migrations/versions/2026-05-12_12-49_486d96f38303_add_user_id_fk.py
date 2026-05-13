@@ -22,7 +22,11 @@ depends_on = None
 
 
 def upgrade():
-    """Add nullable ``user_id``, backfill, require it, and add the FK.
+    """Attach every transaction to a ``main_user`` row.
+
+    Adds nullable ``user_id``, ensures at least one user exists for backfill,
+    assigns the column from the lowest ``main_user.id``, then enforces
+    ``NOT NULL`` and ``ON DELETE CASCADE`` on the foreign key.
 
     Returns:
         None
@@ -59,7 +63,10 @@ def upgrade():
 
 
 def downgrade():
-    """Remove the ``user_id`` foreign key and column from ``main_transaction``.
+    """Remove ``user_id`` from ``main_transaction`` and delete the placeholder user.
+
+    Drops the foreign key and column, then removes the migration-only
+    ``dummy`` user row if present.
 
     Returns:
         None

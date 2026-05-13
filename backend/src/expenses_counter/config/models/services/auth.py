@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field, SecretStr
 
 
 class Auth(BaseModel):
-    """Auth configuration model."""
+    """Secrets and JWA algorithm names for password hashing and JWT signing."""
 
     jwt_secret_key: SecretStr = Field(..., description="The secret key for the JWT service")
     password_secret_key: SecretStr = Field(..., description="The secret key for the password service")

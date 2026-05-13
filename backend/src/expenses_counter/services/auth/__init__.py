@@ -1,4 +1,4 @@
-"""Auth services module."""
+"""JWT issuance and password hashing services."""
 
 __all__ = ("JWTTokenService", "PasswordService")
 

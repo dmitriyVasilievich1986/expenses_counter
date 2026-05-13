@@ -1,4 +1,4 @@
-"""User DAO module."""
+"""DAO for creating and loading ``User`` records with hashed passwords."""
 
 __all__ = ("UserDAO",)
 
@@ -10,17 +10,34 @@ from expenses_counter.services.database.models.user import User
 
 
 class UserDAO(BaseDAO[User]):
-    """Data access for ``User`` model."""
+    """Persistence helpers for ``User`` rows, including password hashing on create."""
 
     database_model = User
     get_all_columns = (User.id, User.username, User.email)
 
     async def get_by_username(self, username: str) -> User:
-        """Get a user by their username."""
+        """Return the user with the given unique username.
+
+        Args:
+            username (str): Login name to resolve.
+
+        Returns:
+            User: Matching row from ``main_user``.
+
+        """
         return await self.get_by_pk(username, "username")
 
     async def create(self, **kwargs) -> User:
-        """Create a row from keyword arguments matching the model fields."""
+        """Insert a user, replacing plaintext ``password`` with a keyed hash.
+
+        Args:
+            **kwargs: ``User`` column values. ``password`` must be plaintext; it
+                is hashed with ``PasswordService`` before persistence.
+
+        Returns:
+            User: Newly created row.
+
+        """
         app_config = AppConfig.get_or_create()
         password_service = PasswordService(app_config.services.auth.password_secret_key.get_secret_value())
         hashed_password = password_service.hash_password(kwargs["password"])

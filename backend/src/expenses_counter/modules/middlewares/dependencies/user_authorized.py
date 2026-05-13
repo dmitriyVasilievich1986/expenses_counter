@@ -32,11 +32,12 @@ async def user_authorized(
     """Decode the Bearer JWT and return the authenticated user row.
 
     Args:
-        token_header: Credentials from the ``Authorization: Bearer`` header.
-        db: Async database client used to load the user by primary key.
+        token_header (HTTPAuthorizationCredentials): Parsed ``Authorization``
+            Bearer credentials from the request.
+        db (AsyncDatabaseClient): Client used to load the user by primary key.
 
     Returns:
-        The ``User`` instance for the ``user_id`` embedded in the token.
+        User: Database row for the ``user_id`` embedded in the token.
 
     Raises:
         HTTPException: 401 if the token is expired, malformed, or the user is

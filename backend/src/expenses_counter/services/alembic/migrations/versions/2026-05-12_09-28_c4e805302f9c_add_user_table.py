@@ -1,4 +1,6 @@
-"""Add the user table and tie each transaction to a user.
+"""Create the ``main_user`` table for application accounts.
+
+Linking ``main_transaction`` rows to users is introduced in a later revision.
 
 Revision ID: c4e805302f9c
 Revises: f68d0ab7444f
@@ -17,10 +19,9 @@ depends_on = None
 
 
 def upgrade():
-    """Create ``main_user`` and add ``user_id`` to ``main_transaction``.
+    """Create ``main_user`` with unique username and email constraints.
 
-    The new user row stores credentials and unique username and email keys.
-    Each transaction references ``main_user`` with ``ON DELETE CASCADE``.
+    Columns store login credentials; indexes support username lookups.
 
     Returns:
         None
@@ -40,7 +41,7 @@ def upgrade():
 
 
 def downgrade():
-    """Drop the transaction ``user_id`` FK and remove ``main_user``.
+    """Drop the ``main_user`` table.
 
     Returns:
         None
