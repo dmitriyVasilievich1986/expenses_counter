@@ -33,17 +33,21 @@ jobs:
         if: steps.changes.outputs.backend != 'true'
         run: echo "No backend or workflow changes; marking check successful."
 
-      - name: Install uv
-        if: steps.changes.outputs.backend == 'true'
-        uses: astral-sh/setup-uv@v4
-        with:
-          enable-cache: true
-
       - name: Set up Python
         if: steps.changes.outputs.backend == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: "3.13"
+
+      - name: Install uv
+        if: steps.changes.outputs.backend == 'true'
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          python-version: "3.13"
+          cache-dependency-glob: |
+            backend/uv.lock
+            backend/pyproject.toml
 
       - name: Install dependencies
         if: steps.changes.outputs.backend == 'true'
@@ -56,6 +60,15 @@ jobs:
       - name: Run ruff formatter check
         if: steps.changes.outputs.backend == 'true'
         run: uv run ruff format --check src/
+
+      - name: Cache mypy incremental data
+        if: steps.changes.outputs.backend == 'true'
+        uses: actions/cache@v4
+        with:
+          path: backend/.mypy_cache
+          key: ${{ runner.os }}-mypy-py3.13-${{ hashFiles('backend/pyproject.toml', 'backend/uv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mypy-py3.13-
 
       - name: Run mypy
         if: steps.changes.outputs.backend == 'true'
