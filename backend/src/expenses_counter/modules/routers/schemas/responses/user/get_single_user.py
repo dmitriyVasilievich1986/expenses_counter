@@ -1,14 +1,14 @@
 """Me response schema module."""
 
-__all__ = ("MeResponse",)
+__all__ = ("GetSingleUserResponse",)
 
 from pydantic import Field
 
 from expenses_counter.modules.routers.schemas.base.response import BaseResponseFromModelSchema
 
 
-class MeResponse(BaseResponseFromModelSchema):
-    """Response schema for the me endpoint."""
+class GetSingleUserResponse(BaseResponseFromModelSchema):
+    """Response schema for the get single user endpoint."""
 
     id: int = Field(..., description="The user id")
     username: str = Field(..., description="The username")
