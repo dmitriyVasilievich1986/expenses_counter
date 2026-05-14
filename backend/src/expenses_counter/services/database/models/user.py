@@ -37,9 +37,9 @@ class User(Base):
     username: Mapped[str] = mapped_column(String(150), nullable=False, unique=True)
     email: Mapped[str] = mapped_column(String(150), nullable=False, unique=True)
     password: Mapped[str] = mapped_column(String(150), nullable=False)
-    first_name: Mapped[str] = mapped_column(String(150), nullable=True)
-    last_name: Mapped[str] = mapped_column(String(150), nullable=True)
-    photo_url: Mapped[str] = mapped_column(String(255), nullable=True)
+    first_name: Mapped[str | None] = mapped_column(String(150), nullable=True)
+    last_name: Mapped[str | None] = mapped_column(String(150), nullable=True)
+    photo_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
     is_admin: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
