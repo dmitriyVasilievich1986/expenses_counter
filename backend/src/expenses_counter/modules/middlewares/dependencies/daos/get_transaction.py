@@ -27,4 +27,4 @@ def get_transaction(
         A TransactionDAO instance.
 
     """
-    return TransactionDAO(database_client=db, user_id=user.id)
+    return TransactionDAO(database_client=db, user=user)
