@@ -2,7 +2,7 @@
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Integer, String
+from sqlalchemy import Boolean, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
@@ -23,6 +23,11 @@ class User(Base):
         email: Unique email address (max 150 characters, enforced by DB constraint).
         password: Stored password credential (typically a password hash).
         transactions: Related Transaction records for this user.
+        first_name: First name of the user.
+        last_name: Last name of the user.
+        photo_url: URL of the user's photo.
+        is_admin: Whether the user is an admin.
+        is_active: Whether the user is active.
 
     """
 
@@ -32,5 +37,10 @@ class User(Base):
     username: Mapped[str] = mapped_column(String(150), nullable=False, unique=True)
     email: Mapped[str] = mapped_column(String(150), nullable=False, unique=True)
     password: Mapped[str] = mapped_column(String(150), nullable=False)
+    first_name: Mapped[str] = mapped_column(String(150), nullable=True)
+    last_name: Mapped[str] = mapped_column(String(150), nullable=True)
+    photo_url: Mapped[str] = mapped_column(String(255), nullable=True)
+    is_admin: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
     transactions: Mapped[list["Transaction"]] = relationship("Transaction", back_populates="user")
