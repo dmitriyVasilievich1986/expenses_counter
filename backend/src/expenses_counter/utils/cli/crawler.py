@@ -16,9 +16,10 @@ async def crawler():
 @crawler.command(help="Crawl and create transaction")
 @click.option("--url", help="URL to crawl", required=True)
 @click.option("--default-category-id", help="Default category ID", type=int, required=False, default=None)
-async def crawl_and_create(url: str, default_category_id: int | None):
+@click.option("--default-user-id", help="Default user ID", type=int, required=False, default=None)
+async def crawl_and_create(url: str, default_category_id: int | None, default_user_id: int | None):
     """Crawl and create transaction."""
-    cmd = CrawlAndCreateCommand(url=url, default_category_id=default_category_id)
+    cmd = CrawlAndCreateCommand(url=url, default_category_id=default_category_id, default_user_id=default_user_id)
     await cmd.initialize()
     await cmd.validate()
     await cmd.execute()
