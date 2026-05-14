@@ -26,17 +26,20 @@ class CrawlAndCreateCommand(BaseCommand):
 
     """
 
-    def __init__(self, url: str, default_category_id: int | None = None) -> None:
+    def __init__(self, url: str, default_category_id: int | None = None, default_user_id: int | None = None) -> None:
         """Initialize CrawlAndCreateCommand with URL and optional category.
 
         Args:
             url: Receipt URL to crawl and process
             default_category_id: Optional category ID to use for new products.
                 If None, will use the first available category.
+            default_user_id: Optional user ID to use for new transactions.
+                If None, will use the first available user.
 
         """
         self.url = url
         self.default_category_id = default_category_id
+        self.default_user_id = default_user_id
 
     async def initialize(self, **_: Any) -> None:
         """Initialize command resources.
@@ -87,7 +90,10 @@ class CrawlAndCreateCommand(BaseCommand):
         html_parser = HTMLParser(html=html)
         table_parser = TableParser(html=html)
         create_transaction_command = CreateTransactionCommand(
-            html_parser=html_parser, table_parser=table_parser, default_category_id=self.default_category_id
+            html_parser=html_parser,
+            table_parser=table_parser,
+            default_category_id=self.default_category_id,
+            default_user_id=self.default_user_id,
         )
         await create_transaction_command.initialize()
         await create_transaction_command.validate()
