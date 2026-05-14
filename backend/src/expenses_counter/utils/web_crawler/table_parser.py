@@ -57,7 +57,20 @@ class TableParser(pd.DataFrame):
             DataFrame with English column names
 
         """  # noqa: RUF002
-        return df.rename(columns={"Назив": "name", "Количина": "quantity", "Јед. цена са ПДВ": "unit_price"})
+        if "Назив" in df.columns:
+            df = df.rename(columns={"Назив": "name"})
+        if "Name" in df.columns:
+            df = df.rename(columns={"Name": "name"})
+        if "Количина" in df.columns:
+            df = df.rename(columns={"Количина": "quantity"})
+        if "Quantity" in df.columns:
+            df = df.rename(columns={"Quantity": "quantity"})
+        if "Јед. цена са ПДВ" in df.columns:
+            df = df.rename(columns={"Јед. цена са ПДВ": "unit_price"})
+        if "Gross Unit Price" in df.columns:
+            df = df.rename(columns={"Gross Unit Price": "unit_price"})
+
+        return df
 
     def _convert_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
         """Filter columns and convert numeric values to proper float format.
