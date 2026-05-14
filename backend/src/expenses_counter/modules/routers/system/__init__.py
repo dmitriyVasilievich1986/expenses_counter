@@ -13,5 +13,6 @@ router = APIRouter(prefix="/api", tags=["System"])
 
 router.include_router(version_router)
 router.include_router(health_router)
-router.include_router(index_router)
 router.include_router(login_router)
+
+router.include_router(index_router)

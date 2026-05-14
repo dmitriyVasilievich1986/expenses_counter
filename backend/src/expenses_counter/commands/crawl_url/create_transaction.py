@@ -10,9 +10,10 @@ from sqlalchemy.exc import NoResultFound
 
 from expenses_counter.commands.base import BaseCommand
 from expenses_counter.config import AppConfig
-from expenses_counter.services.daos import AddressDAO, CategoryDAO, ProductDAO, TransactionDAO
+from expenses_counter.services.daos import AddressDAO, CategoryDAO, ProductDAO, TransactionDAO, UserDAO
 from expenses_counter.services.database import AsyncDatabaseClient
 from expenses_counter.services.database.models import Address, Category, Product
+from expenses_counter.services.database.models.user import User
 from expenses_counter.utils.web_crawler import HTMLParser, TableParser
 
 
@@ -36,7 +37,11 @@ class CreateTransactionCommand(BaseCommand):
     db_client: AsyncDatabaseClient
 
     def __init__(
-        self, html_parser: HTMLParser, table_parser: TableParser, default_category_id: int | None = None
+        self,
+        html_parser: HTMLParser,
+        table_parser: TableParser,
+        default_category_id: int | None = None,
+        default_user_id: int | None = None,
     ) -> None:
         """Initialize CreateTransactionCommand with parsed receipt data.
 
@@ -45,11 +50,16 @@ class CreateTransactionCommand(BaseCommand):
             table_parser: TableParser instance with product table data
             default_category_id: Optional category ID for new products. If None,
                 uses the first available category from the database.
+            default_user_id: Optional user ID for new transactions. If None,
+                uses the first available user from the database.
 
         """
         self.html_parser = html_parser
         self.table_parser = table_parser
         self.default_category_id = default_category_id
+        self.default_user_id = default_user_id
+        self.user: User | None = None
+
         pd.options.display.max_columns = None
         pd.options.display.max_rows = None
         pd.options.display.width = None  # type: ignore[assignment]
@@ -63,6 +73,24 @@ class CreateTransactionCommand(BaseCommand):
         """
         self.app_config = AppConfig.get_or_create()
         self.db_client = AsyncDatabaseClient(app_config=self.app_config)
+
+    async def _get_user(self, user_id: int | None = None) -> User:
+        """Get user by ID or return the first available user.
+
+        Args:
+            user_id: Optional user ID to retrieve
+
+        Returns:
+            User object matching the ID, or the first available user if ID is None or not found
+
+        """
+        user_dao = UserDAO(database_client=self.db_client)
+        if user_id:
+            try:
+                return await user_dao.get_by_pk(user_id)
+            except NoResultFound:
+                logger.warning(f"User {user_id} not found")
+        return await user_dao.get_by_username("dummy")
 
     async def _get_category(self, category_id: int | None = None) -> Category:
         """Get category by ID or return the first available category.
@@ -143,7 +171,7 @@ class CreateTransactionCommand(BaseCommand):
         address = await self._get_address(self.html_parser.address)
 
         async with self.db_client.session_factory() as session:
-            transaction_dao = TransactionDAO(session=session, database_client=None)
+            transaction_dao = TransactionDAO(session=session, database_client=None, user=self.user)
             for i, row in self.table_parser.iterrows():
                 logger.info(f"Processing row {i + 1} of {len(self.table_parser)}")  # type: ignore[operator]
                 product = await self._get_or_create_product(row["name"])
@@ -223,4 +251,15 @@ class CreateTransactionCommand(BaseCommand):
             raise ValueError("Default category not found") from e
         except Exception as e:
             logger.error(f"Error getting category: {e}")
+            raise e
+
+        try:
+            user = await self._get_user(self.default_user_id)
+            self.default_user_id = user.id
+            self.user = user
+        except ValueError as e:
+            logger.error(f"Error getting user: {e}")
+            raise ValueError("Default user not found") from e
+        except Exception as e:
+            logger.error(f"Error getting user: {e}")
             raise e

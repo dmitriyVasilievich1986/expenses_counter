@@ -12,6 +12,7 @@ from expenses_counter.services.daos.base import BaseDAO
 from expenses_counter.services.database import AsyncDatabaseClient
 from expenses_counter.services.database.models.product import Product
 from expenses_counter.services.database.models.transaction import Transaction
+from expenses_counter.services.database.models.user import User
 
 
 class TransactionDAO(BaseDAO[Transaction]):
@@ -47,13 +48,15 @@ class TransactionDAO(BaseDAO[Transaction]):
         if database_client is None and session is None:
             raise ValueError("Either database_client or session must be provided")
 
-        if (user_id := kwargs.get("user_id")) is None:
-            raise ValueError("user_id is required")
+        user: User | None = kwargs.get("user")
+        if user is None:
+            raise ValueError("user is required")
+        if not user.is_admin:
+            self.base_filters = [Transaction.user_id == user.id]
 
-        self.base_filters = [Transaction.user_id == user_id]
         self.database_client = database_client
         self.session = session
-        self.user_id = user_id
+        self.user_id = user.id
 
     async def _get_spendings_grouped_by_month_raw(self, session: AsyncSession) -> Sequence[tuple[str, float]]:
         """Sum transaction prices grouped by calendar month using the given session.

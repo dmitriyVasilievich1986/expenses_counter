@@ -194,7 +194,7 @@ async def create_transaction(
         HTTPException: 500 if a database error occurs while creating the transaction.
 
     """
-    transaction_dao = TransactionDAO(database_client=db, user_id=user.id)
+    transaction_dao = TransactionDAO(database_client=db, user=user)
     try:
         payload = await transaction_dao.create(**body.model_dump(), user_id=user.id)
     except IntegrityError as e:
