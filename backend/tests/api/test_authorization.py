@@ -49,6 +49,9 @@ PROTECTED_ROUTES: list[tuple[str, str]] = [
     ("POST", "/api/v1/transaction"),
     ("PUT", "/api/v1/transaction/1"),
     ("DELETE", "/api/v1/transaction/1"),
+    ("GET", "/api/v1/user/me"),
+    ("PUT", "/api/v1/user"),
+    ("PATCH", "/api/v1/user"),
 ]
 
 
