@@ -1,6 +1,6 @@
 """Extend ``main_user`` with profile fields and admin/active flags.
 
-Adds required first and last names, booleans ``is_admin`` and ``is_active``,
+Adds optional first and last names, booleans ``is_admin`` and ``is_active``,
 and an optional ``photo_url`` for account metadata.
 
 Revision ID: 06e92c9e6a09
