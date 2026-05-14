@@ -41,16 +41,15 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --link-mode=copy --no-editable --no-install-project
 
 COPY ./backend/src ./src
-
-COPY --from=frontend /opt/backend/static /opt/backend/static
-
-COPY ./backend/configurations ./configurations
-
 COPY ./backend/LICENSE ./
 COPY ./backend/README.md ./
 
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --link-mode=copy --no-editable
+uv sync --frozen --link-mode=copy --no-editable
+
+COPY --from=frontend /opt/backend/static /opt/backend/static
+
+COPY ./backend/configurations ./configurations
 
 ENV PYTHONPATH="/opt/backend/src"
 ENV PATH="/opt/backend/.venv/bin:${PATH}"
