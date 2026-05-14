@@ -12,7 +12,7 @@ from expenses_counter.modules.routers.schemas.requests.category import PostCateg
 from expenses_counter.modules.routers.schemas.requests.product import PostProductBody
 from expenses_counter.modules.routers.schemas.requests.shop import PostShopBody
 from expenses_counter.modules.routers.schemas.requests.transaction import PostTransactionBody
-from expenses_counter.services.daos import AddressDAO, CategoryDAO, ProductDAO, ShopDAO, TransactionDAO
+from expenses_counter.services.daos import AddressDAO, CategoryDAO, ProductDAO, ShopDAO, TransactionDAO, UserDAO
 from expenses_counter.services.database import AsyncDatabaseClient
 
 from ..base import BaseCommand
@@ -75,7 +75,9 @@ class FillDBCommand(BaseCommand):
         product = await ProductDAO(self.db_client).create(
             **PostProductBody(name="Product 1", description="Description 1", category_id=category.id).model_dump(),
         )
-        await TransactionDAO(self.db_client).create(
+        user = await UserDAO(self.db_client).get_by_username("dummy")
+        await TransactionDAO(self.db_client, user=user).create(
+            user_id=user.id,
             **PostTransactionBody(
                 product_id=product.id,
                 address_id=address.id,
