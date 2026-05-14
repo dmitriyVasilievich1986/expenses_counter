@@ -33,9 +33,14 @@ COPY --from=build /opt/backend/.venv /opt/backend/.venv
 
 WORKDIR /opt/backend
 
-COPY ./backend/src ./src
+# Lockfile + sync first so backend/src changes do not invalidate dependency layers.
 COPY ./backend/pyproject.toml ./
 COPY ./backend/uv.lock ./
+
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --link-mode=copy --no-editable --no-install-project
+
+COPY ./backend/src ./src
 
 COPY --from=frontend /opt/backend/static /opt/backend/static
 
@@ -55,8 +60,8 @@ FROM python:3.13-slim-bookworm AS production
 WORKDIR /opt/backend
 
 COPY --from=build /opt/backend/.venv /opt/backend/.venv
-COPY ./backend/src ./src
 COPY ./backend/pyproject.toml ./
+COPY ./backend/src ./src
 COPY --from=frontend /opt/backend/static /opt/backend/static
 COPY ./backend/configurations ./configurations
 
