@@ -311,6 +311,9 @@ class BaseDAO[DatabaseModel: Base](ABC):
             DatabaseModel: The updated row after commit and reload.
 
         """
+        if not kwargs:
+            return await self._get_by_pk_raw(session, pk, pk_column_name)
+
         await session.execute(
             update(self.database_model).where(getattr(self.database_model, pk_column_name) == pk).values(**kwargs)
         )
