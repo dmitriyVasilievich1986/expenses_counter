@@ -35,15 +35,15 @@ export function ProductPriceChart({
   }
 
   const prices = data.map((item) => item.price);
+  // red for uprising, green for falling, blue for flat
+  // that should show that growing prices are bad and falling prices are good
   let lineColor = theme.palette.primary.main;
-  if (prices.length >= 2) {
-    const last = prices[prices.length - 1];
-    const previous = prices[prices.length - 2];
-    if (last > previous) {
-      lineColor = theme.palette.error.main;
-    } else if (last < previous) {
-      lineColor = theme.palette.success.main;
-    }
+  const last = prices[prices.length - 1];
+  const previous = prices[prices.length - 2];
+  if (last > previous) {
+    lineColor = theme.palette.error.main;
+  } else if (last < previous) {
+    lineColor = theme.palette.success.main;
   }
 
   const stripChrome = removeLabels;
