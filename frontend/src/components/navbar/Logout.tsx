@@ -114,11 +114,12 @@ export function Logout() {
         <Divider />
         <MenuItem onClick={handleLogout}>Logout</MenuItem>
         <Divider />
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mx: 1 }}>
-          <Typography color="text.secondary" variant="caption">
-            Version {import.meta.env.VITE_APP_VERSION}
-          </Typography>
-        </Box>
+        <MenuItem
+          disabled
+          sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mx: 1 }}
+        >
+          <Typography variant="caption">Version {import.meta.env.VITE_APP_VERSION}</Typography>
+        </MenuItem>
       </Menu>
     </Box>
   );
