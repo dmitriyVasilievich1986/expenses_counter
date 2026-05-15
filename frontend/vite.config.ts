@@ -1,9 +1,21 @@
 import react from '@vitejs/plugin-react';
-import { resolve } from 'path';
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const appVersion = (
+  JSON.parse(readFileSync(resolve(__dirname, 'application-version.json'), 'utf-8')) as {
+    version: string;
+  }
+).version;
 
 // https://vite.dev/config/
 export default defineConfig({
+  define: {
+    'import.meta.env.VITE_APP_VERSION': JSON.stringify(appVersion),
+  },
   plugins: [react()],
   resolve: {
     alias: {
