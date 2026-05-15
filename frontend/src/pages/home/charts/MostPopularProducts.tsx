@@ -1,12 +1,18 @@
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import classnames from 'classnames/bind';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 
 import { ProductPriceChart } from '@components/productPriceChart';
 import { useStatisticsAPIClient } from '@services/apiClient/statistics';
 import type { ProductSimpleType } from '@store/product/types';
+
+
+import * as defaultStyle from './style.scss';
+
+const cx = classnames.bind(defaultStyle);
 
 export function MostPopularProducts() {
   const [data, setData] = useState<ProductSimpleType[] | null>(null);
@@ -32,10 +38,7 @@ export function MostPopularProducts() {
         height: '100%',
       }}
     >
-      <Box
-        sx={{ px: 2, flex: 1, height: 'fit-content', cursor: 'pointer' }}
-        onClick={() => navigate('/product')}
-      >
+      <Box sx={{ px: 2, flex: 1, height: 'fit-content' }}>
         <Typography align="center" variant="h6" sx={{ mb: 2 }}>
           Most Popular Products:
         </Typography>
@@ -43,13 +46,8 @@ export function MostPopularProducts() {
           {data?.map((item) => (
             <Box
               key={item.id}
-              sx={{
-                display: 'flex',
-                justifyContent: 'start',
-                alignItems: 'center',
-                width: '100%',
-                gap: 2,
-              }}
+              className={cx('most-popular-products-item')}
+              onClick={() => navigate(`/product/${item.id}`)}
             >
               <Box sx={{ width: '200px', height: '50px' }}>
                 <ProductPriceChart productId={item.id} removeLabels={true} />
