@@ -147,7 +147,12 @@ async def get_category_list_by_parent(
     )
 
 
-@router.get("/{category_id}", response_model=GetSingleCategoryResponse, status_code=status.HTTP_200_OK)
+@router.get(
+    "/{category_id}",
+    response_model=GetSingleCategoryResponse,
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(admin_required)],
+)
 async def get_category_by_id(
     category_id: Annotated[int, Path(description="The unique identifier of the category to retrieve")],
     category_dao: Annotated[CategoryDAO, Depends(get_category)],
@@ -181,7 +186,12 @@ async def get_category_by_id(
     return GetSingleCategoryResponse.model_validate(payload)
 
 
-@router.post("", response_model=GetSingleCategoryResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=GetSingleCategoryResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(admin_required)],
+)
 async def create_category(
     body: Annotated[PostCategoryBody, Body(description="The category data to create")],
     category_dao: Annotated[CategoryDAO, Depends(get_category)],
@@ -214,7 +224,12 @@ async def create_category(
     return GetSingleCategoryResponse.model_validate(payload)
 
 
-@router.put("/{category_id}", response_model=GetSingleCategoryResponse, status_code=status.HTTP_200_OK)
+@router.put(
+    "/{category_id}",
+    response_model=GetSingleCategoryResponse,
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(admin_required)],
+)
 async def update_category(
     category_id: Annotated[int, Path(description="The unique identifier of the category to update")],
     body: Annotated[PutCategoryBody, Body(description="The category data to update")],
@@ -253,7 +268,12 @@ async def update_category(
     return GetSingleCategoryResponse.model_validate(payload)
 
 
-@router.patch("/{category_id}", response_model=GetSingleCategoryResponse, status_code=status.HTTP_200_OK)
+@router.patch(
+    "/{category_id}",
+    response_model=GetSingleCategoryResponse,
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(admin_required)],
+)
 async def patch_category(
     category_id: Annotated[int, Path(description="The unique identifier of the category to update")],
     body: Annotated[PatchCategoryBody, Body(description="The category data to update")],
@@ -292,7 +312,7 @@ async def patch_category(
     return GetSingleCategoryResponse.model_validate(payload)
 
 
-@router.delete("/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{category_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(admin_required)])
 async def delete_category(
     category_id: Annotated[int, Path(description="The unique identifier of the category to delete")],
     category_dao: Annotated[CategoryDAO, Depends(get_category)],

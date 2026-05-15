@@ -83,7 +83,12 @@ async def get_product_list(
     )
 
 
-@router.get("/{product_id}", response_model=GetSingleProductResponse, status_code=status.HTTP_200_OK)
+@router.get(
+    "/{product_id}",
+    response_model=GetSingleProductResponse,
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(admin_required)],
+)
 async def get_product_by_id(
     product_id: Annotated[int, Path(description="The unique identifier of the product to retrieve")],
     product_dao: Annotated[ProductDAO, Depends(get_product)],
@@ -117,7 +122,12 @@ async def get_product_by_id(
     return GetSingleProductResponse.model_validate(payload)
 
 
-@router.post("", response_model=GetSingleProductResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=GetSingleProductResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(admin_required)],
+)
 async def create_product(
     body: Annotated[PostProductBody, Body(description="The product data to create")],
     product_dao: Annotated[ProductDAO, Depends(get_product)],
@@ -151,7 +161,12 @@ async def create_product(
     return GetSingleProductResponse.model_validate(payload)
 
 
-@router.put("/{product_id}", response_model=GetSingleProductResponse, status_code=status.HTTP_200_OK)
+@router.put(
+    "/{product_id}",
+    response_model=GetSingleProductResponse,
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(admin_required)],
+)
 async def update_product(
     product_id: Annotated[int, Path(description="The unique identifier of the product to update")],
     body: Annotated[PutProductBody, Body(description="The product data to update")],
@@ -191,7 +206,12 @@ async def update_product(
     return GetSingleProductResponse.model_validate(payload)
 
 
-@router.patch("/{product_id}", response_model=GetSingleProductResponse, status_code=status.HTTP_200_OK)
+@router.patch(
+    "/{product_id}",
+    response_model=GetSingleProductResponse,
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(admin_required)],
+)
 async def patch_product(
     product_id: Annotated[int, Path(description="The unique identifier of the product to update")],
     body: Annotated[PatchProductBody, Body(description="The product data to update")],
@@ -231,7 +251,7 @@ async def patch_product(
     return GetSingleProductResponse.model_validate(payload)
 
 
-@router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(admin_required)])
 async def delete_product(
     product_id: Annotated[int, Path(description="The unique identifier of the product to delete")],
     product_dao: Annotated[ProductDAO, Depends(get_product)],

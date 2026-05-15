@@ -69,11 +69,11 @@ async def get_shop_list(
     return GetAllShopsResponse(data=[SimpleShopGet.model_validate(shop) for shop in data], metadata=metadata)
 
 
-@router.get("/{shop_id}", response_model=GetSingleShopResponse)
+@router.get("/{shop_id}", response_model=GetSingleShopResponse, dependencies=[Depends(admin_required)])
 async def get_shop_by_id(
     shop_id: Annotated[int, Path(description="The unique identifier of the shop to retrieve")],
     shop_dao: Annotated[ShopDAO, Depends(get_shop)],
-):
+) -> GetSingleShopResponse:
     """Return a single shop by primary key.
 
     Args:
@@ -103,7 +103,12 @@ async def get_shop_by_id(
     return GetSingleShopResponse.model_validate(payload)
 
 
-@router.post("", response_model=GetSingleShopResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=GetSingleShopResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(admin_required)],
+)
 async def create_shop(
     body: Annotated[PostShopBody, Body(description="The shop data to create")],
     shop_dao: Annotated[ShopDAO, Depends(get_shop)],
@@ -137,7 +142,12 @@ async def create_shop(
     return GetSingleShopResponse.model_validate(payload)
 
 
-@router.put("/{shop_id}", response_model=GetSingleShopResponse, status_code=status.HTTP_200_OK)
+@router.put(
+    "/{shop_id}",
+    response_model=GetSingleShopResponse,
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(admin_required)],
+)
 async def update_shop(
     shop_id: Annotated[int, Path(description="The unique identifier of the shop to update")],
     body: Annotated[PutShopBody, Body(description="The shop data to update")],
@@ -177,7 +187,12 @@ async def update_shop(
     return GetSingleShopResponse.model_validate(payload)
 
 
-@router.patch("/{shop_id}", response_model=GetSingleShopResponse, status_code=status.HTTP_200_OK)
+@router.patch(
+    "/{shop_id}",
+    response_model=GetSingleShopResponse,
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(admin_required)],
+)
 async def patch_shop(
     shop_id: Annotated[int, Path(description="The unique identifier of the shop to update")],
     body: Annotated[PatchShopBody, Body(description="The shop data to update")],
@@ -217,7 +232,7 @@ async def patch_shop(
     return GetSingleShopResponse.model_validate(payload)
 
 
-@router.delete("/{shop_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{shop_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(admin_required)])
 async def delete_shop(
     shop_id: Annotated[int, Path(description="The unique identifier of the shop to delete")],
     shop_dao: Annotated[ShopDAO, Depends(get_shop)],
