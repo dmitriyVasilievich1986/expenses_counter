@@ -10,6 +10,9 @@ import Typography from '@mui/material/Typography';
 import classnames from 'classnames/bind';
 import { Link } from 'react-router';
 
+import { Image } from '@components/image';
+
+import { default as defaultImage } from './expenses.svg';
 import { Logout } from './Logout';
 import * as defaultStyle from './style.scss';
 
@@ -25,21 +28,31 @@ export function Navbar() {
     <AppBar position="sticky">
       <Container maxWidth="xl">
         <Toolbar disableGutters>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-            <Stack direction="row" spacing={2}>
-              <Link to="/" className={cx('navlink-text')}>
-                <Typography variant="h6">Home</Typography>
-              </Link>
-              <Link to="/shop" className={cx('navlink-text')}>
-                <Typography variant="h6">Shops</Typography>
-              </Link>
-              <Link to="/product" className={cx('navlink-text')}>
-                <Typography variant="h6">Products</Typography>
-              </Link>
-              <Link to="/transaction" className={cx('navlink-text')}>
-                <Typography variant="h6">Transactions</Typography>
-              </Link>
-            </Stack>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              width: '100%',
+              alignItems: 'center',
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Image src={defaultImage} width={50} height={50} alt="Home" />
+              <Stack direction="row" spacing={2}>
+                <Link to="/" className={cx('navlink-text')}>
+                  <Typography variant="h6">Home</Typography>
+                </Link>
+                <Link to="/shop" className={cx('navlink-text')}>
+                  <Typography variant="h6">Shops</Typography>
+                </Link>
+                <Link to="/product" className={cx('navlink-text')}>
+                  <Typography variant="h6">Products</Typography>
+                </Link>
+                <Link to="/transaction" className={cx('navlink-text')}>
+                  <Typography variant="h6">Transactions</Typography>
+                </Link>
+              </Stack>
+            </Box>
             <Logout />
           </Box>
         </Toolbar>

@@ -8,6 +8,7 @@ import { Routes, Route } from 'react-router';
 const Home = lazy(() => import('@pages/home').then((m) => ({ default: m.Home })));
 const Login = lazy(() => import('@pages/login').then((m) => ({ default: m.Login })));
 const ShopList = lazy(() => import('@pages/shop').then((m) => ({ default: m.ShopList })));
+const Profile = lazy(() => import('@pages/profile').then((m) => ({ default: m.Profile })));
 const CreateShop = lazy(() => import('@pages/shop').then((m) => ({ default: m.CreateShop })));
 const ProductList = lazy(() => import('@pages/product').then((m) => ({ default: m.ProductList })));
 const CreateProduct = lazy(() =>
@@ -30,6 +31,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/profile" element={<Profile />} />
           <Route path="/shop">
             <Route index element={<ShopList />} />
             <Route path="create" element={<CreateShop />} />
