@@ -1,16 +1,17 @@
 """API tests for the ``admin_required`` gate on ``/api/v1`` routers.
 
-The category, product, and shop routers are admin-only end-to-end. The address
-router applies ``admin_required`` to every endpoint except the two list/lookup
-reads (``GET /address`` and ``GET /address/name/{local_name}``). This module
-exercises a request per admin-protected ``(method, path)`` pair with an
-authenticated non-admin user and asserts the dependency rejects it with 403.
+The address, category, shop, and product routers require ``user_authorized``
+at the router level. ``admin_required`` is applied per-endpoint to the write
+operations and per-item reads, while list endpoints remain open to any
+authenticated user. This module verifies both halves of that contract: a
+non-admin user gets 403 on admin-gated routes and 200 on the user-only ones.
 """
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy.exc import NoResultFound
 
 from expenses_counter.modules.app import get_app
 from expenses_counter.modules.middlewares.dependencies import user_authorized
@@ -25,21 +26,16 @@ from expenses_counter.modules.middlewares.dependencies.daos import (
 # minimal — the gate fires before request validation, so a 403 must come back
 # regardless of payload shape.
 ADMIN_PROTECTED_ROUTES: list[tuple[str, str]] = [
-    ("GET", "/api/v1/category"),
     ("GET", "/api/v1/category/1"),
-    ("GET", "/api/v1/category/parent"),
-    ("GET", "/api/v1/category/parent/1"),
     ("POST", "/api/v1/category"),
     ("PUT", "/api/v1/category/1"),
     ("PATCH", "/api/v1/category/1"),
     ("DELETE", "/api/v1/category/1"),
-    ("GET", "/api/v1/shop"),
     ("GET", "/api/v1/shop/1"),
     ("POST", "/api/v1/shop"),
     ("PUT", "/api/v1/shop/1"),
     ("PATCH", "/api/v1/shop/1"),
     ("DELETE", "/api/v1/shop/1"),
-    ("GET", "/api/v1/product"),
     ("GET", "/api/v1/product/1"),
     ("POST", "/api/v1/product"),
     ("PUT", "/api/v1/product/1"),
@@ -52,10 +48,28 @@ ADMIN_PROTECTED_ROUTES: list[tuple[str, str]] = [
     ("DELETE", "/api/v1/address/1"),
 ]
 
+# (method, path) pairs that only require ``user_authorized`` — a non-admin
+# user must reach the handler. The DAO mocks resolve list calls to an empty
+# page so handlers serialize a valid response.
+USER_ONLY_ROUTES: list[tuple[str, str]] = [
+    ("GET", "/api/v1/category"),
+    ("GET", "/api/v1/category/parent"),
+    ("GET", "/api/v1/category/parent/1"),
+    ("GET", "/api/v1/shop"),
+    ("GET", "/api/v1/product"),
+    ("GET", "/api/v1/address"),
+]
+
 
 def _async_dao_mock() -> AsyncMock:
-    """Return a generic async DAO mock for routes that resolve a DAO dependency."""
+    """Return a generic async DAO mock for routes that resolve a DAO dependency.
+
+    ``get_all`` returns an empty paginated result so list handlers can
+    serialize a 200 response without needing a real database row.
+
+    """
     dao = AsyncMock()
+    dao.get_all = AsyncMock(return_value=([], 0))
     dao.__aenter__ = AsyncMock(return_value=dao)
     dao.__aexit__ = AsyncMock(return_value=None)
     return dao
@@ -104,6 +118,27 @@ class TestAdminRequiredRejectsNonAdmin:
 
 
 @pytest.mark.api
+class TestUserOnlyRoutesAllowNonAdmin:
+    """Non-admin users must be allowed through routes without ``admin_required``."""
+
+    @pytest.mark.parametrize(("method", "path"), USER_ONLY_ROUTES)
+    def test_non_admin_reaches_handler(self, non_admin_client: TestClient, method: str, path: str) -> None:
+        """The gate skips these routes — handler must return 200 for an authenticated user."""
+        response = non_admin_client.request(method, path)
+        assert response.status_code == 200
+
+    def test_non_admin_can_look_up_address_by_local_name(self, non_admin_client: TestClient) -> None:
+        """Address-by-local-name lookup is user-only; 404 confirms the handler ran."""
+        dao = _async_dao_mock()
+        # 404 is fine — what matters is we are not blocked by ``admin_required``.
+        dao.get_by_address = AsyncMock(side_effect=NoResultFound("Address not found"))
+        non_admin_client.app.dependency_overrides[get_address] = lambda: dao
+
+        response = non_admin_client.get("/api/v1/address/name/unknown")
+        assert response.status_code == 404
+
+
+@pytest.mark.api
 class TestAdminRequiredAllowsAdmin:
     """Admin users must pass the gate (handler-level outcome is not asserted)."""
 
@@ -122,7 +157,7 @@ class TestAdminRequiredAllowsAdmin:
         app = get_app(test_config)
 
         category_dao = _async_dao_mock()
-        category_dao.get_all = AsyncMock(return_value=([], 0))
+        category_dao.get_by_pk = AsyncMock(side_effect=NoResultFound("Category not found"))
 
         app.dependency_overrides[user_authorized] = lambda: mock_user
         app.dependency_overrides[get_category] = lambda: category_dao
@@ -133,38 +168,10 @@ class TestAdminRequiredAllowsAdmin:
         app.dependency_overrides.clear()
 
     def test_admin_passes_admin_required_gate(self, admin_client: TestClient) -> None:
-        """An admin reaches the handler — the gate must not short-circuit with 403."""
-        response = admin_client.get("/api/v1/category")
-        assert response.status_code == 200
+        """An admin reaches an admin-only handler — the gate must not short-circuit with 403.
 
-
-@pytest.mark.api
-class TestAddressPublicReadsAllowedForNonAdmin:
-    """``GET /address`` and ``GET /address/name/{local_name}`` skip the admin gate."""
-
-    def test_non_admin_can_list_addresses(self, non_admin_client: TestClient) -> None:
-        """Listing addresses must remain available to authenticated non-admin users."""
-        # The injected address DAO is a bare AsyncMock; override its get_all to
-        # return an empty page so the handler can serialize a valid response.
-        from expenses_counter.modules.middlewares.dependencies.daos import get_address as _get_address
-
-        dao = _async_dao_mock()
-        dao.get_all = AsyncMock(return_value=([], 0))
-        non_admin_client.app.dependency_overrides[_get_address] = lambda: dao
-
-        response = non_admin_client.get("/api/v1/address")
-        assert response.status_code == 200
-
-    def test_non_admin_can_look_up_address_by_local_name(self, non_admin_client: TestClient) -> None:
-        """Resolving an address by local name must not require admin privileges."""
-        from sqlalchemy.exc import NoResultFound
-
-        from expenses_counter.modules.middlewares.dependencies.daos import get_address as _get_address
-
-        dao = _async_dao_mock()
-        # 404 is fine — what matters is we are not blocked by ``admin_required``.
-        dao.get_by_address = AsyncMock(side_effect=NoResultFound("Address not found"))
-        non_admin_client.app.dependency_overrides[_get_address] = lambda: dao
-
-        response = non_admin_client.get("/api/v1/address/name/unknown")
+        ``GET /category/{id}`` is admin-gated; we route it through to a 404 from the DAO
+        to prove the request passed ``admin_required`` rather than being blocked at the gate.
+        """
+        response = admin_client.get("/api/v1/category/1")
         assert response.status_code == 404
