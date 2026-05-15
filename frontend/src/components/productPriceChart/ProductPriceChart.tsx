@@ -6,9 +6,7 @@
 import { Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { LineChart } from '@mui/x-charts/LineChart';
-import { useEffect, useState } from 'react';
 
-import { useTransactionAPIClient } from '@services/apiClient/transaction';
 import type { TransactionType } from '@store/transaction/types';
 
 /**
@@ -20,25 +18,13 @@ import type { TransactionType } from '@store/transaction/types';
  * @returns {JSX.Element} Line chart or empty-state typography.
  */
 export function ProductPriceChart({
-  productId,
+  data,
   removeLabels = true,
 }: {
-  productId: number;
+  data: TransactionType[] | null;
   removeLabels?: boolean;
 }) {
   const theme = useTheme();
-  const { getTransactions } = useTransactionAPIClient();
-  const [data, setData] = useState<TransactionType[] | null>(null);
-
-  useEffect(() => {
-    if (data === null) {
-      getTransactions(100, 0, 'date', 'asc', [
-        { column: 'product_id', operator: 'eq', value: productId },
-      ]).then((response) => {
-        setData(response.data);
-      });
-    }
-  }, [data, productId]);
 
   if (data === null || data.length <= 1) {
     return (
