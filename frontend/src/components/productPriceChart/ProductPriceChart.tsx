@@ -38,7 +38,7 @@ export function ProductPriceChart({
         setData(response.data);
       });
     }
-  }, [data]);
+  }, [data, productId]);
 
   if (data === null || data.length <= 1) {
     return (
