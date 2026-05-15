@@ -5,11 +5,17 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const appVersion = (
-  JSON.parse(readFileSync(resolve(__dirname, 'application-version.json'), 'utf-8')) as {
-    version: string;
-  }
-).version;
+
+let appVersion = '1.0.0';
+try {
+  appVersion = (
+    JSON.parse(readFileSync(resolve(__dirname, 'application-version.json'), 'utf-8')) as {
+      version: string;
+    }
+  ).version;
+} catch (error) {
+  console.error('Error reading application version:', error);
+}
 
 // https://vite.dev/config/
 export default defineConfig({
