@@ -14,10 +14,11 @@ class Filter[ColumnType: str](BaseModel):
     """Declarative filter triple for paginated or filtered list APIs.
 
     ``ColumnType`` is typically a string literal union of allowed ORM attribute
-    names. Supported operators: null checks (``isnull``, ``notnull``),
-    comparisons (``eq``, ``ge``, ``gt``, ``le``, ``lt``), membership (``in``),
-    and substring match (``like``, ``ilike``).
+    names.
 
+    Supported operators: null checks (``isnull``, ``notnull``); comparisons
+    (``eq``, ``ge``, ``gt``, ``le``, ``lt``); membership (``in``); substring
+    match (``like``, ``ilike``).
     """
 
     column: ColumnType = Field(..., description="The column to filter by")
@@ -30,15 +31,31 @@ class Filter[ColumnType: str](BaseModel):
     def coerce_iso_date_strings_for_comparison(self) -> Self:
         """Coerce ISO date strings to ``date`` for numeric-style operators.
 
-        Strings matching ``%Y-%m-%d`` become ``date`` objects for ``eq``, ``ge``,
-        ``gt``, ``le``, ``lt``, and ``in``. ``like``, ``ilike``, ``isnull``, and
-        ``notnull`` leave ``value`` unchanged so patterns and null semantics stay
-        intact. Non-matching strings are unchanged.
+        Strings matching ``%Y-%m-%d`` become ``date`` objects for ``eq``,
+        ``ge``, ``gt``, ``le``, ``lt``, and ``in``. Operators ``like``,
+        ``ilike``, ``isnull``, and ``notnull`` leave ``value`` unchanged so
+        patterns and null semantics stay intact. Strings that do not match the
+        ISO date pattern are left unchanged.
 
         Returns:
-            Self: Model copy with coerced ``value``, or ``self`` when no change
-                applies.
+            Self: A copy of the model with a coerced ``value``, or ``self`` if
+                no coercion applies.
+
+        Raises:
+            ValueError: If ``operator`` is ``in`` but ``value`` is not a list;
+                if ``operator`` is not ``in`` but ``value`` is a list; or if
+                ``operator`` is ``isnull`` or ``notnull`` but ``value`` is not
+                ``None``.
         """
+        if self.operator == "in" and not isinstance(self.value, list):
+            raise ValueError("Value for 'in' operator must be a list")
+
+        if self.operator != "in" and isinstance(self.value, list):
+            raise ValueError(f"Value for '{self.operator}' should not be a list")
+
+        if self.operator in ("isnull", "notnull") and self.value is not None:
+            raise ValueError(f"Value for '{self.operator}' should be None")
+
         if self.operator in ("like", "ilike", "isnull", "notnull"):
             return self
 
@@ -52,22 +69,22 @@ class Filter[ColumnType: str](BaseModel):
         return self
 
     def to_sqlalchemy_filter(self, cls: type[DeclarativeBase]) -> ColumnElement[bool]:
-        """Return a boolean SQLAlchemy expression for this filter.
+        """Build a boolean SQLAlchemy expression for this filter.
 
-        ``isnull`` and ``notnull`` ignore ``value``. ``like`` and ``ilike``
-        surround ``value`` with ``%`` for substring match.
+        Operators ``isnull`` and ``notnull`` ignore ``value``. Operators ``like``
+        and ``ilike`` wrap ``value`` with ``%`` for substring matching.
 
         Args:
-            cls (type[DeclarativeBase]): Declarative model that defines the
+            cls (type[DeclarativeBase]): Declarative model class exposing the
                 attribute named by ``column``.
 
         Returns:
-            ColumnElement[bool]: Predicate suitable for ``Query.where()`` or
+            ColumnElement[bool]: A predicate for ``Query.where()`` or
                 ``filter()``.
 
         Raises:
-            ValueError: If ``operator`` is not one of the supported literals
-                (unexpected after successful Pydantic validation).
+            ValueError: If ``operator`` is not a supported literal (should not
+                occur after successful Pydantic validation).
 
         """
         column: ColumnElement[Any] = getattr(cls, self.column)
