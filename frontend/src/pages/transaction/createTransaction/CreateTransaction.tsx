@@ -51,7 +51,11 @@ export function CreateTransaction() {
 
   const currentDate = useMemo(() => {
     const dateParam = searchParams.get('date');
-    return dateParam ? dayjs(dateParam) : dayjs();
+    const payload = dateParam ? dayjs(dateParam) : dayjs();
+    if (!payload.isValid()) {
+      return dayjs();
+    }
+    return payload;
   }, [searchParams]);
 
   /** Builds payload from the form and store date, then POST (navigate to new id) or PUT when `transactionId` is set. */
