@@ -7,7 +7,8 @@
 import { Home } from './home';
 import { Login } from './login';
 import { ProductList, CreateProduct } from './product';
+import { Profile } from './profile';
 import { ShopList, CreateShop } from './shop';
 import { TransactionPage } from './transaction';
 
-export { Home, ShopList, CreateShop, ProductList, CreateProduct, TransactionPage, Login };
+export { Home, ShopList, CreateShop, ProductList, CreateProduct, TransactionPage, Login, Profile };
