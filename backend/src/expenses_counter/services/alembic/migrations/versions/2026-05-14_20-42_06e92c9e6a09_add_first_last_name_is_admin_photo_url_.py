@@ -32,8 +32,8 @@ def upgrade():
     with op.batch_alter_table("main_user") as batch_op:
         batch_op.add_column(sa.Column("first_name", sa.String(150), nullable=True))
         batch_op.add_column(sa.Column("last_name", sa.String(150), nullable=True))
-        batch_op.add_column(sa.Column("is_admin", sa.Boolean, nullable=False, server_default="false"))
-        batch_op.add_column(sa.Column("is_active", sa.Boolean, nullable=False, server_default="true"))
+        batch_op.add_column(sa.Column("is_admin", sa.Boolean, nullable=False, server_default="0"))
+        batch_op.add_column(sa.Column("is_active", sa.Boolean, nullable=False, server_default="1"))
         batch_op.add_column(sa.Column("photo_url", sa.String(255), nullable=True))
 
 
