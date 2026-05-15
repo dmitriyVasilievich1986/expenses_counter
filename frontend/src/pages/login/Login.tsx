@@ -46,7 +46,7 @@ export function Login() {
   useEffect(() => {
     if (user === null) return;
     setUser(null);
-  }, []);
+  }, [user, setUser]);
 
   /** Calls the login API, sets the `accessToken` cookie using the response expiry, then navigates to `redirectTo`. */
   const handleSubmit = async () => {
