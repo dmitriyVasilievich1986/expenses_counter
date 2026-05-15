@@ -31,5 +31,5 @@ export type PaginationMetadata = {
 export type FilterType = {
   column: string;
   operator: string;
-  value: string | number | null | Date | boolean | Dayjs;
+  value: string | number | string[] | number[] | null | Date | boolean | Dayjs;
 };
