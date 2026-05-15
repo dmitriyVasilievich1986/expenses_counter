@@ -20,7 +20,7 @@ import { useMainStore } from '@store/main/mainStore';
 
 import * as defaultStyle from '../style.scss';
 
-import type { AvailablePagesType } from './types';
+import type { AvailablePageType } from './types';
 
 const cx = classnames.bind(defaultStyle);
 
@@ -30,7 +30,7 @@ const cx = classnames.bind(defaultStyle);
  * @returns {JSX.Element | null} MUI Typography that clears the token and navigates to login, or nothing if logged out.
  */
 export function Logout() {
-  const pagesMapping: Record<string, AvailablePagesType> = {
+  const pagesMapping: Record<string, AvailablePageType> = {
     shops: {
       label: 'Shops',
       path: '/shop',
@@ -46,7 +46,7 @@ export function Logout() {
   const { user, setUser } = useMainStore();
   const { getUser, getAvailablePages } = useUserAPIClient();
 
-  const [availablePages, setAvailablePages] = useState<AvailablePagesType[]>([]);
+  const [availablePages, setAvailablePages] = useState<AvailablePageType[]>([]);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
@@ -61,7 +61,7 @@ export function Logout() {
   useEffect(() => {
     if (user !== null && !!Cookies.get('accessToken')) {
       getAvailablePages().then((pages) => {
-        const newAvailablePages: AvailablePagesType[] = [];
+        const newAvailablePages: AvailablePageType[] = [];
         pages.forEach((page) => {
           if (page in pagesMapping) {
             newAvailablePages.push(pagesMapping[page]);

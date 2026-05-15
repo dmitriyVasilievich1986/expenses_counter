@@ -8,7 +8,7 @@
  * @property {string} label - Text shown in the menu for this entry.
  * @property {string} path - Client route path (e.g. `/shop`) when the item is chosen.
  */
-export type AvailablePagesType = {
+export type AvailablePageType = {
   label: string;
   path: string;
 };
