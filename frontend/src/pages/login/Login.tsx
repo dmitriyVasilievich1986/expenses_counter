@@ -16,11 +16,12 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import dayjs from 'dayjs';
 import Cookies from 'js-cookie';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 
 import { SubmitButton } from '@components/submitButton';
 import { useAuthAPIClient } from '@services/apiClient/auth';
+import { useMainStore } from '@store/main/mainStore';
 
 /**
  * Presents credential fields and submits login; shows API errors as helper text on both fields.
@@ -34,10 +35,18 @@ export function Login() {
   const [error, setError] = useState<string>('');
 
   const navigate = useNavigate();
+
+  const { user, setUser } = useMainStore();
+
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get('redirectTo') ?? '/';
 
   const { login } = useAuthAPIClient();
+
+  useEffect(() => {
+    if (user === null) return;
+    setUser(null);
+  }, []);
 
   /** Calls the login API, sets the `accessToken` cookie using the response expiry, then navigates to `redirectTo`. */
   const handleSubmit = async () => {
