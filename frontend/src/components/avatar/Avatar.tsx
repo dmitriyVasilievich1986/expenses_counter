@@ -16,10 +16,13 @@ import { useState } from 'react';
  * @returns A Material UI `Avatar` element.
  */
 export function Avatar(props: { src?: string | null; label: string }) {
-  const [failed, setFailed] = useState(false);
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
 
-  if (failed || !props.src) {
+  const src = props.src;
+  const showInitials = !src || src === failedSrc;
+
+  if (showInitials) {
     return <MuiAvatar aria-label="avatar">{props.label.slice(0, 2).toUpperCase()}</MuiAvatar>;
   }
-  return <MuiAvatar src={props.src} onError={() => setFailed(true)} aria-label="avatar" />;
+  return <MuiAvatar src={src} onError={() => setFailedSrc(src)} aria-label="avatar" />;
 }
