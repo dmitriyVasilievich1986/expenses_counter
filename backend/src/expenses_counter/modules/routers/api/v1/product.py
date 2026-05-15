@@ -31,8 +31,8 @@ from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, status
 from loguru import logger
 from sqlalchemy.exc import IntegrityError, NoResultFound, SQLAlchemyError
 
+from expenses_counter.modules.middlewares.dependencies.admin_required import admin_required
 from expenses_counter.modules.middlewares.dependencies.daos import get_product
-from expenses_counter.modules.middlewares.dependencies.user_authorized import user_authorized
 from expenses_counter.modules.routers.schemas.base.metadata import PaginationMetadata
 from expenses_counter.modules.routers.schemas.requests.product import (
     GetAllProductsQuery,
@@ -47,7 +47,7 @@ from expenses_counter.modules.routers.schemas.responses.product import (
 )
 from expenses_counter.services.daos import ProductDAO
 
-router = APIRouter(prefix="/product", tags=["Product"], dependencies=[Depends(user_authorized)])
+router = APIRouter(prefix="/product", tags=["Product"], dependencies=[Depends(admin_required)])
 
 
 @router.get("", response_model=GetAllProductsResponse, status_code=status.HTTP_200_OK)

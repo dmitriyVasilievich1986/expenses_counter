@@ -21,8 +21,8 @@ from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, status
 from loguru import logger
 from sqlalchemy.exc import IntegrityError, NoResultFound, SQLAlchemyError
 
+from expenses_counter.modules.middlewares.dependencies.admin_required import admin_required
 from expenses_counter.modules.middlewares.dependencies.daos import get_category
-from expenses_counter.modules.middlewares.dependencies.user_authorized import user_authorized
 from expenses_counter.modules.routers.schemas.base.metadata import PaginationMetadata
 from expenses_counter.modules.routers.schemas.requests.category import (
     GetAllCategoriesByParentQuery,
@@ -39,7 +39,7 @@ from expenses_counter.modules.routers.schemas.responses.category import (
 from expenses_counter.services.daos import CategoryDAO
 from expenses_counter.utils.filter import Filter
 
-router = APIRouter(prefix="/category", tags=["Category"], dependencies=[Depends(user_authorized)])
+router = APIRouter(prefix="/category", tags=["Category"], dependencies=[Depends(admin_required)])
 
 
 @router.get("", response_model=GetAllCategoriesResponse, status_code=status.HTTP_200_OK)

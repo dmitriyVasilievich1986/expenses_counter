@@ -21,8 +21,8 @@ from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, status
 from loguru import logger
 from sqlalchemy.exc import IntegrityError, NoResultFound, SQLAlchemyError
 
+from expenses_counter.modules.middlewares.dependencies.admin_required import admin_required
 from expenses_counter.modules.middlewares.dependencies.daos.get_address import get_address
-from expenses_counter.modules.middlewares.dependencies.user_authorized import user_authorized
 from expenses_counter.modules.routers.schemas.base.metadata import PaginationMetadata
 from expenses_counter.modules.routers.schemas.requests.address import (
     GetAllAddressesQuery,
@@ -37,7 +37,7 @@ from expenses_counter.modules.routers.schemas.responses.address import (
 )
 from expenses_counter.services.daos import AddressDAO
 
-router = APIRouter(prefix="/address", tags=["Address"], dependencies=[Depends(user_authorized)])
+router = APIRouter(prefix="/address", tags=["Address"], dependencies=[Depends(admin_required)])
 
 
 @router.get("", response_model=GetAllAddressesResponse, status_code=status.HTTP_200_OK)
