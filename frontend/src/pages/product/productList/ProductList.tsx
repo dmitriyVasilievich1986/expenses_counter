@@ -24,6 +24,7 @@ import Typography from '@mui/material/Typography';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 
+import { ProductPriceChart } from '@components/productPriceChart';
 import { Search } from '@components/search';
 import { useCategoryAPIClient } from '@services/apiClient';
 import { useProductAPIClient } from '@services/apiClient/product/client';
@@ -37,7 +38,7 @@ import type { ProductSimpleType } from '@store/product';
  */
 export function ProductList() {
   /** Fixed page size for product list requests and MUI `TablePagination`. */
-  const limit = 10;
+  const limit = 5;
   const columnHeaders = [
     {
       label: 'Name',
@@ -52,6 +53,11 @@ export function ProductList() {
     {
       label: 'Description',
       key: 'description',
+      isSortable: false,
+    },
+    {
+      label: 'Price Chart',
+      key: 'priceChart',
       isSortable: false,
     },
   ];
@@ -192,6 +198,11 @@ export function ProductList() {
                   {groupedCategories[product.categoryId as number]}
                 </TableCell>
                 <TableCell align="left">{product.description}</TableCell>
+                <TableCell align="center">
+                  <Box sx={{ width: '200px', height: '50px' }}>
+                    <ProductPriceChart productId={product.id} removeLabels={true} />
+                  </Box>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
