@@ -95,6 +95,7 @@ export function Logout() {
         id="logout-menu"
         anchorEl={anchorEl}
         open={open}
+        disableAutoFocusItem
         onClose={handleClose}
         slotProps={{
           list: {
@@ -112,6 +113,13 @@ export function Logout() {
         </MenuItem>
         <Divider />
         <MenuItem onClick={handleLogout}>Logout</MenuItem>
+        <Divider />
+        <MenuItem
+          disabled
+          sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mx: 1 }}
+        >
+          <Typography variant="caption">Version {import.meta.env.VITE_APP_VERSION}</Typography>
+        </MenuItem>
       </Menu>
     </Box>
   );
