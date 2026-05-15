@@ -26,10 +26,11 @@ import { Link, useNavigate, useSearchParams } from 'react-router';
 
 import { ProductPriceChart } from '@components/productPriceChart';
 import { Search } from '@components/search';
-import { useCategoryAPIClient } from '@services/apiClient';
+import { useCategoryAPIClient, useTransactionAPIClient } from '@services/apiClient';
 import { useProductAPIClient } from '@services/apiClient/product/client';
 import { useCategoryStore } from '@store/category';
 import type { ProductSimpleType } from '@store/product';
+import type { TransactionType } from '@store/transaction';
 
 /**
  * Renders the product catalog in a table with skeleton loading while the list request is in flight.
@@ -66,10 +67,12 @@ export function ProductList() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [productsTable, setProductsTable] = useState<ProductSimpleType[] | null>(null);
+  const [transactions, setTransactions] = useState<TransactionType[] | null>(null);
   const [totalProductsTable, setTotalProductsTable] = useState<number>(0);
 
   const categories = useCategoryStore((state) => state.categories);
 
+  const { getTransactions } = useTransactionAPIClient();
   const { getCategories } = useCategoryAPIClient();
   const { getProducts } = useProductAPIClient();
 
@@ -105,10 +108,12 @@ export function ProductList() {
       .then(({ data, metadata }) => {
         if (cancelled) return;
         setProductsTable(data);
+        setTransactions(null);
         setTotalProductsTable(metadata.total);
       })
       .catch((error) => {
         setProductsTable([] as ProductSimpleType[]);
+        setTransactions(null);
         setTotalProductsTable(0);
         console.error('Error fetching products:', error);
       });
@@ -122,6 +127,39 @@ export function ProductList() {
   useEffect(() => {
     if (categories === null) getCategories();
   }, [categories]);
+
+  useEffect(() => {
+    if (productsTable === null || transactions !== null) return;
+
+    let cancelled = false;
+
+    const fetchData = async (ids: number[]) => {
+      const payload: TransactionType[] = [];
+      let total = 1000;
+      try {
+        while (payload.length < total) {
+          const { data, metadata } = await getTransactions(100, payload.length, 'date', 'asc', [
+            { column: 'product_id', operator: 'in', value: ids },
+          ]);
+          payload.push(...data);
+          total = metadata.total;
+          if (cancelled) break;
+        }
+      } catch (error) {
+        console.error(error);
+        setTransactions(payload);
+        return;
+      }
+      setTransactions(payload);
+    };
+
+    const productIds = productsTable!.map((product) => product.id);
+    void fetchData(productIds);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [productsTable, transactions]);
 
   /** Map from category id to display name for table cells. */
   const groupedCategories = useMemo(() => {
@@ -200,7 +238,10 @@ export function ProductList() {
                 <TableCell align="left">{product.description}</TableCell>
                 <TableCell align="center">
                   <Box sx={{ width: '200px', height: '50px' }}>
-                    <ProductPriceChart productId={product.id} removeLabels={true} />
+                    <ProductPriceChart
+                      data={transactions?.filter((t) => t.productId === product.id) ?? null}
+                      removeLabels={true}
+                    />
                   </Box>
                 </TableCell>
               </TableRow>
