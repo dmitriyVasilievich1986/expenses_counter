@@ -46,6 +46,7 @@ class Filter[ColumnType: str](BaseModel):
                 if ``operator`` is not ``in`` but ``value`` is a list; or if
                 ``operator`` is ``isnull`` or ``notnull`` but ``value`` is not
                 ``None``.
+
         """
         if self.operator == "in" and not isinstance(self.value, list):
             raise ValueError("Value for 'in' operator must be a list")
@@ -105,7 +106,7 @@ class Filter[ColumnType: str](BaseModel):
             case "lt":
                 return column < self.value
             case "in":
-                return column.in_(self.value)
+                return column.in_(self.value)  # type: ignore[arg-type]
             case "like":
                 return column.like(f"%{self.value}%")
             case "ilike":
