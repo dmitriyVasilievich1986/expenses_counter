@@ -24,7 +24,7 @@ import { useMainStore } from '@store/main/mainStore';
 export function ProfileForm() {
   const { putUser } = useUserAPIClient();
 
-  const { user, setUser } = useMainStore();
+  const { user } = useMainStore();
 
   const [newFirstName, setNewFirstName] = useState<string>(user?.firstName ?? '');
   const [newLastName, setNewLastName] = useState<string>(user?.lastName ?? '');
@@ -36,13 +36,7 @@ export function ProfileForm() {
       firstName: newFirstName,
       lastName: newLastName,
       photoUrl: newPhotoUrl,
-    })
-      .then((newUser) => {
-        setUser(newUser);
-      })
-      .catch((error) => {
-        console.error(error);
-      });
+    });
   };
 
   return (
