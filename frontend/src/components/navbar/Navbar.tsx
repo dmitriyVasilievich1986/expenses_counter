@@ -13,7 +13,7 @@ import { Link } from 'react-router';
 import { Image } from '@components/image';
 
 import { default as defaultImage } from './expenses.svg';
-import { Logout } from './Logout';
+import { Logout } from './logout';
 import * as defaultStyle from './style.scss';
 
 const cx = classnames.bind(defaultStyle);
@@ -41,12 +41,6 @@ export function Navbar() {
               <Stack direction="row" spacing={2}>
                 <Link to="/" className={cx('navlink-text')}>
                   <Typography variant="h6">Home</Typography>
-                </Link>
-                <Link to="/shop" className={cx('navlink-text')}>
-                  <Typography variant="h6">Shops</Typography>
-                </Link>
-                <Link to="/product" className={cx('navlink-text')}>
-                  <Typography variant="h6">Products</Typography>
                 </Link>
                 <Link to="/transaction" className={cx('navlink-text')}>
                   <Typography variant="h6">Transactions</Typography>

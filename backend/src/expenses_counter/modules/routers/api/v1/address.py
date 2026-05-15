@@ -21,6 +21,7 @@ from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, status
 from loguru import logger
 from sqlalchemy.exc import IntegrityError, NoResultFound, SQLAlchemyError
 
+from expenses_counter.modules.middlewares.dependencies.admin_required import admin_required
 from expenses_counter.modules.middlewares.dependencies.daos.get_address import get_address
 from expenses_counter.modules.middlewares.dependencies.user_authorized import user_authorized
 from expenses_counter.modules.routers.schemas.base.metadata import PaginationMetadata
@@ -106,7 +107,12 @@ async def get_address_by_local_name(
     return GetSingleAddressResponse.model_validate(payload)
 
 
-@router.get("/{address_id}", response_model=GetSingleAddressResponse, status_code=status.HTTP_200_OK)
+@router.get(
+    "/{address_id}",
+    response_model=GetSingleAddressResponse,
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(admin_required)],
+)
 async def get_address_by_id(
     address_id: Annotated[int, Path(description="The unique identifier of the address to retrieve")],
     address_dao: Annotated[AddressDAO, Depends(get_address)],
@@ -139,7 +145,12 @@ async def get_address_by_id(
     return GetSingleAddressResponse.model_validate(payload)
 
 
-@router.post("", response_model=GetSingleAddressResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=GetSingleAddressResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(admin_required)],
+)
 async def create_address(
     body: Annotated[PostAddressBody, Body(description="The address data to create")],
     address_dao: Annotated[AddressDAO, Depends(get_address)],
@@ -172,7 +183,12 @@ async def create_address(
     return GetSingleAddressResponse.model_validate(payload)
 
 
-@router.put("/{address_id}", response_model=GetSingleAddressResponse, status_code=status.HTTP_200_OK)
+@router.put(
+    "/{address_id}",
+    response_model=GetSingleAddressResponse,
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(admin_required)],
+)
 async def update_address(
     address_id: Annotated[int, Path(description="The unique identifier of the address to update")],
     body: Annotated[PutAddressBody, Body(description="The address data to update")],
@@ -210,7 +226,12 @@ async def update_address(
     return GetSingleAddressResponse.model_validate(payload)
 
 
-@router.patch("/{address_id}", response_model=GetSingleAddressResponse, status_code=status.HTTP_200_OK)
+@router.patch(
+    "/{address_id}",
+    response_model=GetSingleAddressResponse,
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(admin_required)],
+)
 async def patch_address(
     address_id: Annotated[int, Path(description="The unique identifier of the address to update")],
     body: Annotated[PatchAddressBody, Body(description="The address data to update")],
@@ -248,7 +269,7 @@ async def patch_address(
     return GetSingleAddressResponse.model_validate(payload)
 
 
-@router.delete("/{address_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{address_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(admin_required)])
 async def delete_address(
     address_id: Annotated[int, Path(description="The unique identifier of the address to delete")],
     address_dao: Annotated[AddressDAO, Depends(get_address)],

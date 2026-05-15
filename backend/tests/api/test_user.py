@@ -346,3 +346,65 @@ class TestPatchMe:
         response = test_client.patch("/api/v1/user", json={"firstName": "x" * 151})
 
         assert response.status_code == 422
+
+
+@pytest.mark.api
+class TestGetAvailablePages:
+    """Test GET /api/v1/user/available-pages endpoint."""
+
+    def _build_client(self, test_config, mock_user_dao, user: MagicMock) -> TestClient:
+        """Wire a ``TestClient`` whose ``user_authorized`` resolves to ``user``."""
+        app = get_app(test_config)
+        app.dependency_overrides[get_user_dao] = lambda: mock_user_dao
+        app.dependency_overrides[user_authorized] = lambda: user
+        return TestClient(app)
+
+    def test_admin_user_sees_admin_pages(self, test_config, mock_user_dao):
+        """Admin users get the admin-only page keys."""
+        admin = MagicMock(spec=User)
+        admin.is_admin = True
+        client = self._build_client(test_config, mock_user_dao, admin)
+
+        try:
+            response = client.get("/api/v1/user/available-pages")
+        finally:
+            client.app.dependency_overrides.clear()
+
+        assert response.status_code == 200
+        assert response.json() == ["shops", "products"]
+
+    def test_non_admin_user_sees_empty_list(self, test_config, mock_user_dao):
+        """Non-admin users get no admin-gated page keys."""
+        regular = MagicMock(spec=User)
+        regular.is_admin = False
+        client = self._build_client(test_config, mock_user_dao, regular)
+
+        try:
+            response = client.get("/api/v1/user/available-pages")
+        finally:
+            client.app.dependency_overrides.clear()
+
+        assert response.status_code == 200
+        assert response.json() == []
+
+    def test_response_differs_between_admin_and_non_admin(self, test_config, mock_user_dao):
+        """The same endpoint must return different payloads for the two roles."""
+        admin = MagicMock(spec=User)
+        admin.is_admin = True
+        regular = MagicMock(spec=User)
+        regular.is_admin = False
+
+        admin_client = self._build_client(test_config, mock_user_dao, admin)
+        try:
+            admin_pages = admin_client.get("/api/v1/user/available-pages").json()
+        finally:
+            admin_client.app.dependency_overrides.clear()
+
+        regular_client = self._build_client(test_config, mock_user_dao, regular)
+        try:
+            regular_pages = regular_client.get("/api/v1/user/available-pages").json()
+        finally:
+            regular_client.app.dependency_overrides.clear()
+
+        assert admin_pages != regular_pages
+        assert set(admin_pages) - set(regular_pages) == {"shops", "products"}

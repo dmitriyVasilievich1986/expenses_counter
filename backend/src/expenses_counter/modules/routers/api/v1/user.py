@@ -7,6 +7,7 @@ Routes:
     GET /user/me - Get the current user
     PUT /user - Replace the current user's fields
     PATCH /user - Partially update the current user
+    GET /user/available-pages - Page keys the user may access
 """
 
 __all__ = ("router",)
@@ -137,3 +138,28 @@ async def patch_me(
         ) from e
 
     return GetSingleUserResponse.model_validate(payload)
+
+
+@router.get(
+    "/available-pages",
+    response_model=list[str],
+    status_code=status.HTTP_200_OK,
+    description="Get the available pages",
+)
+async def get_available_pages(user: Annotated[User, Depends(user_authorized)]) -> list[str]:
+    """Return route page identifiers the authenticated user is allowed to open.
+
+    Admin users receive identifiers for admin-only sections; non-admins get an
+    empty list.
+
+    Args:
+        user (User): The user resolved from the JWT by ``user_authorized``.
+
+    Returns:
+        list[str]: Page keys (e.g. ``shops``, ``products``) or an empty list.
+
+    """
+    if user.is_admin:
+        return ["shops", "products"]
+
+    return []

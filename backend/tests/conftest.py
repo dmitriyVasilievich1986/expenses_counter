@@ -212,14 +212,34 @@ async def async_db_client(
 def mock_user() -> MagicMock:
     """Return a mock ``User`` for tests that override ``user_authorized``.
 
+    The user is flagged as an admin so requests pass the ``admin_required``
+    gate guarding most ``/api/v1`` routers.
+
     Returns:
-        MagicMock: A mock user with stable ``id``, ``username``, and ``email``.
+        MagicMock: A mock admin user with stable ``id``, ``username``, and ``email``.
 
     """
     user = MagicMock(spec=User)
     user.id = 1
     user.username = "testuser"
     user.email = "test@example.com"
+    user.is_admin = True
+    return user
+
+
+@pytest.fixture
+def mock_non_admin_user() -> MagicMock:
+    """Return a non-admin mock ``User`` for ``admin_required`` rejection tests.
+
+    Returns:
+        MagicMock: A mock user with ``is_admin`` set to ``False``.
+
+    """
+    user = MagicMock(spec=User)
+    user.id = 2
+    user.username = "regular"
+    user.email = "regular@example.com"
+    user.is_admin = False
     return user
 
 
@@ -245,6 +265,7 @@ async def test_user_in_db(
         username="integration-user",
         email="integration@example.com",
         password="integration-password",
+        is_admin=True,
     )
 
 
