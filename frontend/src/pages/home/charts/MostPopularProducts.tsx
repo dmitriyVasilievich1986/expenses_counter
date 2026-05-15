@@ -4,7 +4,7 @@ import Typography from '@mui/material/Typography';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 
-import { Card } from '@components/card';
+import { ProductPriceChart } from '@components/productPriceChart';
 import { useStatisticsAPIClient } from '@services/apiClient/statistics';
 import type { ProductSimpleType } from '@store/product/types';
 
@@ -15,7 +15,7 @@ export function MostPopularProducts() {
 
   useEffect(() => {
     if (data === null) {
-      getMostPopularProducts(6).then((response) => {
+      getMostPopularProducts(5).then((response) => {
         setData(response);
       });
     }
@@ -32,18 +32,32 @@ export function MostPopularProducts() {
         height: '100%',
       }}
     >
-      <Box sx={{ px: 2, flex: 1, height: 'fit-content' }}>
+      <Box
+        sx={{ px: 2, flex: 1, height: 'fit-content', cursor: 'pointer' }}
+        onClick={() => navigate('/product')}
+      >
         <Typography align="center" variant="h6" sx={{ mb: 2 }}>
           Most Popular Products:
         </Typography>
         <Stack spacing={2} sx={{ width: '100%' }}>
           {data?.map((item) => (
-            <Card
+            <Box
               key={item.id}
-              title={item.name}
-              description={item.description}
-              onClick={() => navigate(`/product/${item.id}`)}
-            />
+              sx={{
+                display: 'flex',
+                justifyContent: 'start',
+                alignItems: 'center',
+                width: '100%',
+                gap: 2,
+              }}
+            >
+              <Box sx={{ width: '200px', height: '50px' }}>
+                <ProductPriceChart productId={item.id} removeLabels={true} />
+              </Box>
+              <Typography align="left" variant="body1" sx={{ mb: 2 }}>
+                {item.name}
+              </Typography>
+            </Box>
           ))}
         </Stack>
       </Box>
