@@ -9,8 +9,9 @@ import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
-import { useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import dayjs from 'dayjs';
+import { useMemo, useRef, useState } from 'react';
+import { useNavigate, useParams, useSearchParams } from 'react-router';
 
 import { AsyncInput } from '@components/asyncInput';
 import { Input } from '@components/input';
@@ -30,10 +31,11 @@ import { useTransactionStore } from '@store/transaction';
  */
 export function CreateTransaction() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { transactionId } = useParams();
   const formRef = useRef<HTMLFormElement>(null);
 
-  const { currentTransaction, currentDate } = useTransactionStore();
+  const { currentTransaction } = useTransactionStore();
   const { products, setProducts } = useProductStore();
   const { addresses, setAddresses } = useShopStore();
 
@@ -47,6 +49,11 @@ export function CreateTransaction() {
     currentTransaction?.product ?? null
   );
 
+  const currentDate = useMemo(() => {
+    const dateParam = searchParams.get('date');
+    return dateParam ? dayjs(dateParam) : dayjs();
+  }, [searchParams]);
+
   /** Builds payload from the form and store date, then POST (navigate to new id) or PUT when `transactionId` is set. */
   const clickHandler = async () => {
     const formData = new FormData(formRef.current as HTMLFormElement);
@@ -58,7 +65,7 @@ export function CreateTransaction() {
     if (transactionId === undefined) {
       try {
         const response = await postTransaction(data);
-        navigate(`/transaction/${response.id}`);
+        navigate({ pathname: `/transaction/${response.id}`, search: searchParams.toString() });
       } catch (error) {
         console.error(error);
       }
@@ -70,7 +77,7 @@ export function CreateTransaction() {
   /** Deletes the transaction for the route id and navigates back to the transaction list. */
   const deleteHandler = async () => {
     await deleteTransaction(parseInt(transactionId as string));
-    navigate('/transaction');
+    navigate({ pathname: '/transaction', search: searchParams.toString() });
   };
 
   return (
