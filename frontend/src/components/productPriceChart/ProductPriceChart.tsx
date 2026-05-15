@@ -14,12 +14,12 @@ import type { TransactionType } from '@store/transaction/types';
  *
  * @param {object} props - Component props.
  * @param {number} props.productId - Product whose transactions are loaded and charted.
- * @param {boolean | undefined} props.removeLabels - When true (default), hides axes, legend, highlights, and tooltips for a compact sparkline-style chart.
+ * @param {boolean | undefined} props.removeLabels - When true, hides axes, legend, highlights, and tooltips for a compact sparkline-style chart.
  * @returns {JSX.Element} Line chart or empty-state typography.
  */
 export function ProductPriceChart({
   data,
-  removeLabels = true,
+  removeLabels,
 }: {
   data: TransactionType[] | null;
   removeLabels?: boolean;
