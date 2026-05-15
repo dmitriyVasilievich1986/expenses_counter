@@ -18,7 +18,9 @@ import { Avatar } from '@components/avatar';
 import { useUserAPIClient } from '@services/apiClient/user';
 import { useMainStore } from '@store/main/mainStore';
 
-import * as defaultStyle from './style.scss';
+import * as defaultStyle from '../style.scss';
+
+import type { AvailablePagesType } from './types';
 
 const cx = classnames.bind(defaultStyle);
 
@@ -28,11 +30,23 @@ const cx = classnames.bind(defaultStyle);
  * @returns {JSX.Element | null} MUI Typography that clears the token and navigates to login, or nothing if logged out.
  */
 export function Logout() {
+  const pagesMapping: Record<string, AvailablePagesType> = {
+    shops: {
+      label: 'Shops',
+      path: '/shop',
+    },
+    products: {
+      label: 'Products',
+      path: '/product',
+    },
+  };
+
   const navigate = useNavigate();
 
   const { user, setUser } = useMainStore();
-  const { getUser } = useUserAPIClient();
+  const { getUser, getAvailablePages } = useUserAPIClient();
 
+  const [availablePages, setAvailablePages] = useState<AvailablePagesType[]>([]);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
@@ -45,11 +59,23 @@ export function Logout() {
   };
 
   useEffect(() => {
-    if (user !== null || !Cookies.get('accessToken')) return;
+    if (user !== null && !!Cookies.get('accessToken')) {
+      getAvailablePages().then((pages) => {
+        const newAvailablePages: AvailablePagesType[] = [];
+        pages.forEach((page) => {
+          if (page in pagesMapping) {
+            newAvailablePages.push(pagesMapping[page]);
+          }
+        });
+        setAvailablePages(newAvailablePages);
+      });
+    }
 
-    getUser().then((user) => {
-      setUser(user);
-    });
+    if (user === null && !!Cookies.get('accessToken')) {
+      getUser().then((user) => {
+        setUser(user);
+      });
+    }
   }, [user, Cookies.get('accessToken')]);
 
   /** Removes session cookie and redirects to the login route. */
@@ -111,6 +137,18 @@ export function Logout() {
         >
           Profile
         </MenuItem>
+        {availablePages.length > 0 && <Divider />}
+        {availablePages.map((page, index) => (
+          <MenuItem
+            key={index}
+            onClick={() => {
+              handleClose();
+              navigate(page.path);
+            }}
+          >
+            {page.label}
+          </MenuItem>
+        ))}
         <Divider />
         <MenuItem onClick={handleLogout}>Logout</MenuItem>
         <Divider />
