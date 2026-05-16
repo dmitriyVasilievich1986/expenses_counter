@@ -104,7 +104,7 @@ class CreateTransactionsFromCrawledDataCommand(BaseCommand):
             None:
 
         """
-        logger.info(f"Executing command with data:\n{self.data}")
+        logger.info(f"Start executing command with {len(self.data.df)} transactions")
         async with self.db.session_factory() as session:  # type: ignore[union-attr]
             transaction_dao = TransactionDAO(session=session, database_client=None, user=self.user)
             product_dao = ProductDAO(session=session, database_client=None)
@@ -125,3 +125,4 @@ class CreateTransactionsFromCrawledDataCommand(BaseCommand):
                 )
 
         logger.info(f"Executed command with {len(self.data.df)} transactions")
+        logger.debug(f"Data:\n{self.data}")

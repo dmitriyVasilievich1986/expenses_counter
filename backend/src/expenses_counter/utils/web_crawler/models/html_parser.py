@@ -61,7 +61,7 @@ class HTMLParser:
             raise ValueError("Date span not found")
 
         date_reg = re.sub(r"\s+", "", str(date_span.contents[0]))
-        self._date = datetime.strptime(date_reg, "%d/%m/%Y%H:%M:%S%p")
+        self._date = datetime.strptime(date_reg, "%m/%d/%Y%I:%M:%S%p")
 
         return self._date
 

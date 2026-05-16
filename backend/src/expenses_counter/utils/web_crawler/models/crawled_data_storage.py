@@ -43,8 +43,8 @@ class CrawledDataStorage:
         if self.html_parser.total_price is None:
             raise ValueError("Total price is not found")
 
-        if abs(self.html_parser.total_price - self.df.sum(axis=0)["total"]) > 1:
-            raise ValueError("Total price does not match the sum of the table")
+        if (diff := abs(self.html_parser.total_price - self.df.sum(axis=0)["total"])) > 1:
+            raise ValueError(f"Total price does not match the sum of the table: {diff}")
 
     def __str__(self) -> str:
         """Return a human-readable summary of metadata and the line-item table.
