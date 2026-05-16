@@ -10,6 +10,7 @@ from .product import router as product_router
 from .shop import router as shop_router
 from .statistics import router as statistics_router
 from .transaction import router as transaction_router
+from .user import router as user_router
 
 router = APIRouter(prefix="/v1")
 
@@ -19,3 +20,4 @@ router.include_router(address_router)
 router.include_router(shop_router)
 router.include_router(transaction_router)
 router.include_router(statistics_router)
+router.include_router(user_router)

@@ -39,7 +39,15 @@ export function LeftSide() {
 
   const currentDate = useMemo(() => {
     const dateParam = searchParams.get('date');
-    return dateParam ? dayjs(dateParam) : dayjs();
+    const payload = dateParam ? dayjs(dateParam) : dayjs();
+    if (!payload.isValid()) {
+      setSearchParams((previous) => {
+        previous.set('date', dayjs().format('YYYY-MM-DD'));
+        return previous;
+      });
+      return dayjs();
+    }
+    return payload;
   }, [searchParams]);
 
   /** Fetches every page of transactions between the month's start and end (inclusive) and replaces the store list. */

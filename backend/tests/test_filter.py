@@ -24,6 +24,7 @@ from datetime import date
 from typing import Literal
 
 import pytest
+from pydantic import ValidationError
 from sqlalchemy.sql import ColumnElement
 from sqlalchemy.sql.elements import BinaryExpression
 
@@ -61,10 +62,10 @@ class TestDateCoercionViaInit:
         assert isinstance(f.value, str)
 
     @pytest.mark.parametrize("operator", ["isnull", "notnull"])
-    def test_null_operators_do_not_touch_value_via_init(self, operator: str):
-        """Null-check operators ignore the value and leave it unchanged."""
-        f = CategoryFilter(column="parent_id", operator=operator, value="2025-01-15")
-        assert f.value == "2025-01-15"
+    def test_null_operators_accept_none_via_init(self, operator: str):
+        """Null-check operators accept ``None`` and short-circuit before date parsing."""
+        f = CategoryFilter(column="parent_id", operator=operator, value=None)
+        assert f.value is None
 
 
 class TestDateCoercionViaModelValidate:
@@ -89,12 +90,12 @@ class TestDateCoercionViaModelValidate:
         assert isinstance(f.value, str)
 
     @pytest.mark.parametrize("operator", ["isnull", "notnull"])
-    def test_null_operators_do_not_coerce_value(self, operator: str):
-        """Null-check operators ignore the value and leave it unchanged."""
+    def test_null_operators_accept_none_value(self, operator: str):
+        """Null-check operators accept ``None`` and leave it unchanged."""
         f = CategoryFilter.model_validate(
-            {"column": "parent_id", "operator": operator, "value": "2025-01-15"},
+            {"column": "parent_id", "operator": operator, "value": None},
         )
-        assert f.value == "2025-01-15"
+        assert f.value is None
 
     def test_invalid_date_string_remains_string(self):
         """A malformed date string falls through unchanged."""
@@ -247,3 +248,69 @@ class TestFilterValidation:
         assert f.column == "name"
         assert f.operator == "eq"
         assert f.value == "Food"
+
+
+class TestValueShapeValidation:
+    """Value-shape rules enforced by the model validator."""
+
+    def test_in_operator_requires_list_value(self):
+        """``in`` rejects a scalar value with a clear error."""
+        with pytest.raises(ValidationError, match="Value for 'in' operator must be a list"):
+            CategoryFilter.model_validate(
+                {"column": "name", "operator": "in", "value": "Food"},
+            )
+
+    @pytest.mark.parametrize("operator", ["eq", "ge", "gt", "le", "lt", "like", "ilike"])
+    def test_non_in_operators_reject_list_value(self, operator: str):
+        """All non-``in`` operators reject list values."""
+        with pytest.raises(ValidationError, match=f"Value for '{operator}' should not be a list"):
+            CategoryFilter.model_validate(
+                {"column": "name", "operator": operator, "value": ["a", "b"]},
+            )
+
+    @pytest.mark.parametrize("operator", ["isnull", "notnull"])
+    def test_null_operators_reject_non_none_value(self, operator: str):
+        """``isnull``/``notnull`` reject any non-``None`` value."""
+        with pytest.raises(ValidationError, match=f"Value for '{operator}' should be None"):
+            CategoryFilter.model_validate(
+                {"column": "parent_id", "operator": operator, "value": "anything"},
+            )
+
+    @pytest.mark.parametrize("operator", ["isnull", "notnull"])
+    def test_null_operators_reject_list_with_specific_message(self, operator: str):
+        """A list value for ``isnull``/``notnull`` hits the list-rejection branch first."""
+        with pytest.raises(ValidationError, match=f"Value for '{operator}' should not be a list"):
+            CategoryFilter.model_validate(
+                {"column": "parent_id", "operator": operator, "value": ["x"]},
+            )
+
+
+class TestInOperator:
+    """Behavior of the ``in`` operator (requires list values)."""
+
+    def test_in_operator_accepts_list_of_ints(self):
+        """A list of ints is accepted and preserved as-is."""
+        f = TransactionFilter.model_validate(
+            {"column": "product_id", "operator": "in", "value": [1, 2, 3]},
+        )
+        assert f.value == [1, 2, 3]
+
+    def test_in_operator_accepts_list_of_strings(self):
+        """A list of strings is accepted; date-string coercion is not applied to list items."""
+        f = CategoryFilter.model_validate(
+            {"column": "name", "operator": "in", "value": ["Food", "2025-01-15"]},
+        )
+        assert f.value == ["Food", "2025-01-15"]
+        assert all(isinstance(item, str) for item in f.value)
+
+    def test_in_operator_renders_in_clause(self):
+        """``to_sqlalchemy_filter`` builds an ``IN (...)`` SQL clause."""
+        f = TransactionFilter.model_validate(
+            {"column": "product_id", "operator": "in", "value": [1, 2, 3]},
+        )
+        expr = f.to_sqlalchemy_filter(Transaction)
+        sql = _compile(expr).upper()
+        assert " IN " in sql
+        rendered = _compile(expr)
+        for literal in ("1", "2", "3"):
+            assert literal in rendered

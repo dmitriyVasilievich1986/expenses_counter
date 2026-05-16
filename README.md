@@ -1,5 +1,6 @@
 [![build-backend](https://github.com/dmitriyVasilievich1986/expenses_counter/actions/workflows/build_backend.yml/badge.svg?branch=development)](https://github.com/dmitriyVasilievich1986/expenses_counter/actions/workflows/build_backend.yml)
 [![build-frontend](https://github.com/dmitriyVasilievich1986/expenses_counter/actions/workflows/build_frontend.yml/badge.svg)](https://github.com/dmitriyVasilievich1986/expenses_counter/actions/workflows/build_frontend.yml)
+[![test-backend](https://github.com/dmitriyVasilievich1986/expenses_counter/actions/workflows/test_backend.yml/badge.svg)](https://github.com/dmitriyVasilievich1986/expenses_counter/actions/workflows/test_backend.yml)
 
 # Expenses Counter
 

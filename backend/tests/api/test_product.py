@@ -11,6 +11,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy.exc import DatabaseError, IntegrityError, NoResultFound
 
 from expenses_counter.modules.app import get_app
+from expenses_counter.modules.middlewares.dependencies import user_authorized
 from expenses_counter.modules.middlewares.dependencies.daos import get_product
 
 
@@ -37,11 +38,12 @@ def mock_product_dao():
 
 
 @pytest.fixture
-def test_client(mock_product_dao, test_config):
+def test_client(mock_product_dao, mock_user, test_config):
     """Create a test client with mocked dependencies.
 
     Args:
         mock_product_dao: Mocked ProductDAO instance.
+        mock_user: Mocked authenticated user.
         test_config: Test configuration fixture.
 
     Returns:
@@ -51,6 +53,7 @@ def test_client(mock_product_dao, test_config):
     app = get_app(test_config)
 
     app.dependency_overrides[get_product] = lambda: mock_product_dao
+    app.dependency_overrides[user_authorized] = lambda: mock_user
 
     client = TestClient(app)
     yield client

@@ -27,18 +27,28 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 FROM python:3.13-slim-bookworm AS development
 
+COPY --from=ghcr.io/astral-sh/uv:0.6 /uv /bin/uv
+
 COPY --from=build /opt/backend/.venv /opt/backend/.venv
 
 WORKDIR /opt/backend
 
-# Add application
-COPY ./backend/src ./src
+# Lockfile + sync first so backend/src changes do not invalidate dependency layers.
 COPY ./backend/pyproject.toml ./
+COPY ./backend/uv.lock ./
 
-# Add frontend
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --link-mode=copy --no-editable --no-install-project
+
+COPY ./backend/src ./src
+COPY ./backend/LICENSE ./
+COPY ./backend/README.md ./
+
+RUN --mount=type=cache,target=/root/.cache/uv \
+uv sync --frozen --link-mode=copy --no-editable
+
 COPY --from=frontend /opt/backend/static /opt/backend/static
 
-# Add configurations
 COPY ./backend/configurations ./configurations
 
 ENV PYTHONPATH="/opt/backend/src"
@@ -48,7 +58,11 @@ FROM python:3.13-slim-bookworm AS production
 
 WORKDIR /opt/backend
 
-COPY --from=development /opt/backend /opt/backend
+COPY --from=build /opt/backend/.venv /opt/backend/.venv
+COPY ./backend/pyproject.toml ./
+COPY ./backend/src ./src
+COPY --from=frontend /opt/backend/static /opt/backend/static
+COPY ./backend/configurations ./configurations
 
 # Add binaries for run inside container
 ENV PYTHONPATH="/opt/backend/src"

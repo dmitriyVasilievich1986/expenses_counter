@@ -19,7 +19,9 @@ from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, status
 from loguru import logger
 from sqlalchemy.exc import IntegrityError, NoResultFound, SQLAlchemyError
 
+from expenses_counter.modules.middlewares.dependencies.admin_required import admin_required
 from expenses_counter.modules.middlewares.dependencies.daos import get_shop
+from expenses_counter.modules.middlewares.dependencies.user_authorized import user_authorized
 from expenses_counter.modules.routers.schemas.base.metadata import PaginationMetadata
 from expenses_counter.modules.routers.schemas.requests.shop import (
     GetAllShopsQuery,
@@ -34,7 +36,7 @@ from expenses_counter.modules.routers.schemas.responses.shop import (
 )
 from expenses_counter.services.daos import ShopDAO
 
-router = APIRouter(prefix="/shop", tags=["Shop"])
+router = APIRouter(prefix="/shop", tags=["Shop"], dependencies=[Depends(user_authorized)])
 
 
 @router.get("", response_model=GetAllShopsResponse, status_code=status.HTTP_200_OK)
@@ -68,11 +70,11 @@ async def get_shop_list(
     return GetAllShopsResponse(data=[SimpleShopGet.model_validate(shop) for shop in data], metadata=metadata)
 
 
-@router.get("/{shop_id}", response_model=GetSingleShopResponse)
+@router.get("/{shop_id}", response_model=GetSingleShopResponse, dependencies=[Depends(admin_required)])
 async def get_shop_by_id(
     shop_id: Annotated[int, Path(description="The unique identifier of the shop to retrieve")],
     shop_dao: Annotated[ShopDAO, Depends(get_shop)],
-):
+) -> GetSingleShopResponse:
     """Return a single shop by primary key.
 
     Args:
@@ -102,7 +104,12 @@ async def get_shop_by_id(
     return GetSingleShopResponse.model_validate(payload)
 
 
-@router.post("", response_model=GetSingleShopResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=GetSingleShopResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(admin_required)],
+)
 async def create_shop(
     body: Annotated[PostShopBody, Body(description="The shop data to create")],
     shop_dao: Annotated[ShopDAO, Depends(get_shop)],
@@ -136,7 +143,12 @@ async def create_shop(
     return GetSingleShopResponse.model_validate(payload)
 
 
-@router.put("/{shop_id}", response_model=GetSingleShopResponse, status_code=status.HTTP_200_OK)
+@router.put(
+    "/{shop_id}",
+    response_model=GetSingleShopResponse,
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(admin_required)],
+)
 async def update_shop(
     shop_id: Annotated[int, Path(description="The unique identifier of the shop to update")],
     body: Annotated[PutShopBody, Body(description="The shop data to update")],
@@ -176,7 +188,12 @@ async def update_shop(
     return GetSingleShopResponse.model_validate(payload)
 
 
-@router.patch("/{shop_id}", response_model=GetSingleShopResponse, status_code=status.HTTP_200_OK)
+@router.patch(
+    "/{shop_id}",
+    response_model=GetSingleShopResponse,
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(admin_required)],
+)
 async def patch_shop(
     shop_id: Annotated[int, Path(description="The unique identifier of the shop to update")],
     body: Annotated[PatchShopBody, Body(description="The shop data to update")],
@@ -216,7 +233,7 @@ async def patch_shop(
     return GetSingleShopResponse.model_validate(payload)
 
 
-@router.delete("/{shop_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{shop_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(admin_required)])
 async def delete_shop(
     shop_id: Annotated[int, Path(description="The unique identifier of the shop to delete")],
     shop_dao: Annotated[ShopDAO, Depends(get_shop)],
