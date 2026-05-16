@@ -1,7 +1,6 @@
 """Transaction request schemas module."""
 
 __all__ = (
-    "CrawlTransactionBody",
     "GetAllTransactionsQuery",
     "MonthlyBodyRequest",
     "MonthlyQuery",
@@ -9,7 +8,6 @@ __all__ = (
     "PutTransactionBody",
 )
 
-from .crawl_transaction_body import CrawlTransactionBody
 from .get_all_transactions_query import GetAllTransactionsQuery
 from .monthly_body_request import MonthlyBodyRequest
 from .monthly_query import MonthlyQuery
