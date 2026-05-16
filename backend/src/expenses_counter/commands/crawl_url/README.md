@@ -6,11 +6,11 @@ This module bridges the [`web_crawler`](../../utils/web_crawler/README.md) utili
 
 ## Components
 
-| Component | Responsibility |
-| --- | --- |
-| `CrawlAndCreateCommand` | Persists a `CrawledDataStorage` payload as products + transactions owned by a `User`. Resolves the receipt's `Address` from the parsed shop name and inherits the shop's `category_id` for any product that has to be created on the fly. |
+| Component                                  | Responsibility                                                                                                                                                                                                                            |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CreateTransactionsFromCrawledDataCommand` | Persists a `CrawledDataStorage` payload as products + transactions owned by a `User`. Resolves the receipt's `Address` from the parsed shop name and inherits the shop's `category_id` for any product that has to be created on the fly. |
 
-`CrawlAndCreateCommand` extends `BaseCommand` and follows its three-step lifecycle:
+`CreateTransactionsFromCrawledDataCommand` extends `BaseCommand` and follows its three-step lifecycle:
 
 1. **`initialize()`** — lazily constructs an `AsyncDatabaseClient` from `AppConfig` if one was not injected, and logs the bound user.
 2. **`validate()`** — calls `CrawledDataStorage.validate()` for end-to-end sanity checks, then looks up the `Address` by the crawled shop's `local_name` and sets `category_id` from the matched address's shop.
@@ -48,12 +48,12 @@ uv run expenses_counter crawler crawl-url --url "https://example-receipt-host/re
 
 ### Programmatic
 
-`CrawlAndCreateCommand` can be invoked directly from Python — useful from notebooks, scripts, or other commands:
+`CreateTransactionsFromCrawledDataCommand` can be invoked directly from Python — useful from notebooks, scripts, or other commands:
 
 ```python
 import asyncio
 
-from expenses_counter.commands.crawl_url import CrawlAndCreateCommand
+from expenses_counter.commands.crawl_url import CreateTransactionsFromCrawledDataCommand
 from expenses_counter.config import AppConfig
 from expenses_counter.services.daos import UserDAO
 from expenses_counter.services.database import AsyncDatabaseClient
@@ -67,7 +67,7 @@ async def crawl_receipt(url: str, username: str) -> None:
     user = await UserDAO(db_client).get_by_username(username)
     data = Crawler(url=url).run()
 
-    cmd = CrawlAndCreateCommand(data=data, user=user, db=db_client)
+    cmd = CreateTransactionsFromCrawledDataCommand(data=data, user=user, db=db_client)
     await cmd.initialize()
     await cmd.validate()
     await cmd.execute()
@@ -84,13 +84,13 @@ asyncio.run(crawl_receipt(
 If you already have a `CrawledDataStorage` (e.g., constructed from saved HTML), skip `Crawler` and feed it directly to the command:
 
 ```python
-from expenses_counter.commands.crawl_url import CrawlAndCreateCommand
+from expenses_counter.commands.crawl_url import CreateTransactionsFromCrawledDataCommand
 from expenses_counter.utils.web_crawler import CrawledDataStorage
 
 with open("receipt.html", encoding="utf-8") as f:
     data = CrawledDataStorage(html=f.read())
 
-cmd = CrawlAndCreateCommand(data=data, user=user)  # db will be lazily created
+cmd = CreateTransactionsFromCrawledDataCommand(data=data, user=user)  # db will be lazily created
 await cmd.initialize()
 await cmd.validate()
 await cmd.execute()
@@ -101,7 +101,7 @@ await cmd.execute()
 `validate()` only resolves the `Address` automatically when `command.address` is `None`. To target a specific store explicitly (and bypass the `local_name` lookup), set both `address` and `category_id` before calling `validate()`:
 
 ```python
-cmd = CrawlAndCreateCommand(data=data, user=user, db=db_client)
+cmd = CreateTransactionsFromCrawledDataCommand(data=data, user=user, db=db_client)
 cmd.address = existing_address
 cmd.category_id = existing_address.shop.category_id
 

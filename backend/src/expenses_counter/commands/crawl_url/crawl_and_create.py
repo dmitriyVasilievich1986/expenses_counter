@@ -1,6 +1,6 @@
 """Command for crawling receipt URL and creating transaction records."""
 
-__all__ = ("CrawlAndCreateCommand",)
+__all__ = ("CreateTransactionsFromCrawledDataCommand",)
 
 
 from typing import Any, TYPE_CHECKING
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from expenses_counter.utils.web_crawler import CrawledDataStorage
 
 
-class CrawlAndCreateCommand(BaseCommand):
+class CreateTransactionsFromCrawledDataCommand(BaseCommand):
     """Persist crawled receipt line items as products and transactions for a user.
 
     After `validate`, `address` and `category_id` are set from the parsed shop name.
@@ -70,7 +70,7 @@ class CrawlAndCreateCommand(BaseCommand):
             app_config = AppConfig.get_or_create()
             self.db = AsyncDatabaseClient(app_config=app_config)
 
-        logger.info(f"Initialized CrawlAndCreateCommand with user {self.user.id}")
+        logger.info(f"Initialized command with user {self.user.id}")
 
     async def validate(self) -> None:
         """Validate crawled data and resolve the shop address and category.
@@ -89,7 +89,7 @@ class CrawlAndCreateCommand(BaseCommand):
             self.address = await address_dao.get_by_pk(self.data.html_parser.shop_name, "local_name")
             self.category_id = self.address.shop.category_id  # type: ignore[assignment]
 
-        logger.info(f"Validated CrawlAndCreateCommand with address {self.address.id} and category {self.category_id}")
+        logger.info(f"Validated command with address {self.address.id} and category {self.category_id}")
 
     async def execute(self) -> None:
         """Insert one transaction per dataframe row using shared receipt metadata.
@@ -102,7 +102,7 @@ class CrawlAndCreateCommand(BaseCommand):
             None:
 
         """
-        logger.info(f"Executing CrawlAndCreateCommand with data:\n{self.data}")
+        logger.info(f"Executing command with data:\n{self.data}")
         async with self.db.session_factory() as session:  # type: ignore[union-attr]
             transaction_dao = TransactionDAO(session=session, database_client=None, user=self.user)
             product_dao = ProductDAO(session=session, database_client=None)
@@ -122,4 +122,4 @@ class CrawlAndCreateCommand(BaseCommand):
                     user_id=self.user.id,
                 )
 
-        logger.info(f"Executed CrawlAndCreateCommand with {len(self.data.df)} transactions")
+        logger.info(f"Executed command with {len(self.data.df)} transactions")

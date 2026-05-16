@@ -4,7 +4,7 @@ __all__ = ("crawler",)
 
 import asyncclick as click
 
-from expenses_counter.commands.crawl_url import CrawlAndCreateCommand
+from expenses_counter.commands.crawl_url import CreateTransactionsFromCrawledDataCommand
 from expenses_counter.config import AppConfig
 from expenses_counter.services.daos import UserDAO
 from expenses_counter.services.database import AsyncDatabaseClient
@@ -51,7 +51,7 @@ async def crawl_and_create(
     """Crawl a URL and create database records from the parsed result.
 
     Loads app configuration from the parent CLI context, loads a user with
-    ``UserDAO.get_by_username``, then runs ``CrawlAndCreateCommand`` to validate
+    ``UserDAO.get_by_username``, then runs ``CreateTransactionsFromCrawledDataCommand`` to validate
     and persist transactions.
 
     Args:
@@ -71,7 +71,7 @@ async def crawl_and_create(
     user_dao = UserDAO(db_client)
     user = await user_dao.get_by_username(username)
 
-    cmd = CrawlAndCreateCommand(data=data, user=user, db=db_client)
+    cmd = CreateTransactionsFromCrawledDataCommand(data=data, user=user, db=db_client)
     await cmd.initialize()
     await cmd.validate()
     await cmd.execute()
