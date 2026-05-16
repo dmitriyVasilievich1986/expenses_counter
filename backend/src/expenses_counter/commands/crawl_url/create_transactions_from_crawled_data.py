@@ -88,6 +88,8 @@ class CreateTransactionsFromCrawledDataCommand(BaseCommand):
             address_dao = AddressDAO(database_client=self.db)  # type: ignore[arg-type]
             self.address = await address_dao.get_by_pk(self.data.html_parser.shop_name, "local_name")
             self.category_id = self.address.shop.category_id  # type: ignore[assignment]
+        else:
+            self.category_id = self.address.shop.category_id  # type: ignore[assignment]
 
         logger.info(f"Validated command with address {self.address.id} and category {self.category_id}")
 
