@@ -54,19 +54,6 @@ class Crawler:
         chrome_options.add_argument("--disable-dev-shm-usage")
         return chrome_options
 
-    @property
-    def driver(self) -> webdriver.Chrome:
-        """Create and configure a Chrome WebDriver instance.
-
-        Automatically downloads and installs the appropriate ChromeDriver version
-        using webdriver_manager, then initializes it with the configured options.
-
-        Returns:
-            Configured Chrome WebDriver instance ready for use
-
-        """
-        return webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=self.chrome_options)
-
     def run(self) -> CrawledDataStorage:
         """Load the receipt page, switch to English, expand content, and parse HTML.
 
@@ -78,20 +65,28 @@ class Crawler:
             CrawledDataStorage: Parsed receipt HTML with metadata and table data.
 
         """
-        driver = self.driver
-        driver.get(self.url)
-        time.sleep(1)
+        with webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=self.chrome_options) as driver:
+            driver.get(self.url)
+            time.sleep(1)
 
-        # Open language menu, then find the <a> by exact href (or use a[href*="ChangeLanguage/en-US"]).
-        driver.find_element(By.CSS_SELECTOR, "#languagesSelect").click()
-        time.sleep(0.5)
-        driver.find_element(By.CSS_SELECTOR, 'a[href="/Home/ChangeLanguage/en-US"]').click()
-        time.sleep(1)
+            # Open language menu, then find the <a> by exact href (or use a[href*="ChangeLanguage/en-US"]).
+            language_element = driver.find_element(By.CSS_SELECTOR, "#languagesSelect")
+            if not language_element:
+                raise ValueError("Language element not found")
+            language_element.click()
+            time.sleep(0.5)
 
-        link_element = driver.find_element(By.CLASS_NAME, "collapsed")
-        driver.execute_script("arguments[0].click();", link_element)
-        time.sleep(1)
+            language_link_element = driver.find_element(By.CSS_SELECTOR, 'a[href="/Home/ChangeLanguage/en-US"]')
+            if not language_link_element:
+                raise ValueError("Language link element not found")
+            language_link_element.click()
+            time.sleep(1)
 
-        html = driver.page_source
-        driver.quit()
-        return CrawledDataStorage(html=html)
+            link_element = driver.find_element(By.CLASS_NAME, "collapsed")
+            if not link_element:
+                raise ValueError("Link element not found")
+            driver.execute_script("arguments[0].click();", link_element)
+            time.sleep(1)
+
+            html = driver.page_source
+            return CrawledDataStorage(html=html)
