@@ -9,9 +9,9 @@ The crawler uses a headless Chrome browser (via Selenium) to load a target recei
 | Component | Responsibility |
 | --- | --- |
 | `Crawler` | Drives a headless Chrome session: opens the target URL, switches language, expands collapsed UI, and returns a `CrawledDataStorage`. |
-| `CrawledDataStorage` | Aggregates the raw HTML and exposes both an `HTMLParser` (metadata) and a `TableParser` (line items). |
+| `CrawledDataStorage` | Aggregates the raw HTML and exposes both an `HTMLParser` (metadata) and a `TableParser` (line items). Provides a `validate()` method that cross-checks metadata completeness and reconciles the receipt total against the line-item sum. |
 | `HTMLParser` | Extracts receipt metadata: `date`, `street_address`, `shop_name`, `total_price`. |
-| `TableParser` | A `pandas.DataFrame` subclass that parses the first receipt `<table>`, keeping `Name`, `Quantity`, and `Gross Unit Price` columns with numeric values normalized. |
+| `TableParser` | A `pandas.DataFrame` subclass that parses the first receipt `<table>` into the columns `name`, `quantity`, `unit_price`, and a derived `total` (`quantity * unit_price`). |
 
 ## Requirements
 
@@ -55,7 +55,7 @@ print(data.html_parser.total_price)     # float
 
 ### Working with the line-item table
 
-`CrawledDataStorage.df` is a `pandas.DataFrame` (subclass `TableParser`) with the columns `Name`, `Quantity`, and `Gross Unit Price`, so any pandas operation works directly:
+`CrawledDataStorage.df` is a `pandas.DataFrame` (subclass `TableParser`) with the columns `name`, `quantity`, `unit_price`, and a pre-computed `total` (`quantity * unit_price`), so any pandas operation works directly:
 
 ```python
 data = Crawler(url=url).run()
@@ -63,10 +63,30 @@ data = Crawler(url=url).run()
 items_df = data.df
 
 print(items_df.head())
-print(items_df["Gross Unit Price"].sum())
+print(items_df["total"].sum())
 
 # Persist as CSV
 items_df.to_csv("receipt_items.csv", index=False)
+```
+
+### Validating the crawled data
+
+`CrawledDataStorage.validate()` performs end-to-end sanity checks on a crawl result. It raises `ValueError` when:
+
+- the line-item table is empty,
+- `date`, `street_address`, or `total_price` is missing from the HTML, or
+- the HTML total and the sum of per-line `total` values differ by more than `1`.
+
+```python
+data = Crawler(url=url).run()
+
+try:
+    data.validate()
+except ValueError as exc:
+    print(f"Crawl rejected: {exc}")
+else:
+    # safe to persist into the database
+    ...
 ```
 
 ### Parsing existing HTML without re-crawling
