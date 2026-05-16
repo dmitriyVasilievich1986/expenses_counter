@@ -77,7 +77,10 @@ class TransactionDAO(BaseDAO[Transaction]):
         else:
             date_column = func.to_char(Transaction.date, "YYYY-MM-01")
 
-        stmt = select(date_column, func.sum(Transaction.price)).group_by(date_column).order_by(date_column)
+        filters = self.concat_filters(None)
+        stmt = (
+            select(date_column, func.sum(Transaction.price)).group_by(date_column).order_by(date_column).where(*filters)
+        )
         result = await session.execute(stmt)
         return result.tuples().all()
 
@@ -110,9 +113,11 @@ class TransactionDAO(BaseDAO[Transaction]):
                 most frequent first.
 
         """
+        filters = self.concat_filters(None)
         amount = func.count(Transaction.product_id)
         subquery = (
             select(Transaction.product_id)
+            .where(*filters)
             .group_by(Transaction.product_id)
             .order_by(amount.desc())
             .limit(limit)
