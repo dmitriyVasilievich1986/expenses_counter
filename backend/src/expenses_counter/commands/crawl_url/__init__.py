@@ -2,4 +2,4 @@
 
 __all__ = ("CreateTransactionsFromCrawledDataCommand",)
 
-from .crawl_and_create import CreateTransactionsFromCrawledDataCommand
+from .create_transactions_from_crawled_data import CreateTransactionsFromCrawledDataCommand
