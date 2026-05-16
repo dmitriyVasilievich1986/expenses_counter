@@ -3,98 +3,123 @@
 __all__ = ("CrawlAndCreateCommand",)
 
 
-from typing import Any
+from typing import Any, TYPE_CHECKING
+
+from loguru import logger
+from sqlalchemy.exc import NoResultFound
 
 from expenses_counter.commands.base import BaseCommand
-from expenses_counter.utils.web_crawler import Crawler, HTMLParser, TableParser
+from expenses_counter.config import AppConfig
+from expenses_counter.services.daos import AddressDAO, ProductDAO, TransactionDAO
+from expenses_counter.services.database import AsyncDatabaseClient
 
-from .create_transaction import CreateTransactionCommand
+if TYPE_CHECKING:
+    from expenses_counter.services.database.models import Address, User
+    from expenses_counter.utils.web_crawler import CrawledDataStorage
 
 
 class CrawlAndCreateCommand(BaseCommand):
-    """Command to crawl a receipt URL and create transaction records.
+    """Persist crawled receipt line items as products and transactions for a user.
 
-    This command orchestrates the complete workflow of:
-    1. Crawling a receipt URL using Selenium
-    2. Parsing the HTML to extract transaction metadata
-    3. Parsing product table data
-    4. Creating transaction records in the database
+    After `validate`, `address` and `category_id` are set from the parsed shop name.
 
     Attributes:
-        url: Receipt URL to crawl
-        default_category_id: Optional default category ID for products
+        address (Address | None): Target store address resolved from crawled shop name,
+            set during `validate`. Initially ``None``.
+        category_id (int): Shop category id used when creating missing products,
+            set during `validate` from the resolved address's shop.
 
     """
 
-    def __init__(self, url: str, default_category_id: int | None = None, default_user_id: int | None = None) -> None:
-        """Initialize CrawlAndCreateCommand with URL and optional category.
+    address: "Address | None" = None
+    category_id: int
+
+    def __init__(
+        self,
+        data: "CrawledDataStorage",
+        user: "User",
+        db: AsyncDatabaseClient | None = None,
+    ) -> None:
+        """Create a command bound to crawled receipt data and a user.
 
         Args:
-            url: Receipt URL to crawl and process
-            default_category_id: Optional category ID to use for new products.
-                If None, will use the first available category.
-            default_user_id: Optional user ID to use for new transactions.
-                If None, will use the first available user.
+            data (CrawledDataStorage): Parsed receipt content (HTML and tabular rows).
+            user (User): Owner for created transactions.
+            db (AsyncDatabaseClient | optional): Async database client. If ``None``,
+                `initialize` creates one from application config.
+
+        Returns:
+            None:
 
         """
-        self.url = url
-        self.default_category_id = default_category_id
-        self.default_user_id = default_user_id
+        self.data = data
+        self.user = user
+        self.db = db
 
     async def initialize(self, **_: Any) -> None:
-        """Initialize command resources.
+        """Ensure a database client exists and log startup context.
 
-        This command does not require initialization as it delegates to
-        CreateTransactionCommand which handles its own initialization.
+        Args:
+            **_ (Any): Ignored keyword arguments kept for ``BaseCommand`` compatibility.
+
+        Returns:
+            None:
 
         """
-        pass
+        if self.db is None:
+            app_config = AppConfig.get_or_create()
+            self.db = AsyncDatabaseClient(app_config=app_config)
+
+        logger.info(f"Initialized CrawlAndCreateCommand with user {self.user.id}")
 
     async def validate(self) -> None:
-        """Validate command preconditions.
+        """Validate crawled data and resolve the shop address and category.
 
-        This command does not perform validation at this level as validation
-        is delegated to CreateTransactionCommand which validates the parsed data.
+        Loads `address` by matching the parsed shop ``local_name`` and sets
+        `category_id` from that address's shop when `address` was not preset.
+
+        Returns:
+            None:
 
         """
-        pass
+        self.data.validate()
+
+        if self.address is None:
+            address_dao = AddressDAO(database_client=self.db)  # type: ignore[arg-type]
+            self.address = await address_dao.get_by_pk(self.data.html_parser.shop_name, "local_name")
+            self.category_id = self.address.shop.category_id  # type: ignore[assignment]
+
+        logger.info(f"Validated CrawlAndCreateCommand with address {self.address.id} and category {self.category_id}")
 
     async def execute(self) -> None:
-        """Execute the complete crawl and create workflow.
+        """Insert one transaction per dataframe row using shared receipt metadata.
 
-        This method orchestrates the following steps:
-        1. Creates a Crawler instance and fetches HTML from the URL
-        2. Parses the HTML to extract transaction metadata (date, address)
-        3. Parses the product table data
-        4. Creates a CreateTransactionCommand with parsed data
-        5. Initializes, validates, and executes the transaction creation
+        Resolves each product by name under the crawl shop scope, creating the
+        product with `category_id` when missing, then attaches quantity, unit
+        price, and receipt date.
 
-        Raises:
-            ValueError: If URL crawling fails, parsing fails, or transaction
-                creation validation fails
-            selenium.common.exceptions.WebDriverException: If browser automation fails
-            Exception: For any unexpected errors during the process
-
-        Example:
-            >>> command = CrawlAndCreateCommand(
-            ...     url="https://receipt.example.com/12345",
-            ...     default_category_id=1
-            ... )
-            >>> await command.initialize()
-            >>> await command.validate()
-            >>> await command.execute()
+        Returns:
+            None:
 
         """
-        crawler = Crawler(url=self.url)
-        html = crawler.run()
-        html_parser = HTMLParser(html=html)
-        table_parser = TableParser(html=html)
-        create_transaction_command = CreateTransactionCommand(
-            html_parser=html_parser,
-            table_parser=table_parser,
-            default_category_id=self.default_category_id,
-            default_user_id=self.default_user_id,
-        )
-        await create_transaction_command.initialize()
-        await create_transaction_command.validate()
-        await create_transaction_command.execute()
+        logger.info(f"Executing CrawlAndCreateCommand with data:\n{self.data}")
+        async with self.db.session_factory() as session:  # type: ignore[union-attr]
+            transaction_dao = TransactionDAO(session=session, database_client=None, user=self.user)
+            product_dao = ProductDAO(session=session, database_client=None)
+
+            for _, row in self.data.df.iterrows():
+                try:
+                    product = await product_dao.get_by_name(self.data.html_parser.shop_name)
+                except NoResultFound:
+                    product = await product_dao.create(name=row["name"], category_id=self.category_id)
+
+                await transaction_dao.create(
+                    date=self.data.html_parser.date,
+                    address_id=self.address.id,  # type: ignore[union-attr]
+                    product_id=product.id,
+                    count=row["quantity"],
+                    price=row["unit_price"],
+                    user_id=self.user.id,
+                )
+
+        logger.info(f"Executed CrawlAndCreateCommand with {len(self.data.df)} transactions")
