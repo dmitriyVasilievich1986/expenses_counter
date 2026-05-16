@@ -26,23 +26,59 @@ class TableParser(pd.DataFrame):
             raise ValueError("No tables found")
 
         df = dfs[0]
+        df = self._rename_columns(df)
         df = self._convert_dataframe(df)
+        df = self._add_total_column(df)
         super().__init__(df)  # type: ignore[call-arg]
 
-    def _convert_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Keep name/quantity/price columns and parse numeric cells.
+    def _rename_columns(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Map receipt-specific column labels to internal names.
+
+        Keeps parsing stable when the source site renames header cells.
 
         Args:
-            df (pd.DataFrame): First table returned by ``pandas.read_html``.
+            df (pd.DataFrame): Table as returned by ``read_html``.
 
         Returns:
-            pd.DataFrame: Subset with normalized ``Quantity`` and
-                ``Gross Unit Price`` values.
+            pd.DataFrame: Same rows with unified column names.
 
         """
-        df = df[["Name", "Quantity", "Gross Unit Price"]].copy()
-        df["Quantity"] = [self.convert_float(x) for x in df["Quantity"]]
-        df["Gross Unit Price"] = [self.convert_float(x) for x in df["Gross Unit Price"]]
+        return df.rename(
+            columns={
+                "Name": "name",
+                "Quantity": "quantity",
+                "Gross Unit Price": "unit_price",
+            }
+        )
+
+    def _convert_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Select product columns and coerce numeric cells to floats.
+
+        Args:
+            df (pd.DataFrame): Frame with ``name``, ``quantity``, and
+                ``unit_price`` columns after renaming.
+
+        Returns:
+            pd.DataFrame: Subset of columns with ``quantity`` and
+                ``unit_price`` parsed with ``convert_float``.
+
+        """
+        df = df[["name", "quantity", "unit_price"]].copy()
+        df["quantity"] = [self.convert_float(x) for x in df["quantity"]]
+        df["unit_price"] = [self.convert_float(x) for x in df["unit_price"]]
+        return df
+
+    def _add_total_column(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Add a total column to the dataframe.
+
+        Args:
+            df (pd.DataFrame): Frame with ``quantity`` and ``unit_price`` columns.
+
+        Returns:
+            pd.DataFrame: Frame with a ``total`` column.
+
+        """
+        df["total"] = df["quantity"] * df["unit_price"]
         return df
 
     @staticmethod
