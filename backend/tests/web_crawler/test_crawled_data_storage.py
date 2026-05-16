@@ -40,7 +40,7 @@ class TestValidate:
         """An empty product table (headers only, no rows) fails validation."""
         html = """
         <html><body>
-          <span id="sdcDateTimeLabel">20/01/2026 10:30:00 AM</span>
+          <span id="sdcDateTimeLabel">01/20/2026 10:30:00 AM</span>
           <span id="addressLabel">123 Main Street</span>
           <span id="shopFullNameLabel">Test Shop</span>
           <span id="totalAmountLabel">0.00</span>
