@@ -10,6 +10,8 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
 
+from .models import CrawledDataStorage
+
 
 class Crawler:
     """Web crawler for automated receipt data extraction using Selenium WebDriver.
@@ -52,55 +54,39 @@ class Crawler:
         chrome_options.add_argument("--disable-dev-shm-usage")
         return chrome_options
 
-    @property
-    def driver(self) -> webdriver.Chrome:
-        """Create and configure a Chrome WebDriver instance.
+    def run(self) -> CrawledDataStorage:
+        """Load the receipt page, switch to English, expand content, and parse HTML.
 
-        Automatically downloads and installs the appropriate ChromeDriver version
-        using webdriver_manager, then initializes it with the configured options.
-
-        Returns:
-            Configured Chrome WebDriver instance ready for use
-
-        """
-        return webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=self.chrome_options)
-
-    def run(self) -> str:
-        """Execute the crawling process and extract page HTML.
-
-        This method:
-        1. Initializes a Chrome WebDriver instance
-        2. Navigates to the target URL
-        3. Waits for page load (1 second)
-        4. Finds and clicks the collapsed element to expand hidden content
-        5. Waits for content expansion (1 second)
-        6. Extracts the complete page source HTML
-        7. Closes the browser and cleans up resources
+        Opens the target URL in Chrome, selects English via the language menu,
+        expands collapsed receipt UI, snapshots ``page_source``, and closes the
+        browser.
 
         Returns:
-            Complete HTML source of the page after expanding collapsed sections
-
-        Raises:
-            selenium.common.exceptions.NoSuchElementException: If the collapsed
-                element is not found on the page
-            selenium.common.exceptions.WebDriverException: If there are issues
-                with the WebDriver or browser
-
-        Example:
-            >>> crawler = Crawler("https://receipt.example.com/12345")
-            >>> html = crawler.run()
-            >>> len(html) > 0
-            True
+            CrawledDataStorage: Parsed receipt HTML with metadata and table data.
 
         """
-        driver = self.driver
-        driver.get(self.url)
-        time.sleep(1)
+        with webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=self.chrome_options) as driver:
+            driver.get(self.url)
+            time.sleep(1)
 
-        link_element = driver.find_element(By.CLASS_NAME, "collapsed")
-        driver.execute_script("arguments[0].click();", link_element)
-        time.sleep(1)
+            # Open language menu, then find the <a> by exact href (or use a[href*="ChangeLanguage/en-US"]).
+            language_element = driver.find_element(By.CSS_SELECTOR, "#languagesSelect")
+            if not language_element:
+                raise ValueError("Language element not found")
+            language_element.click()
+            time.sleep(0.5)
 
-        html = driver.page_source
-        driver.quit()
-        return html
+            language_link_element = driver.find_element(By.CSS_SELECTOR, 'a[href="/Home/ChangeLanguage/en-US"]')
+            if not language_link_element:
+                raise ValueError("Language link element not found")
+            language_link_element.click()
+            time.sleep(1)
+
+            link_element = driver.find_element(By.CLASS_NAME, "collapsed")
+            if not link_element:
+                raise ValueError("Link element not found")
+            driver.execute_script("arguments[0].click();", link_element)
+            time.sleep(1)
+
+            html = driver.page_source
+            return CrawledDataStorage(html=html)
