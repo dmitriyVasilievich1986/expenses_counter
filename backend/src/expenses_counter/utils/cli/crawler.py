@@ -42,11 +42,13 @@ async def crawl_url(url: str) -> None:
 @crawler.command(help="Crawl and create transaction")
 @click.option("--url", help="URL to crawl", required=True)
 @click.option("--username", help="Username", type=str, required=True)
+@click.option("--raise-errors", help="Raise errors", is_flag=True, default=True)
 @click.pass_context
 async def crawl_and_create(
     ctx: click.Context,
     url: str,
     username: str,
+    raise_errors: bool,
 ) -> None:
     """Crawl a URL and create database records from the parsed result.
 
@@ -58,6 +60,7 @@ async def crawl_and_create(
         ctx (click.Context): Parent CLI context with ``config`` (``AppConfig``).
         url (str): Page URL to crawl.
         username (str): Value forwarded to ``get_by_username`` to load the acting user.
+        raise_errors (bool): Raise errors if True, otherwise continue execution.
 
     Returns:
         None
@@ -73,5 +76,11 @@ async def crawl_and_create(
 
     cmd = CreateTransactionsFromCrawledDataCommand(data=data, user=user, db=db_client)
     await cmd.initialize()
-    await cmd.validate()
+
+    try:
+        await cmd.validate()
+    except ValueError as e:
+        if raise_errors:
+            raise e
+
     await cmd.execute()

@@ -27,7 +27,7 @@ class ReceiptExpectation(NamedTuple):
 _MOCK_HTML = """<!DOCTYPE html>
 <html>
   <body>
-    <span id="sdcDateTimeLabel">20/01/2026 10:30:00 AM</span>
+    <span id="sdcDateTimeLabel">01/20/2026 10:30:00 AM</span>
     <span id="addressLabel">  123 Main Street  </span>
     <span id="shopFullNameLabel">Test Shop</span>
     <span id="totalAmountLabel">25.50</span>
