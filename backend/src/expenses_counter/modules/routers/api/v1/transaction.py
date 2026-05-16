@@ -32,10 +32,12 @@ from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, status
 from loguru import logger
 from sqlalchemy.exc import IntegrityError, NoResultFound, SQLAlchemyError
 
+from expenses_counter.commands.crawl_url import CreateTransactionsFromCrawledDataCommand
 from expenses_counter.modules.middlewares.dependencies import get_db, user_authorized
 from expenses_counter.modules.middlewares.dependencies.daos import get_transaction
 from expenses_counter.modules.routers.schemas.base.metadata import PaginationMetadata
 from expenses_counter.modules.routers.schemas.requests.transaction import (
+    CrawlTransactionBody,
     GetAllTransactionsQuery,
     MonthlyBodyRequest,
     MonthlyQuery,
@@ -51,6 +53,7 @@ from expenses_counter.services.daos import TransactionDAO
 from expenses_counter.services.database import AsyncDatabaseClient
 from expenses_counter.services.database.models.user import User
 from expenses_counter.utils.filter import Filter
+from expenses_counter.utils.web_crawler import Crawler
 
 router = APIRouter(prefix="/transaction", tags=["Transaction"])
 
@@ -279,4 +282,52 @@ async def delete_transaction(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Something went wrong while deleting the transaction",
+        ) from e
+
+
+@router.post("/crawl", status_code=status.HTTP_204_NO_CONTENT)
+async def crawl_transaction(
+    body: Annotated[CrawlTransactionBody, Body(description="The transaction data to crawl")],
+    user: Annotated[User, Depends(user_authorized)],
+) -> None:
+    """Crawl a transaction.
+
+    Args:
+        body (CrawlTransactionBody): The transaction data to crawl.
+        user (User): User who is authorized to access the transactions.
+
+    Returns:
+        None
+
+    Raises:
+        HTTPException: 400 if the URL is invalid.
+        HTTPException: 500 if something goes wrong while crawling the transaction.
+
+    """
+    crawler = Crawler(url=body.url)
+    try:
+        data = crawler.run()
+    except ValueError as e:
+        logger.exception("Invalid URL", exc_info=e)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid URL") from e
+    except Exception as e:
+        logger.exception("Something went wrong while crawling the transaction", exc_info=e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Something went wrong while crawling the transaction",
+        ) from e
+
+    cmd = CreateTransactionsFromCrawledDataCommand(data=data, user=user)
+    try:
+        await cmd.initialize()
+        await cmd.validate()
+        await cmd.execute()
+    except ValueError as e:
+        logger.exception("Invalid data", exc_info=e)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid data") from e
+    except Exception as e:
+        logger.exception("Something went wrong while creating the transaction", exc_info=e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Something went wrong while creating the transaction",
         ) from e
