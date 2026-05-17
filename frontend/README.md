@@ -99,19 +99,19 @@ frontend/
 
 Routes live in `src/App.tsx`. Pages are lazy-loaded behind `Suspense`:
 
-| Path | Page | Notes |
-| --- | --- | --- |
-| `/` | `Home` | Charts: monthly spend + most popular products. |
-| `/login` | `Login` | Username/password form → JWT cookie. |
-| `/profile` | `Profile` | View / edit the current user. |
-| `/shop` | `ShopList` | Paginated shop list. |
-| `/shop/create` | `CreateShop` | Create form. |
-| `/shop/:shopId` | `CreateShop` | Edit form (same component, ID-aware). |
-| `/product` | `ProductList` | Paginated product list. |
-| `/product/create` | `CreateProduct` | Create form. |
-| `/product/:productId` | `CreateProduct` | Edit form. |
-| `/transaction` | `TransactionPage` | Calendar + filters + creation. |
-| `/transaction/:transactionId` | `TransactionPage` | Same view, focused on one row. |
+| Path                          | Page              | Notes                                          |
+| ----------------------------- | ----------------- | ---------------------------------------------- |
+| `/`                           | `Home`            | Charts: monthly spend + most popular products. |
+| `/login`                      | `Login`           | Username/password form → JWT cookie.           |
+| `/profile`                    | `Profile`         | View / edit the current user.                  |
+| `/shop`                       | `ShopList`        | Paginated shop list.                           |
+| `/shop/create`                | `CreateShop`      | Create form.                                   |
+| `/shop/:shopId`               | `CreateShop`      | Edit form (same component, ID-aware).          |
+| `/product`                    | `ProductList`     | Paginated product list.                        |
+| `/product/create`             | `CreateProduct`   | Create form.                                   |
+| `/product/:productId`         | `CreateProduct`   | Edit form.                                     |
+| `/transaction`                | `TransactionPage` | Calendar + filters + creation.                 |
+| `/transaction/:transactionId` | `TransactionPage` | Same view, focused on one row.                 |
 
 There is no route-level auth guard; the Axios request interceptor enforces auth by redirecting to `/login?redirectTo=<current-path>` whenever the `accessToken` cookie is missing.
 
@@ -140,16 +140,16 @@ apiClientInstance.interceptors.request.use((config) => {
 
 Per-resource hooks (each file: `client.ts`, `types.ts`, `index.ts`):
 
-| Hook | Endpoints |
-| --- | --- |
-| `useAuthAPIClient` | `POST /api/login` (uses raw `axios`, no interceptor — no token yet) |
-| `useCategoryAPIClient` | `GET/POST/PUT/PATCH/DELETE /api/v1/category` |
-| `useShopAPIClient` | `/api/v1/shop` CRUD |
-| `useAddressAPIClient` | `/api/v1/address` CRUD |
-| `useProductAPIClient` | `/api/v1/product` CRUD |
-| `useTransactionAPIClient` | `/api/v1/transaction` CRUD |
-| `useStatisticsAPIClient` | `GET /api/v1/statistics/spendings/grouped-by-month`, `GET /api/v1/statistics/most-popular-products` |
-| `useUserAPIClient` | `/api/v1/user` (profile, current user) |
+| Hook                      | Endpoints                                                                                           |
+| ------------------------- | --------------------------------------------------------------------------------------------------- |
+| `useAuthAPIClient`        | `POST /api/login` (uses raw `axios`, no interceptor — no token yet)                                 |
+| `useCategoryAPIClient`    | `GET/POST/PUT/PATCH/DELETE /api/v1/category`                                                        |
+| `useShopAPIClient`        | `/api/v1/shop` CRUD                                                                                 |
+| `useAddressAPIClient`     | `/api/v1/address` CRUD                                                                              |
+| `useProductAPIClient`     | `/api/v1/product` CRUD                                                                              |
+| `useTransactionAPIClient` | `/api/v1/transaction` CRUD                                                                          |
+| `useStatisticsAPIClient`  | `GET /api/v1/statistics/spendings/grouped-by-month`, `GET /api/v1/statistics/most-popular-products` |
+| `useUserAPIClient`        | `/api/v1/user` (profile, current user)                                                              |
 
 Mutating hooks (create/update/delete) sync the result into the matching Zustand store so list views stay consistent.
 
@@ -157,12 +157,12 @@ Mutating hooks (create/update/delete) sync the result into the matching Zustand 
 
 State uses **Zustand** (not Redux) with Redux DevTools middleware for inspection.
 
-| Store | Responsibility |
-| --- | --- |
-| `useMainStore` | Global `isLoading` flag and the authenticated `user`. |
-| `useCategoryStore` | Category tree + per-entity mutations. |
-| `useShopStore` | Shop list and `currentShop`. |
-| `useProductStore` | Paginated product list and `currentProduct`. |
+| Store                 | Responsibility                                                                     |
+| --------------------- | ---------------------------------------------------------------------------------- |
+| `useMainStore`        | Global `isLoading` flag and the authenticated `user`.                              |
+| `useCategoryStore`    | Category tree + per-entity mutations.                                              |
+| `useShopStore`        | Shop list and `currentShop`.                                                       |
+| `useProductStore`     | Paginated product list and `currentProduct`.                                       |
 | `useTransactionStore` | Transaction list, calendar-selected `currentDate` (`dayjs`), `currentTransaction`. |
 
 Each store exports a hook (`use<Name>Store`) and a `types.ts` with its model. The API client hooks call these stores' setters directly after a successful mutation.
@@ -179,13 +179,13 @@ Each store exports a hook (`use<Name>Store`) and a `types.ts` with its model. Th
 
 Re-exported from `src/components/index.ts` for use via `@components`:
 
-| Component | Purpose |
-| --- | --- |
-| `Navbar` | Top bar: logo, primary navigation, logout. |
-| `Card` | Generic card surface. |
-| `CardsStack` | Stacked layout for card lists. |
-| `Input` | Form input wrapper. |
-| `AsyncInput` | Input with async option loading (autocomplete-style). |
+| Component      | Purpose                                                    |
+| -------------- | ---------------------------------------------------------- |
+| `Navbar`       | Top bar: logo, primary navigation, logout.                 |
+| `Card`         | Generic card surface.                                      |
+| `CardsStack`   | Stacked layout for card lists.                             |
+| `Input`        | Form input wrapper.                                        |
+| `AsyncInput`   | Input with async option loading (autocomplete-style).      |
 | `SubmitButton` | Submit button with a loading state tied to `useMainStore`. |
 
 Additional internal pieces live in their own subfolders: `avatar/`, `image/`, `search/`, `productPriceChart/`, plus `navbar/logout/`. SCSS modules sit next to the components that use them (e.g. `navbar/style.scss`, `card/style.scss`).
@@ -194,12 +194,12 @@ Additional internal pieces live in their own subfolders: `avatar/`, `image/`, `s
 
 Declared in both `vite.config.ts` and `tsconfig.app.json`:
 
-| Alias | Resolves to |
-| --- | --- |
+| Alias         | Resolves to      |
+| ------------- | ---------------- |
 | `@components` | `src/components` |
-| `@pages` | `src/pages` |
-| `@store` | `src/store` |
-| `@services` | `src/services` |
+| `@pages`      | `src/pages`      |
+| `@store`      | `src/store`      |
+| `@services`   | `src/services`   |
 
 Each alias has a bare form (`@components`) that hits the barrel `index.ts`, and a wildcard form (`@components/*`) for deep imports.
 

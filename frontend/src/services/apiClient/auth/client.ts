@@ -5,8 +5,9 @@ import type { LoginResponse } from './types';
 export const useAuthAPIClient = () => {
   return {
     login: async (username: string, password: string) => {
+      const apiHost = import.meta.env.VITE_API_HOST ?? '';
       const response = await axios.post<LoginResponse>(
-        `${import.meta.env.VITE_API_HOST}/api/login`,
+        `${apiHost}/api/login`,
         {
           username,
           password,

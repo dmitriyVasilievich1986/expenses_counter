@@ -4,7 +4,7 @@ import Cookies from 'js-cookie';
 import { useMainStore } from '@store/main';
 
 export const apiClientInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_HOST,
+  baseURL: import.meta.env.VITE_API_HOST ?? '',
   headers: {
     'Content-Type': 'application/json',
   },
