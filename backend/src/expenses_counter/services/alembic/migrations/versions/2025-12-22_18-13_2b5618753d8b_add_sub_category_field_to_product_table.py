@@ -16,12 +16,16 @@ branch_labels = None
 depends_on = None
 
 
-def upgrade():
+def upgrade() -> None:
     """Add subcategory relationship to the product table.
 
     Adds a nullable sub_category_id foreign key column to main_product table,
     allowing products to be associated with subcategories. The field is nullable
     to allow for products without assigned subcategories.
+
+    Returns:
+        None
+
     """
     with op.batch_alter_table("main_product") as batch_op:
         batch_op.add_column(
@@ -32,11 +36,15 @@ def upgrade():
         )
 
 
-def downgrade():
+def downgrade() -> None:
     """Remove subcategory relationship from the product table.
 
     Drops the foreign key constraint and removes the sub_category_id column
     from the main_product table.
+
+    Returns:
+        None
+
     """
     with op.batch_alter_table("main_product") as batch_op:
         batch_op.drop_constraint("main_product_sub_category_id_fkey", type_="foreignkey")

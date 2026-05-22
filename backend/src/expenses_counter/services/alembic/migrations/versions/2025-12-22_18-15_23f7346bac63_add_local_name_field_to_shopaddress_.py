@@ -16,21 +16,29 @@ branch_labels = None
 depends_on = None
 
 
-def upgrade():
+def upgrade() -> None:
     """Add local_name field to shop address table.
 
     Adds a non-nullable local_name column (String, max 150 characters) to
     main_shopaddress table. This field likely stores a localized or custom
     name for the specific shop location/address.
+
+    Returns:
+        None
+
     """
     with op.batch_alter_table("main_shopaddress") as batch_op:
         batch_op.add_column(sa.Column("local_name", sa.String(length=150), nullable=False))
 
 
-def downgrade():
+def downgrade() -> None:
     """Remove local_name field from shop address table.
 
     Drops the local_name column from main_shopaddress table.
+
+    Returns:
+        None
+
     """
     with op.batch_alter_table("main_shopaddress") as batch_op:
         batch_op.drop_column("local_name")

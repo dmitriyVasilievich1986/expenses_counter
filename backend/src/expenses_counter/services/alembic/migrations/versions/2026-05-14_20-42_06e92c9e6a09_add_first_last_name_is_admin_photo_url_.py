@@ -19,7 +19,7 @@ branch_labels = None
 depends_on = None
 
 
-def upgrade():
+def upgrade() -> None:
     """Add profile and status columns to ``main_user``.
 
     Uses a batch alteration so SQLite and other backends apply the change
@@ -37,7 +37,7 @@ def upgrade():
         batch_op.add_column(sa.Column("photo_url", sa.String(255), nullable=True))
 
 
-def downgrade():
+def downgrade() -> None:
     """Remove profile and status columns from ``main_user``.
 
     Returns:

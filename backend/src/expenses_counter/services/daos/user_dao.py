@@ -3,6 +3,8 @@
 __all__ = ("UserDAO",)
 
 
+from typing import Any
+
 from expenses_counter.services.auth import PasswordService
 from expenses_counter.services.daos.base import BaseDAO
 from expenses_counter.services.database.models.user import User
@@ -26,7 +28,7 @@ class UserDAO(BaseDAO[User]):
         """
         return await self.get_by_pk(username, "username")
 
-    async def create(self, **kwargs) -> User:
+    async def create(self, **kwargs: Any) -> User:
         """Insert a user, replacing plaintext ``password`` with a keyed hash.
 
         Args:

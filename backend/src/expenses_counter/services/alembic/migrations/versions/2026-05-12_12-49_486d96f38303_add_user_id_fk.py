@@ -26,7 +26,7 @@ user = table("main_user", column("id"), column("username"), column("email"), col
 transaction = table("main_transaction", column("id"), column("user_id"))
 
 
-def upgrade():
+def upgrade() -> None:
     """Attach every transaction to a ``main_user`` row.
 
     Adds nullable ``user_id``, ensures at least one user exists for backfill,
@@ -46,7 +46,7 @@ def upgrade():
     connection = op.get_bind()
     user_id = connection.execute(
         user.insert().values(username="dummy", email="dummy@example.com", password=password).returning(user.c.id)
-    ).fetchone()[0]
+    ).fetchone()[0]  # type: ignore[index]
     connection.execute(transaction.update().values(user_id=user_id))
 
     with op.batch_alter_table("main_transaction") as batch_op:
@@ -56,7 +56,7 @@ def upgrade():
         )
 
 
-def downgrade():
+def downgrade() -> None:
     """Remove ``user_id`` from ``main_transaction`` and delete the placeholder user.
 
     Drops the foreign key and column, then removes the migration-only
@@ -71,5 +71,5 @@ def downgrade():
         batch_op.drop_column("user_id")
 
     connection = op.get_bind()
-    user_id = connection.execute(user.select().where(user.c.username == "dummy")).fetchone()[0]
+    user_id = connection.execute(user.select().where(user.c.username == "dummy")).fetchone()[0]  # type: ignore[index]
     connection.execute(user.delete().where(user.c.id == user_id))

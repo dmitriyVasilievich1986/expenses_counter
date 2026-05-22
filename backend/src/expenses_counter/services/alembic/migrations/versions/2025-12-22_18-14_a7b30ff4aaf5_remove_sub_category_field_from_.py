@@ -16,22 +16,30 @@ branch_labels = None
 depends_on = None
 
 
-def upgrade():
+def upgrade() -> None:
     """Remove subcategory reference from transaction table.
 
     Removes the sub_category_id column from main_transaction table.
     This is likely because subcategory information can be derived from
     the product relationship instead of being stored redundantly.
+
+    Returns:
+        None
+
     """
     with op.batch_alter_table("main_transaction") as batch_op:
         batch_op.drop_column("sub_category_id")
 
 
-def downgrade():
+def downgrade() -> None:
     """Restore subcategory reference to transaction table.
 
     Re-adds the nullable sub_category_id foreign key column to main_transaction
     and recreates the foreign key constraint to main_subcategory table.
+
+    Returns:
+        None
+
     """
     with op.batch_alter_table("main_transaction") as batch_op:
         batch_op.add_column(

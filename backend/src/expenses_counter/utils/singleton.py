@@ -3,7 +3,7 @@
 __all__ = ("Singleton",)
 
 from threading import Lock
-from typing import ClassVar
+from typing import Any, ClassVar
 
 
 class Singleton(type):
@@ -26,7 +26,7 @@ class Singleton(type):
     _instances: ClassVar[dict] = {}
     _lock: Lock = Lock()
 
-    def __call__(cls, *args, **kwargs):
+    def __call__(cls, *args: Any, **kwargs: Any) -> Any:
         """Create or return the singleton instance of the class.
 
         On first call, creates a new instance and stores it. Subsequent calls
@@ -38,7 +38,7 @@ class Singleton(type):
             **kwargs: Keyword arguments passed to the class constructor.
 
         Returns:
-            The singleton instance of the class.
+            Any: The singleton instance of the class.
 
         """
         with cls._lock:

@@ -16,22 +16,30 @@ branch_labels = None
 depends_on = None
 
 
-def upgrade():
+def upgrade() -> None:
     """Add quantity/count field to transaction table.
 
     Adds a non-nullable count column (Numeric with precision 10 and scale 3)
     to main_transaction table with a default value of 0. This field tracks
     the quantity of items purchased in each transaction, supporting decimal
     quantities (e.g., 1.5 kg of produce).
+
+    Returns:
+        None
+
     """
     with op.batch_alter_table("main_transaction") as batch_op:
         batch_op.add_column(sa.Column("count", sa.Numeric(precision=10, scale=3), nullable=False, server_default="0"))
 
 
-def downgrade():
+def downgrade() -> None:
     """Remove quantity/count field from transaction table.
 
     Drops the count column from main_transaction table.
+
+    Returns:
+        None
+
     """
     with op.batch_alter_table("main_transaction") as batch_op:
         batch_op.drop_column("count")

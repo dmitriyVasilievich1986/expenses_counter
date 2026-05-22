@@ -18,7 +18,7 @@ branch_labels = None
 depends_on = None
 
 
-def upgrade():
+def upgrade() -> None:
     """Create ``main_user`` with unique username and email constraints.
 
     Columns store login credentials; indexes support username lookups.
@@ -40,7 +40,7 @@ def upgrade():
     )
 
 
-def downgrade():
+def downgrade() -> None:
     """Drop the ``main_user`` table.
 
     Returns:
