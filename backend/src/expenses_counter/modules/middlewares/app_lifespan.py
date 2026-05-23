@@ -21,9 +21,6 @@ async def lifespan(
     Args:
         app (FastAPI): The FastAPI application instance.
 
-    Returns:
-        None: Control returns to the application during its lifetime.
-
     Yields:
         None: Control returns to the application during its lifetime.
 
