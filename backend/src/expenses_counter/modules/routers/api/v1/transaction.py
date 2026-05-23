@@ -64,7 +64,7 @@ async def get_transaction_list(
     filters = transaction_dao.concat_filters(query.filters_dict, [Transaction.user_id == user.id])
 
     try:
-        data, total = await transaction_dao.get_all(**query.model_dump(), filters=filters)
+        data, total = await transaction_dao.get_all(**query.model_dump(exclude={"filters"}), filters=filters)
     except SQLAlchemyError as e:
         logger.exception("Something went wrong while retrieving the transaction list", exc_info=e)
         raise HTTPException(
