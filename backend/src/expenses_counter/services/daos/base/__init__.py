@@ -1,6 +1,6 @@
 """Base DAO module."""
 
 from .base_dao import BaseDAO
-from .types import FilterType
+from .types import AcceptableFiltersType
 
-__all__ = ("BaseDAO", "FilterType")
+__all__ = ("AcceptableFiltersType", "BaseDAO")
