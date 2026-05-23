@@ -54,7 +54,7 @@ async def login(
 
     if not user.is_active:
         logger.error(f"User {body.username} is not active")
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User is not active")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid username or password")
 
     if not PasswordService.check_password(body.password, user.password):
         logger.warning("Invalid username or password")
