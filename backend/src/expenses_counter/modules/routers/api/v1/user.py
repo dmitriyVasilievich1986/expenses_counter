@@ -18,7 +18,7 @@ from fastapi import APIRouter, Body, Depends, HTTPException, status
 from loguru import logger
 from sqlalchemy.exc import IntegrityError, NoResultFound, SQLAlchemyError
 
-from expenses_counter.modules.middlewares.dependencies.daos.user_dao import get_user_dao
+from expenses_counter.modules.middlewares.dependencies import get_db
 from expenses_counter.modules.middlewares.dependencies.user_authorized import user_authorized
 from expenses_counter.modules.routers.schemas.requests.user import (
     PatchUserBody,
@@ -28,6 +28,7 @@ from expenses_counter.modules.routers.schemas.responses.user import (
     GetSingleUserResponse,
 )
 from expenses_counter.services.daos import UserDAO
+from expenses_counter.services.database import AsyncDatabaseClient
 from expenses_counter.services.database.models.user import User
 
 router = APIRouter(prefix="/user", tags=["User"])
@@ -59,25 +60,28 @@ async def me(user: Annotated[User, Depends(user_authorized)]) -> GetSingleUserRe
     description="Update the current user",
 )
 async def update_me(
-    user: Annotated[User, Depends(user_authorized)],
     body: Annotated[PutUserBody, Body(description="The user data to update")],
-    user_dao: Annotated[UserDAO, Depends(get_user_dao)],
+    user: Annotated[User, Depends(user_authorized)],
+    db: Annotated[AsyncDatabaseClient, Depends(get_db)],
 ) -> GetSingleUserResponse:
-    """Replace the authenticated user's editable fields.
+    """Replace the authenticated user's profile with the request body.
 
     Args:
-        user (User): The user resolved from the JWT by ``user_authorized``.
-        body (PutUserBody): Full payload of fields to persist.
-        user_dao (UserDAO): DAO used to persist the update.
+        body (PutUserBody): Full replacement payload for the current user.
+        user (User): Authenticated user performing the update.
+        db (AsyncDatabaseClient): Database client for the request.
 
     Returns:
-        GetSingleUserResponse: Updated user as returned by the persistence layer.
+        GetSingleUserResponse: The updated user payload.
 
     Raises:
-        HTTPException: If the user is missing (404), an integrity constraint
-            fails (400), or another database error occurs (500).
+        HTTPException: 400 if a referenced entity violates integrity.
+        HTTPException: 404 if the authenticated user record is missing.
+        HTTPException: 500 if a database error occurs while updating the user.
 
     """
+    user_dao = UserDAO(database_client=db)
+
     try:
         payload = await user_dao.update(user.id, **body.model_dump())
     except NoResultFound as e:
@@ -105,23 +109,26 @@ async def update_me(
 async def patch_me(
     user: Annotated[User, Depends(user_authorized)],
     body: Annotated[PatchUserBody, Body(description="The user data to patch")],
-    user_dao: Annotated[UserDAO, Depends(get_user_dao)],
+    db: Annotated[AsyncDatabaseClient, Depends(get_db)],
 ) -> GetSingleUserResponse:
-    """Apply a partial update to the authenticated user's fields.
+    """Patch the authenticated user's profile.
 
     Args:
-        user (User): The user resolved from the JWT by ``user_authorized``.
-        body (PatchUserBody): Only fields present in the request body are updated.
-        user_dao (UserDAO): DAO used to persist the patch.
+        user (User): Authenticated user performing the update.
+        body (PatchUserBody): Partial update payload for the current user.
+        db (AsyncDatabaseClient): Database client for the request.
 
     Returns:
-        GetSingleUserResponse: Updated user as returned by the persistence layer.
+        GetSingleUserResponse: The updated user payload.
 
     Raises:
-        HTTPException: If the user is missing (404), an integrity constraint
-            fails (400), or another database error occurs (500).
+        HTTPException: 400 if a referenced entity violates integrity.
+        HTTPException: 404 if the authenticated user record is missing.
+        HTTPException: 500 if a database error occurs while patching the user.
 
     """
+    user_dao = UserDAO(database_client=db)
+
     try:
         payload = await user_dao.update(user.id, **body.model_dump(exclude_unset=True))
     except NoResultFound as e:

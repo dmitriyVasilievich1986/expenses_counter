@@ -7,14 +7,14 @@ from loguru import logger
 from sqlalchemy.exc import NoResultFound, SQLAlchemyError
 
 from expenses_counter.config import AppConfig
-from expenses_counter.modules.middlewares.dependencies import get_config
-from expenses_counter.modules.middlewares.dependencies.daos import get_user_dao
+from expenses_counter.modules.middlewares.dependencies import get_config, get_db
 from expenses_counter.modules.routers.schemas.requests.system import LoginBody
 from expenses_counter.modules.routers.schemas.responses.system import (
     LoginResponse,
 )
 from expenses_counter.services.auth import JWTTokenService, PasswordService
 from expenses_counter.services.daos import UserDAO
+from expenses_counter.services.database import AsyncDatabaseClient
 
 router = APIRouter()
 
@@ -22,14 +22,14 @@ router = APIRouter()
 @router.post("/login", response_model=LoginResponse, status_code=status.HTTP_200_OK, description="Login a user")
 async def login(
     body: Annotated[LoginBody, Body(description="The login body")],
-    user_dao: Annotated[UserDAO, Depends(get_user_dao)],
+    db: Annotated[AsyncDatabaseClient, Depends(get_db)],
     config: Annotated[AppConfig, Depends(get_config)],
 ) -> LoginResponse:
     """Authenticate a user and return a JWT access token.
 
     Args:
         body (LoginBody): Username and plaintext password from the client.
-        user_dao (UserDAO): DAO used to load the user record by username.
+        db (AsyncDatabaseClient): Database client for the request.
         config (AppConfig): Application configuration (password and JWT secrets).
 
     Returns:
@@ -40,6 +40,8 @@ async def login(
             occurs while loading the user (500).
 
     """
+    user_dao = UserDAO(database_client=db)
+
     try:
         user = await user_dao.get_by_username(body.username)
     except NoResultFound as e:
@@ -51,6 +53,10 @@ async def login(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Something went wrong while retrieving the user",
         ) from e
+
+    if not user.is_active:
+        logger.error(f"User {body.username} is not active")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid username or password")
 
     if not PasswordService.check_password(body.password, user.password):
         logger.warning("Invalid username or password")

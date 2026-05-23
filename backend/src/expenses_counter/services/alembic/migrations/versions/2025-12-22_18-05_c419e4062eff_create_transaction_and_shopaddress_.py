@@ -16,7 +16,7 @@ branch_labels = None
 depends_on = None
 
 
-def upgrade():
+def upgrade() -> None:
     """Refactor database schema to introduce Transaction and ShopAddress tables.
 
     This migration performs the following changes:
@@ -28,6 +28,10 @@ def upgrade():
 
     This refactoring moves the transactional data from the product table to a dedicated
     transaction table, allowing products to exist independently of specific purchases.
+
+    Returns:
+        None
+
     """
     # Remove field date from main_price
     with op.batch_alter_table("main_price") as batch_op:
@@ -88,7 +92,7 @@ def upgrade():
     )
 
 
-def downgrade():
+def downgrade() -> None:
     """Revert the schema changes and restore the original structure.
 
     This downgrade performs the following:
@@ -99,6 +103,10 @@ def downgrade():
 
     Note: This will result in data loss for any transactions and shop addresses
     that were created after this migration was applied.
+
+    Returns:
+        None
+
     """
     # Drop the new tables
     op.drop_table("main_shopaddress")

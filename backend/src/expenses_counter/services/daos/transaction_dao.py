@@ -3,16 +3,15 @@
 __all__ = ("TransactionDAO",)
 
 
-from typing import Any, Sequence
+from typing import Sequence
 
-from sqlalchemy import func, select
+from sqlalchemy import func, Select, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql import ColumnElement
 
 from expenses_counter.services.daos.base import BaseDAO
-from expenses_counter.services.database import AsyncDatabaseClient
 from expenses_counter.services.database.models.product import Product
 from expenses_counter.services.database.models.transaction import Transaction
-from expenses_counter.services.database.models.user import User
 
 
 class TransactionDAO(BaseDAO[Transaction]):
@@ -22,54 +21,24 @@ class TransactionDAO(BaseDAO[Transaction]):
     select_in_options_single = (Transaction.product, Transaction.address)
     select_in_options_all = (Transaction.product, Transaction.address)
 
-    def __init__(
+    async def _get_spendings_grouped_by_month_raw(
         self,
-        database_client: AsyncDatabaseClient | None = None,
-        session: AsyncSession | None = None,
-        **kwargs: Any,
-    ) -> None:
-        """Initialize the DAO with either a shared session or a database client.
+        session: AsyncSession,
+        filters: list[ColumnElement[bool]] | None,
+    ) -> Sequence[tuple[str, float]]:
+        """Sum transaction prices grouped by calendar month.
+
+        Uses dialect-specific date truncation: ``strftime`` on SQLite and
+        ``to_char`` on PostgreSQL.
 
         Args:
-            database_client (AsyncDatabaseClient | None, optional): Opens
-                short-lived sessions when ``session`` is omitted. Defaults to
-                None.
-            session (AsyncSession | None, optional): Reused async session for
-                all operations. Defaults to None.
-            kwargs (Any): Ignored keyword arguments for subclass constructors.
-
-        Raises:
-            ValueError: If both ``database_client`` and ``session`` are None.
+            session (AsyncSession): Active async session.
+            filters (list[ColumnElement[bool]] | None, optional): Extra WHERE
+                clauses merged with ``base_filters``. Defaults to None.
 
         Returns:
-            None
-
-        """
-        if database_client is None and session is None:
-            raise ValueError("Either database_client or session must be provided")
-
-        user: User | None = kwargs.get("user")
-        if user is None:
-            raise ValueError("user is required")
-        if not user.is_admin:
-            self.base_filters = [Transaction.user_id == user.id]
-
-        self.database_client = database_client
-        self.session = session
-        self.user_id = user.id
-
-    async def _get_spendings_grouped_by_month_raw(self, session: AsyncSession) -> Sequence[tuple[str, float]]:
-        """Sum transaction prices grouped by calendar month using the given session.
-
-        Month keys are normalized to the first day of each month as ``YYYY-MM-01``.
-        SQLite uses ``strftime``; other dialects use ``to_char`` for grouping.
-
-        Args:
-            session (AsyncSession): Session used to run the aggregation query.
-
-        Returns:
-            Sequence[tuple[str, float]]: Pairs of month key and total spending for that month,
-                ordered by month ascending.
+            Sequence[tuple[str, float]]: Pairs of month label (``YYYY-MM-01``)
+                and total spending for that month, ordered chronologically.
 
         """
         if session.bind.dialect.name == "sqlite":
@@ -77,58 +46,100 @@ class TransactionDAO(BaseDAO[Transaction]):
         else:
             date_column = func.to_char(Transaction.date, "YYYY-MM-01")
 
-        filters = self.concat_filters(None)
+        filters_ = self.concat_filters(self.base_filters, filters)
         stmt = (
-            select(date_column, func.sum(Transaction.price)).group_by(date_column).order_by(date_column).where(*filters)
+            select(date_column, func.sum(Transaction.price))
+            .group_by(date_column)
+            .order_by(date_column)
+            .where(*filters_)
         )
         result = await session.execute(stmt)
         return result.tuples().all()
 
-    async def get_spendings_grouped_by_month(self) -> Sequence[tuple[str, float]]:
-        """Return total spending per month across all transactions.
+    async def get_spendings_grouped_by_month(
+        self, filters: list[ColumnElement[bool]] | None = None
+    ) -> Sequence[tuple[str, float]]:
+        """Return monthly spending totals using injected or factory-opened session.
 
-        Uses ``self.session`` when the DAO was constructed with an active session;
-        otherwise opens a short-lived session from ``database_client``.
+        Args:
+            filters (list[ColumnElement[bool]] | None, optional): Extra WHERE
+                clauses merged with ``base_filters``. Defaults to None.
 
         Returns:
-            Sequence[tuple[str, float]]: Month keys (``YYYY-MM-01``) and summed prices,
-                ordered by month ascending.
+            Sequence[tuple[str, float]]: Pairs of month label (``YYYY-MM-01``)
+                and total spending for that month, ordered chronologically.
 
         """
         if self.session is not None:
-            return await self._get_spendings_grouped_by_month_raw(self.session)
+            return await self._get_spendings_grouped_by_month_raw(self.session, filters)
 
         async with self.database_client.session_factory() as session:  # type: ignore[union-attr]
-            return await self._get_spendings_grouped_by_month_raw(session)
+            return await self._get_spendings_grouped_by_month_raw(session, filters)
 
-    async def get_most_popular_products(self, limit: int = 10) -> Sequence[Product]:
-        """Return products ranked by how often they appear in transactions.
+    async def _get_most_popular_products_raw(
+        self,
+        session: AsyncSession,
+        limit: int | None,
+        filters: list[ColumnElement[bool]] | None,
+    ) -> Sequence[Product]:
+        """Load products ranked by how often they appear in transactions.
+
+        Args:
+            session (AsyncSession): Active async session.
+            limit (int | None): Maximum number of product IDs to consider;
+                None returns all ranked products.
+            filters (list[ColumnElement[bool]] | None, optional): Extra WHERE
+                clauses merged with ``base_filters``. Defaults to None.
+
+        Returns:
+            Sequence[Product]: ``Product`` rows for the top-ranked IDs, in
+                descending transaction-count order.
+
+        """
+        amount = func.count(Transaction.product_id)
+        ranked: Select[tuple[int, int]] = select(
+            Transaction.product_id,
+            amount.label("transaction_count"),
+        ).group_by(Transaction.product_id)
+        if c_filters := self.concat_filters(self.base_filters, filters):
+            ranked = ranked.where(*c_filters)
+        ranked = ranked.order_by(amount.desc())
+        if limit:
+            ranked = ranked.limit(limit)
+
+        ranked_sq = ranked.subquery()
+        stmt = (
+            select(Product)
+            .join(ranked_sq, Product.id == ranked_sq.c.product_id)
+            .order_by(ranked_sq.c.transaction_count.desc())
+        )
+
+        result = await session.execute(stmt)
+        return result.scalars().all()
+
+    async def get_most_popular_products(
+        self,
+        limit: int = 10,
+        filters: list[ColumnElement[bool]] | None = None,
+    ) -> Sequence[Product]:
+        """Return products most frequently referenced in transactions.
+
+        Uses an injected session when present; otherwise opens a
+        short-lived session from the bound database client.
 
         Args:
             limit (int, optional): Maximum number of products to return.
                 Defaults to 10.
+            filters (list[ColumnElement[bool]] | None, optional): Extra WHERE
+                clauses merged with ``base_filters``. Defaults to None.
 
         Returns:
-            Sequence[Product]: Products with the highest transaction counts,
-                most frequent first.
+            Sequence[Product]: ``Product`` rows for the top-ranked IDs, in
+                descending transaction-count order.
 
         """
-        filters = self.concat_filters(None)
-        amount = func.count(Transaction.product_id)
-        subquery = (
-            select(Transaction.product_id)
-            .where(*filters)
-            .group_by(Transaction.product_id)
-            .order_by(amount.desc())
-            .limit(limit)
-            .subquery()
-        )
-        stmt = select(Product).where(Product.id.in_(select(subquery.c.product_id)))
-
         if self.session is not None:
-            result = await self.session.execute(stmt)
-            return result.scalars().all()
+            return await self._get_most_popular_products_raw(self.session, limit, filters)
 
         async with self.database_client.session_factory() as session:  # type: ignore[union-attr]
-            result = await session.execute(stmt)
-            return result.scalars().all()
+            return await self._get_most_popular_products_raw(session, limit, filters)

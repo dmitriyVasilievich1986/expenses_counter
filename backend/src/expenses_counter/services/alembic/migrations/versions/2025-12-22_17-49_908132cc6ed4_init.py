@@ -13,18 +13,26 @@ branch_labels = None
 depends_on = None
 
 
-def upgrade():
+def upgrade() -> None:
     """Add initial migration placeholder.
 
     This is the first migration in the chain and serves as the base revision.
     No database changes are performed in this migration.
+
+    Returns:
+        None
+
     """
     pass
 
 
-def downgrade():
+def downgrade() -> None:
     """Downgrade from initial migration.
 
     No database changes to revert as this is the initial placeholder migration.
+
+    Returns:
+        None
+
     """
     pass

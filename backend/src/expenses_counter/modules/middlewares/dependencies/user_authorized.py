@@ -6,7 +6,7 @@ the JWT, loads the matching ``User`` from the database, or raises ``HTTPExceptio
 
 __all__ = ("user_authorized",)
 
-from typing import Annotated
+from typing import Annotated, TYPE_CHECKING
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -18,22 +18,24 @@ from expenses_counter.config.app_config import AppConfig
 from expenses_counter.services.auth import JWTTokenService
 from expenses_counter.services.daos import UserDAO
 from expenses_counter.services.database import AsyncDatabaseClient
-from expenses_counter.services.database.models.user import User
+
+if TYPE_CHECKING:
+    from expenses_counter.services.database.models.user import User
 
 from .get_db import get_db
 
-user_token = HTTPBearer(scheme_name="User Token")
+user_token = HTTPBearer(scheme_name="User Token", auto_error=False)
 
 
 async def user_authorized(
-    token_header: Annotated[HTTPAuthorizationCredentials, Depends(user_token)],
+    token_header: Annotated[HTTPAuthorizationCredentials | None, Depends(user_token)],
     db: Annotated[AsyncDatabaseClient, Depends(get_db)],
-) -> User:
+) -> "User":
     """Decode the Bearer JWT and return the authenticated user row.
 
     Args:
-        token_header (HTTPAuthorizationCredentials): Parsed ``Authorization``
-            Bearer credentials from the request.
+        token_header (HTTPAuthorizationCredentials | None): Parsed ``Authorization``
+            Bearer credentials from the request or None if no token is provided.
         db (AsyncDatabaseClient): Client used to load the user by primary key.
 
     Returns:
@@ -44,6 +46,10 @@ async def user_authorized(
             missing; 500 if loading the user fails with a database error.
 
     """
+    if token_header is None:
+        logger.error("No token provided")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
+
     user_dao = UserDAO(database_client=db)
     jwt_token_service = JWTTokenService(
         secret_key=AppConfig.get_or_create().services.auth.jwt_secret_key.get_secret_value(),

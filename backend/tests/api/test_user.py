@@ -7,15 +7,14 @@ forwarding, and the three failure branches (``NoResultFound`` -> 404,
 ``IntegrityError`` -> 400, ``SQLAlchemyError`` -> 500).
 """
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.exc import DatabaseError, IntegrityError, NoResultFound
 
 from expenses_counter.modules.app import get_app
-from expenses_counter.modules.middlewares.dependencies import user_authorized
-from expenses_counter.modules.middlewares.dependencies.daos.user_dao import get_user_dao
+from expenses_counter.modules.middlewares.dependencies import get_db, user_authorized
 from expenses_counter.services.database.models.user import User
 
 
@@ -64,6 +63,10 @@ def authenticated_user() -> MagicMock:
 def test_client(mock_user_dao, authenticated_user, test_config):
     """Create a test client with mocked dependencies.
 
+    The user route instantiates ``UserDAO`` directly, so we patch the class in
+    the router module to return the same mock and override ``get_db`` with a
+    stand-in database client.
+
     Args:
         mock_user_dao: Mocked ``UserDAO`` instance.
         authenticated_user: Mocked authenticated user.
@@ -75,11 +78,15 @@ def test_client(mock_user_dao, authenticated_user, test_config):
     """
     app = get_app(test_config)
 
-    app.dependency_overrides[get_user_dao] = lambda: mock_user_dao
     app.dependency_overrides[user_authorized] = lambda: authenticated_user
+    app.dependency_overrides[get_db] = lambda: MagicMock()
 
-    client = TestClient(app)
-    yield client
+    with patch(
+        "expenses_counter.modules.routers.api.v1.user.UserDAO",
+        return_value=mock_user_dao,
+    ):
+        client = TestClient(app)
+        yield client
 
     app.dependency_overrides.clear()
 
@@ -352,18 +359,18 @@ class TestPatchMe:
 class TestGetAvailablePages:
     """Test GET /api/v1/user/available-pages endpoint."""
 
-    def _build_client(self, test_config, mock_user_dao, user: MagicMock) -> TestClient:
+    def _build_client(self, test_config, user: MagicMock) -> TestClient:
         """Wire a ``TestClient`` whose ``user_authorized`` resolves to ``user``."""
         app = get_app(test_config)
-        app.dependency_overrides[get_user_dao] = lambda: mock_user_dao
         app.dependency_overrides[user_authorized] = lambda: user
+        app.dependency_overrides[get_db] = lambda: MagicMock()
         return TestClient(app)
 
-    def test_admin_user_sees_admin_pages(self, test_config, mock_user_dao):
+    def test_admin_user_sees_admin_pages(self, test_config):
         """Admin users get the admin-only page keys."""
         admin = MagicMock(spec=User)
         admin.is_admin = True
-        client = self._build_client(test_config, mock_user_dao, admin)
+        client = self._build_client(test_config, admin)
 
         try:
             response = client.get("/api/v1/user/available-pages")
@@ -373,11 +380,11 @@ class TestGetAvailablePages:
         assert response.status_code == 200
         assert response.json() == ["shops", "products"]
 
-    def test_non_admin_user_sees_empty_list(self, test_config, mock_user_dao):
+    def test_non_admin_user_sees_empty_list(self, test_config):
         """Non-admin users get no admin-gated page keys."""
         regular = MagicMock(spec=User)
         regular.is_admin = False
-        client = self._build_client(test_config, mock_user_dao, regular)
+        client = self._build_client(test_config, regular)
 
         try:
             response = client.get("/api/v1/user/available-pages")
@@ -387,20 +394,20 @@ class TestGetAvailablePages:
         assert response.status_code == 200
         assert response.json() == []
 
-    def test_response_differs_between_admin_and_non_admin(self, test_config, mock_user_dao):
+    def test_response_differs_between_admin_and_non_admin(self, test_config):
         """The same endpoint must return different payloads for the two roles."""
         admin = MagicMock(spec=User)
         admin.is_admin = True
         regular = MagicMock(spec=User)
         regular.is_admin = False
 
-        admin_client = self._build_client(test_config, mock_user_dao, admin)
+        admin_client = self._build_client(test_config, admin)
         try:
             admin_pages = admin_client.get("/api/v1/user/available-pages").json()
         finally:
             admin_client.app.dependency_overrides.clear()
 
-        regular_client = self._build_client(test_config, mock_user_dao, regular)
+        regular_client = self._build_client(test_config, regular)
         try:
             regular_pages = regular_client.get("/api/v1/user/available-pages").json()
         finally:

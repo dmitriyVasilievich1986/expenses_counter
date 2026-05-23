@@ -16,7 +16,7 @@ branch_labels = None
 depends_on = None
 
 
-def upgrade():
+def upgrade() -> None:
     """Replace subcategory references with category references.
 
     This migration refactors both main_shop and main_product tables to reference
@@ -32,6 +32,10 @@ def upgrade():
 
     This simplifies the data model by using categories directly instead of
     requiring subcategories.
+
+    Returns:
+        None
+
     """
     with op.batch_alter_table("main_shop") as batch_op:
         batch_op.drop_constraint("main_shop_sub_category_id_fkey", type_="foreignkey")
@@ -54,7 +58,7 @@ def upgrade():
         )
 
 
-def downgrade():
+def downgrade() -> None:
     """Revert category references back to subcategory references.
 
     This downgrade restores the original structure:
@@ -69,6 +73,10 @@ def downgrade():
 
     Note: This will result in data loss as category references cannot be
     automatically converted back to subcategory references.
+
+    Returns:
+        None
+
     """
     with op.batch_alter_table("main_shop") as batch_op:
         batch_op.drop_constraint("main_shop_category_id_fkey", type_="foreignkey")

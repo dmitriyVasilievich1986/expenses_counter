@@ -3,6 +3,7 @@
 __all__ = ("lifespan",)
 
 from contextlib import asynccontextmanager
+from typing import AsyncGenerator
 
 from fastapi import FastAPI
 from loguru import logger
@@ -14,11 +15,11 @@ from expenses_counter.services.database import AsyncDatabaseClient
 @asynccontextmanager
 async def lifespan(
     app: FastAPI,
-):
+) -> AsyncGenerator[None, None]:
     """Manage the application lifecycle, initializing and cleaning up services.
 
     Args:
-        app: The FastAPI application instance.
+        app (FastAPI): The FastAPI application instance.
 
     Yields:
         None: Control returns to the application during its lifetime.

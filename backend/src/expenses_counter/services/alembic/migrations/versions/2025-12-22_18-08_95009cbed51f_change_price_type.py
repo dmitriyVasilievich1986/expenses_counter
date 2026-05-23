@@ -16,7 +16,7 @@ branch_labels = None
 depends_on = None
 
 
-def upgrade():
+def upgrade() -> None:
     """Change price storage from foreign key reference to inline decimal field.
 
     This migration refactors the main_transaction table to store price directly
@@ -27,6 +27,10 @@ def upgrade():
 
     This simplifies the data model by eliminating the need for a separate price table
     for transaction records.
+
+    Returns:
+        None
+
     """
     # Drop the foreign key constraint first
     with op.batch_alter_table("main_transaction") as batch_op:
@@ -37,7 +41,7 @@ def upgrade():
         )
 
 
-def downgrade():
+def downgrade() -> None:
     """Revert price storage back to foreign key reference.
 
     This downgrade:
@@ -47,6 +51,10 @@ def downgrade():
 
     Note: This will result in data loss as existing price values cannot be
     automatically converted back to price_id references.
+
+    Returns:
+        None
+
     """
     # Drop the decimal price column
     with op.batch_alter_table("main_transaction") as batch_op:

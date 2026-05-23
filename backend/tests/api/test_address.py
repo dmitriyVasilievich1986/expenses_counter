@@ -4,15 +4,20 @@ This module tests all address API endpoints without making direct database calls
 It uses FastAPI's TestClient and mocks the AddressDAO dependency.
 """
 
-from unittest.mock import AsyncMock, MagicMock
+from contextlib import ExitStack
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.exc import DatabaseError, IntegrityError, NoResultFound
 
 from expenses_counter.modules.app import get_app
-from expenses_counter.modules.middlewares.dependencies import user_authorized
-from expenses_counter.modules.middlewares.dependencies.daos import get_address
+from expenses_counter.modules.middlewares.dependencies import get_db, user_authorized
+
+_ADDRESS_DAO_PATHS = (
+    "expenses_counter.modules.routers.api.v1.address.all_users.AddressDAO",
+    "expenses_counter.modules.routers.api.v1.address.admin_only.AddressDAO",
+)
 
 
 @pytest.fixture
@@ -20,7 +25,7 @@ def mock_address_dao():
     """Create a mock AddressDAO for testing.
 
     Returns:
-        AsyncMock: Mocked AddressDAO instance that works as a context manager.
+        AsyncMock: Mocked AddressDAO instance.
 
     """
     dao = AsyncMock()
@@ -30,16 +35,16 @@ def mock_address_dao():
     dao.update = AsyncMock()
     dao.delete = AsyncMock()
 
-    # Make it work as a context manager
-    dao.__aenter__ = AsyncMock(return_value=dao)
-    dao.__aexit__ = AsyncMock(return_value=None)
-
     return dao
 
 
 @pytest.fixture
 def test_client(mock_address_dao, mock_user, test_config):
     """Create a test client with mocked dependencies.
+
+    Address routes are split across ``all_users`` and ``admin_only``; each
+    module imports ``AddressDAO`` locally, so we patch both names to return
+    the same mock and override ``get_db`` with a stand-in client.
 
     Args:
         mock_address_dao: Mocked AddressDAO instance.
@@ -52,13 +57,15 @@ def test_client(mock_address_dao, mock_user, test_config):
     """
     app = get_app(test_config)
 
-    app.dependency_overrides[get_address] = lambda: mock_address_dao
     app.dependency_overrides[user_authorized] = lambda: mock_user
+    app.dependency_overrides[get_db] = lambda: MagicMock()
 
-    client = TestClient(app)
-    yield client
+    with ExitStack() as stack:
+        for path in _ADDRESS_DAO_PATHS:
+            stack.enter_context(patch(path, return_value=mock_address_dao))
+        client = TestClient(app)
+        yield client
 
-    # Clean up
     app.dependency_overrides.clear()
 
 
