@@ -97,18 +97,22 @@ class TransactionDAO(BaseDAO[Transaction]):
 
         """
         amount = func.count(Transaction.product_id)
-        subquery: Select[tuple[int]] = (
-            select(Transaction.product_id)
-            .select_from(Transaction)
-            .group_by(Transaction.product_id)
-            .order_by(amount.desc())
-        )
+        ranked: Select[tuple[int, int]] = select(
+            Transaction.product_id,
+            amount.label("transaction_count"),
+        ).group_by(Transaction.product_id)
         if c_filters := self.concat_filters(self.base_filters, filters):
-            subquery = subquery.where(*c_filters)
+            ranked = ranked.where(*c_filters)
+        ranked = ranked.order_by(amount.desc())
         if limit:
-            subquery = subquery.limit(limit)
+            ranked = ranked.limit(limit)
 
-        stmt = select(Product).where(Product.id.in_(select(subquery.subquery().c.product_id)))
+        ranked_sq = ranked.subquery()
+        stmt = (
+            select(Product)
+            .join(ranked_sq, Product.id == ranked_sq.c.product_id)
+            .order_by(ranked_sq.c.transaction_count.desc())
+        )
 
         result = await session.execute(stmt)
         return result.scalars().all()
