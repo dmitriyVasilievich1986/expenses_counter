@@ -370,17 +370,19 @@ class BaseDAO[DatabaseModel: Base](ABC):
             DatabaseModel: Instance after commit (or unchanged if no values).
 
         """
+        c_filters = self.concat_filters(self.base_filters, filters)
+
         if not kwargs:
-            return await self._get_by_pk_raw(session, pk, pk_column_name, filters)
+            return await self._get_by_pk_raw(session, pk, pk_column_name, c_filters)
 
         stmt = update(self.database_model).where(getattr(self.database_model, pk_column_name) == pk).values(**kwargs)
-        if c_filters := self.concat_filters(self.base_filters, filters):
+        if c_filters:
             stmt = stmt.where(*c_filters)
 
         await session.execute(stmt)
         await session.commit()
 
-        return await self._get_by_pk_raw(session, pk, pk_column_name, None)
+        return await self._get_by_pk_raw(session, pk, pk_column_name, c_filters)
 
     async def update(
         self,
@@ -433,7 +435,8 @@ class BaseDAO[DatabaseModel: Base](ABC):
             bool: Always ``True`` after a successful delete and commit.
 
         """
-        instance = instance or await self._get_by_pk_raw(session, pk, pk_column_name, filters)
+        c_filters = self.concat_filters(self.base_filters, filters)
+        instance = instance or await self._get_by_pk_raw(session, pk, pk_column_name, c_filters)
         await session.delete(instance)
         await session.commit()
         return True
