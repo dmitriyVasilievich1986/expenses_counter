@@ -3,11 +3,7 @@
 __all__ = ("AddressDAO",)
 
 
-from typing import Any
-
-from sqlalchemy.sql import ColumnElement
-
-from expenses_counter.services.daos.base import BaseDAO
+from expenses_counter.services.daos.base import BaseDAO, FilterType
 from expenses_counter.services.database.models.address import Address
 
 
@@ -23,14 +19,12 @@ class AddressDAO(BaseDAO[Address]):
     get_all_columns = (Address.id, Address.local_name, Address.address)
     select_in_options_single = (Address.shop,)
 
-    async def get_by_address(
-        self, address: str, filters: list[ColumnElement[bool]] | list[dict[str, Any]] | None = None
-    ) -> Address:
+    async def get_by_address(self, address: str, filters: FilterType = None) -> Address:
         """Load one address row by its ``address`` column value.
 
         Args:
             address (str): Value of the ``address`` column to match.
-            filters (list[ColumnElement[bool]] | list[dict[str, Any]] | None, optional): Extra WHERE
+            filters (FilterType, optional): Extra WHERE
                 clauses merged with ``base_filters``. Defaults to None.
 
         Returns:
