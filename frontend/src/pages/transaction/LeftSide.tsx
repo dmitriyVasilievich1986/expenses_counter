@@ -37,17 +37,13 @@ export function LeftSide() {
 
   const { getTransactions } = useTransactionAPIClient();
 
-  const currentDate = useMemo(() => {
+  const currentDate = useMemo((): [Dayjs, boolean] => {
     const dateParam = searchParams.get('date');
     const payload = dateParam ? dayjs(dateParam) : dayjs();
-    if (!payload.isValid()) {
-      setSearchParams((previous) => {
-        previous.set('date', dayjs().format('YYYY-MM-DD'));
-        return previous;
-      });
-      return dayjs();
+    if (!dateParam || !payload.isValid()) {
+      return [dayjs(), false];
     }
-    return payload;
+    return [payload, true];
   }, [searchParams]);
 
   /** Fetches every page of transactions between the month's start and end (inclusive) and replaces the store list. */
@@ -84,8 +80,15 @@ export function LeftSide() {
   };
 
   useEffect(() => {
-    if (transactions === null) {
-      handleMonthChange(currentDate);
+    const [date, isValid] = currentDate;
+    if (!isValid) {
+      setSearchParams((previous) => {
+        previous.set('date', dayjs().format('YYYY-MM-DD'));
+        return previous;
+      });
+    }
+    if (transactions === null || !isValid) {
+      handleMonthChange(date);
     }
   }, [currentDate, transactions]);
 
@@ -116,7 +119,7 @@ export function LeftSide() {
             minHeight: '290px',
           },
         }}
-        value={currentDate}
+        value={currentDate[0]}
         onChange={handleDateChange}
         onMonthChange={handleMonthChange}
         slots={{
