@@ -62,10 +62,10 @@ class TestAuthorizationEndToEnd:
         assert response.status_code == 200
 
     def test_missing_header_is_rejected(self, client: TestClient) -> None:
-        """Requests without ``Authorization`` must be rejected by ``HTTPBearer``."""
+        """Requests without ``Authorization`` must be rejected by ``user_authorized``."""
         response = client.get("/api/v1/category")
-        assert response.status_code == 403
-        assert response.json()["detail"] == "Not authenticated"
+        assert response.status_code == 401
+        assert response.json()["detail"] == "Unauthorized"
 
     def test_malformed_token_is_rejected(self, client: TestClient) -> None:
         """A bearer value that is not a JWT must fail decoding."""

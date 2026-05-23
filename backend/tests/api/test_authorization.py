@@ -86,10 +86,10 @@ class TestMissingAuthorizationHeader:
     def test_protected_route_rejects_missing_header(
         self, unauthorized_client: TestClient, method: str, path: str
     ) -> None:
-        """The bearer scheme aborts unauthenticated requests with 403."""
+        """``user_authorized`` aborts unauthenticated requests with 401."""
         response = unauthorized_client.request(method, path)
-        assert response.status_code == 403
-        assert response.json()["detail"] == "Not authenticated"
+        assert response.status_code == 401
+        assert response.json()["detail"] == "Unauthorized"
 
 
 @pytest.mark.api
@@ -116,10 +116,10 @@ class TestInvalidAuthorizationHeader:
         assert response.json()["detail"] == "Invalid token"
 
     def test_protected_route_rejects_non_bearer_scheme(self, unauthorized_client: TestClient) -> None:
-        """Schemes other than ``Bearer`` must be rejected by ``HTTPBearer``."""
+        """Schemes other than ``Bearer`` collapse to a missing token and return 401."""
         response = unauthorized_client.get("/api/v1/category", headers={"Authorization": "Basic dXNlcjpwYXNz"})
-        assert response.status_code == 403
-        assert response.json()["detail"] == "Invalid authentication credentials"
+        assert response.status_code == 401
+        assert response.json()["detail"] == "Unauthorized"
 
     def test_protected_route_rejects_expired_token(self, unauthorized_client: TestClient) -> None:
         """Expired JWTs surface the dedicated ``Token expired`` 401 detail."""
