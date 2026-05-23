@@ -6,4 +6,4 @@ from typing import Any
 
 from sqlalchemy.sql import ColumnElement
 
-FilterType = list[ColumnElement[bool]] | list[dict[str, Any]] | None
+FilterType = list[ColumnElement[bool]] | list[ColumnElement[bool] | dict[str, Any]] | None
