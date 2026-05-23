@@ -1,13 +1,14 @@
-"""HTTP API routes for shops.
+"""Admin-only HTTP API routes for expense shops.
 
-Provides list, read, create, update, and delete endpoints for shops linked to
-categories. The list endpoint supports pagination and sorting.
+Provides read, create, update, and delete endpoints for shops.
+Admin access is enforced on the router via ``admin_required``. The
+paginated list endpoint lives in ``all_users``.
 
 Routes:
-    GET /shop - Paginated list of all shops
     GET /shop/{shop_id} - Single shop by id
     POST /shop - Create a shop
     PUT /shop/{shop_id} - Replace a shop
+    PATCH /shop/{shop_id} - Partially update a shop
     DELETE /shop/{shop_id} - Delete a shop
 """
 
@@ -15,71 +16,36 @@ __all__ = ("router",)
 
 from typing import Annotated
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, status
 from loguru import logger
 from sqlalchemy.exc import IntegrityError, NoResultFound, SQLAlchemyError
 
+from expenses_counter.modules.middlewares.dependencies import get_db
 from expenses_counter.modules.middlewares.dependencies.admin_required import admin_required
-from expenses_counter.modules.middlewares.dependencies.daos import get_shop
-from expenses_counter.modules.middlewares.dependencies.user_authorized import user_authorized
-from expenses_counter.modules.routers.schemas.base.metadata import PaginationMetadata
 from expenses_counter.modules.routers.schemas.requests.shop import (
-    GetAllShopsQuery,
     PatchShopBody,
     PostShopBody,
     PutShopBody,
 )
 from expenses_counter.modules.routers.schemas.responses.shop import (
-    GetAllShopsResponse,
     GetSingleShopResponse,
-    SimpleShopGet,
 )
 from expenses_counter.services.daos import ShopDAO
+from expenses_counter.services.database import AsyncDatabaseClient
 
-router = APIRouter(prefix="/shop", tags=["Shop"], dependencies=[Depends(user_authorized)])
-
-
-@router.get("", response_model=GetAllShopsResponse, status_code=status.HTTP_200_OK)
-async def get_shop_list(
-    shop_dao: Annotated[ShopDAO, Depends(get_shop)],
-    query: Annotated[GetAllShopsQuery, Query(description="Pagination and sorting parameters")],
-) -> GetAllShopsResponse:
-    """Return all shops with pagination metadata.
-
-    Args:
-        shop_dao (ShopDAO): Shop data access object.
-        query (GetAllShopsQuery): Pagination and sort parameters.
-
-    Returns:
-        GetAllShopsResponse: Shops and pagination metadata.
-
-    Raises:
-        HTTPException: 500 if a database error occurs while listing shops.
-
-    """
-    try:
-        data, total = await shop_dao.get_all(**query.model_dump())
-    except SQLAlchemyError as e:
-        logger.exception("Something went wrong while retrieving the shop list", exc_info=e)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Something went wrong while retrieving the shop list",
-        ) from e
-
-    metadata = PaginationMetadata(total=total, **query.model_dump())
-    return GetAllShopsResponse(data=[SimpleShopGet.model_validate(shop) for shop in data], metadata=metadata)
+router = APIRouter(prefix="/shop", dependencies=[Depends(admin_required)])
 
 
-@router.get("/{shop_id}", response_model=GetSingleShopResponse, dependencies=[Depends(admin_required)])
+@router.get("/{shop_id}", response_model=GetSingleShopResponse)
 async def get_shop_by_id(
     shop_id: Annotated[int, Path(description="The unique identifier of the shop to retrieve")],
-    shop_dao: Annotated[ShopDAO, Depends(get_shop)],
+    db: Annotated[AsyncDatabaseClient, Depends(get_db)],
 ) -> GetSingleShopResponse:
     """Return a single shop by primary key.
 
     Args:
         shop_id (int): Shop primary key.
-        shop_dao (ShopDAO): Shop data access object.
+        db (AsyncDatabaseClient): Database client for the request.
 
     Returns:
         GetSingleShopResponse: The requested shop payload.
@@ -89,6 +55,8 @@ async def get_shop_by_id(
         HTTPException: 500 if a database error occurs while loading the shop.
 
     """
+    shop_dao = ShopDAO(database_client=db)
+
     try:
         payload = await shop_dao.get_by_pk(shop_id)
     except NoResultFound as e:
@@ -108,17 +76,16 @@ async def get_shop_by_id(
     "",
     response_model=GetSingleShopResponse,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(admin_required)],
 )
 async def create_shop(
     body: Annotated[PostShopBody, Body(description="The shop data to create")],
-    shop_dao: Annotated[ShopDAO, Depends(get_shop)],
+    db: Annotated[AsyncDatabaseClient, Depends(get_db)],
 ) -> GetSingleShopResponse:
     """Create a new shop.
 
     Args:
         body (PostShopBody): Fields for the new shop (e.g. category link).
-        shop_dao (ShopDAO): Shop data access object.
+        db (AsyncDatabaseClient): Database client for the request.
 
     Returns:
         GetSingleShopResponse: The created shop payload.
@@ -128,6 +95,8 @@ async def create_shop(
         HTTPException: 500 if a database error occurs while creating the shop.
 
     """
+    shop_dao = ShopDAO(database_client=db)
+
     try:
         payload = await shop_dao.create(**body.model_dump())
     except IntegrityError as e:
@@ -147,19 +116,18 @@ async def create_shop(
     "/{shop_id}",
     response_model=GetSingleShopResponse,
     status_code=status.HTTP_200_OK,
-    dependencies=[Depends(admin_required)],
 )
 async def update_shop(
     shop_id: Annotated[int, Path(description="The unique identifier of the shop to update")],
     body: Annotated[PutShopBody, Body(description="The shop data to update")],
-    shop_dao: Annotated[ShopDAO, Depends(get_shop)],
+    db: Annotated[AsyncDatabaseClient, Depends(get_db)],
 ) -> GetSingleShopResponse:
     """Replace an existing shop by primary key.
 
     Args:
         shop_id (int): Shop primary key.
         body (PutShopBody): Full replacement payload for the shop.
-        shop_dao (ShopDAO): Shop data access object.
+        db (AsyncDatabaseClient): Database client for the request.
 
     Returns:
         GetSingleShopResponse: The updated shop payload.
@@ -170,6 +138,8 @@ async def update_shop(
         HTTPException: 500 if a database error occurs while updating the shop.
 
     """
+    shop_dao = ShopDAO(database_client=db)
+
     try:
         payload = await shop_dao.update(shop_id, **body.model_dump())
     except IntegrityError as e:
@@ -192,19 +162,18 @@ async def update_shop(
     "/{shop_id}",
     response_model=GetSingleShopResponse,
     status_code=status.HTTP_200_OK,
-    dependencies=[Depends(admin_required)],
 )
 async def patch_shop(
     shop_id: Annotated[int, Path(description="The unique identifier of the shop to update")],
     body: Annotated[PatchShopBody, Body(description="The shop data to update")],
-    shop_dao: Annotated[ShopDAO, Depends(get_shop)],
+    db: Annotated[AsyncDatabaseClient, Depends(get_db)],
 ) -> GetSingleShopResponse:
     """Patch an existing shop by primary key.
 
     Args:
         shop_id (int): Shop primary key.
         body (PatchShopBody): Partial update payload for the shop.
-        shop_dao (ShopDAO): Shop data access object.
+        db (AsyncDatabaseClient): Database client for the request.
 
     Returns:
         GetSingleShopResponse: The updated shop payload.
@@ -215,6 +184,8 @@ async def patch_shop(
         HTTPException: 500 if a database error occurs while patching the shop.
 
     """
+    shop_dao = ShopDAO(database_client=db)
+
     try:
         payload = await shop_dao.update(shop_id, **body.model_dump(exclude_unset=True))
     except IntegrityError as e:
@@ -233,16 +204,16 @@ async def patch_shop(
     return GetSingleShopResponse.model_validate(payload)
 
 
-@router.delete("/{shop_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(admin_required)])
+@router.delete("/{shop_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_shop(
     shop_id: Annotated[int, Path(description="The unique identifier of the shop to delete")],
-    shop_dao: Annotated[ShopDAO, Depends(get_shop)],
+    db: Annotated[AsyncDatabaseClient, Depends(get_db)],
 ) -> None:
     """Delete a shop by primary key.
 
     Args:
         shop_id (int): Shop primary key.
-        shop_dao (ShopDAO): Shop data access object.
+        db (AsyncDatabaseClient): Database client for the request.
 
     Returns:
         None
@@ -252,6 +223,8 @@ async def delete_shop(
         HTTPException: 500 if a database error occurs while deleting the shop.
 
     """
+    shop_dao = ShopDAO(database_client=db)
+
     try:
         await shop_dao.delete(shop_id)
     except NoResultFound as e:
