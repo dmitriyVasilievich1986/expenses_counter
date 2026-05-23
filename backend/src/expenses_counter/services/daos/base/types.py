@@ -1,6 +1,6 @@
 """Types for the base DAO."""
 
-__all__ = ("FilterType",)
+__all__ = ("AcceptableFiltersType",)
 
 from typing import Any
 
