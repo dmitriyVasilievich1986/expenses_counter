@@ -34,8 +34,8 @@ async def user_authorized(
     """Decode the Bearer JWT and return the authenticated user row.
 
     Args:
-        token_header (HTTPAuthorizationCredentials): Parsed ``Authorization``
-            Bearer credentials from the request.
+        token_header (HTTPAuthorizationCredentials | None): Parsed ``Authorization``
+            Bearer credentials from the request or None if no token is provided.
         db (AsyncDatabaseClient): Client used to load the user by primary key.
 
     Returns:
