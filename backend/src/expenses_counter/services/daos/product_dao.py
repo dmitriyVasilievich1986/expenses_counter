@@ -3,7 +3,9 @@
 __all__ = ("ProductDAO",)
 
 
-from expenses_counter.services.daos.base import BaseDAO, FilterType
+from sqlalchemy.sql import ColumnElement
+
+from expenses_counter.services.daos.base import BaseDAO
 from expenses_counter.services.database.models.product import Product
 
 
@@ -14,12 +16,12 @@ class ProductDAO(BaseDAO[Product]):
     get_all_columns = (Product.id, Product.name, Product.description, Product.category_id)
     select_in_options_single = (Product.category,)
 
-    async def get_by_name(self, name: str, filters: FilterType = None) -> Product:
+    async def get_by_name(self, name: str, filters: list[ColumnElement[bool]] | None = None) -> Product:
         """Load one product row by its ``name`` column value.
 
         Args:
             name (str): Value of the ``name`` column to match.
-            filters (FilterType, optional): Extra WHERE
+            filters (list[ColumnElement[bool]] | None, optional): Extra WHERE
                 clauses merged with ``base_filters``. Defaults to None.
 
         Returns:
