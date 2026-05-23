@@ -5,15 +5,20 @@ It uses FastAPI's TestClient and mocks the CategoryDAO dependency.
 """
 
 import json
-from unittest.mock import AsyncMock, MagicMock
+from contextlib import ExitStack
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.exc import DatabaseError, IntegrityError, NoResultFound
 
 from expenses_counter.modules.app import get_app
-from expenses_counter.modules.middlewares.dependencies import user_authorized
-from expenses_counter.modules.middlewares.dependencies.daos import get_category
+from expenses_counter.modules.middlewares.dependencies import get_db, user_authorized
+
+_CATEGORY_DAO_PATHS = (
+    "expenses_counter.modules.routers.api.v1.category.all_users.CategoryDAO",
+    "expenses_counter.modules.routers.api.v1.category.admin_only.CategoryDAO",
+)
 
 
 @pytest.fixture
@@ -21,20 +26,15 @@ def mock_category_dao():
     """Create a mock CategoryDAO for testing.
 
     Returns:
-        AsyncMock: Mocked CategoryDAO instance that works as a context manager.
+        AsyncMock: Mocked CategoryDAO instance.
 
     """
     dao = AsyncMock()
-    # Set up default return values
     dao.get_all = AsyncMock(return_value=([], 0))
     dao.get_by_pk = AsyncMock(return_value=None)
     dao.create = AsyncMock()
     dao.update = AsyncMock()
     dao.delete = AsyncMock()
-
-    # Make it work as a context manager
-    dao.__aenter__ = AsyncMock(return_value=dao)
-    dao.__aexit__ = AsyncMock(return_value=None)
 
     return dao
 
@@ -42,6 +42,10 @@ def mock_category_dao():
 @pytest.fixture
 def test_client(mock_category_dao, mock_user, test_config):
     """Create a test client with mocked dependencies.
+
+    Category routes are split across ``all_users`` and ``admin_only``; each
+    module imports ``CategoryDAO`` locally, so we patch both names to return
+    the same mock and override ``get_db`` with a stand-in client.
 
     Args:
         mock_category_dao: Mocked CategoryDAO instance.
@@ -54,13 +58,15 @@ def test_client(mock_category_dao, mock_user, test_config):
     """
     app = get_app(test_config)
 
-    app.dependency_overrides[get_category] = lambda: mock_category_dao
     app.dependency_overrides[user_authorized] = lambda: mock_user
+    app.dependency_overrides[get_db] = lambda: MagicMock()
 
-    client = TestClient(app)
-    yield client
+    with ExitStack() as stack:
+        for path in _CATEGORY_DAO_PATHS:
+            stack.enter_context(patch(path, return_value=mock_category_dao))
+        client = TestClient(app)
+        yield client
 
-    # Clean up
     app.dependency_overrides.clear()
 
 
@@ -148,128 +154,6 @@ class TestGetCategoryList:
         # Assert
         assert response.status_code == 500
         assert "Something went wrong" in response.json()["detail"]
-
-
-@pytest.mark.api
-class TestGetRootCategoryList:
-    """Test GET /api/v1/category/parent endpoint."""
-
-    def test_get_root_category_list_success(self, test_client, mock_category_dao):
-        """Test successful retrieval of root categories.
-
-        Args:
-            test_client: FastAPI test client fixture.
-            mock_category_dao: Mocked CategoryDAO fixture.
-
-        """
-        # Arrange
-        mock_category1 = MagicMock()
-        mock_category1.id = 1
-        mock_category1.name = "Root Category 1"
-
-        mock_category2 = MagicMock()
-        mock_category2.id = 2
-        mock_category2.name = "Root Category 2"
-
-        mock_categories = [mock_category1, mock_category2]
-        mock_category_dao.get_all.return_value = (mock_categories, 2)
-
-        # Act
-        response = test_client.get("/api/v1/category/parent")
-
-        # Assert
-        assert response.status_code == 200
-        data = response.json()
-        assert len(data["data"]) == 2
-        assert data["metadata"]["total"] == 2
-        # Verify get_all was called with filters for parent_id == None
-        mock_category_dao.get_all.assert_called_once()
-        call_kwargs = mock_category_dao.get_all.call_args.kwargs
-        assert call_kwargs["limit"] == 100
-        assert call_kwargs["offset"] == 0
-        assert call_kwargs["sort_by"] == "id"
-        assert call_kwargs["sort_order"] == "asc"
-        assert "filters" in call_kwargs
-
-    def test_get_root_category_list_db_error(self, test_client, mock_category_dao):
-        """Test root category list with database error.
-
-        Args:
-            test_client: FastAPI test client fixture.
-            mock_category_dao: Mocked CategoryDAO fixture.
-
-        """
-        # Arrange
-        mock_category_dao.get_all.side_effect = DatabaseError("SELECT *", None, Exception("Database error"))
-
-        # Act
-        response = test_client.get("/api/v1/category/parent")
-
-        # Assert
-        assert response.status_code == 500
-        assert "Something went wrong" in response.json()["detail"]
-
-
-@pytest.mark.api
-class TestGetCategoryListByParent:
-    """Test GET /api/v1/category/parent/{parent_id} endpoint."""
-
-    def test_get_category_list_by_parent_success(self, test_client, mock_category_dao):
-        """Test successful retrieval of categories by parent.
-
-        Args:
-            test_client: FastAPI test client fixture.
-            mock_category_dao: Mocked CategoryDAO fixture.
-
-        """
-        # Arrange
-        parent_id = 5
-        mock_category1 = MagicMock()
-        mock_category1.id = 10
-        mock_category1.name = "Child Category 1"
-
-        mock_category2 = MagicMock()
-        mock_category2.id = 11
-        mock_category2.name = "Child Category 2"
-
-        mock_categories = [mock_category1, mock_category2]
-        mock_category_dao.get_all.return_value = (mock_categories, 2)
-
-        # Act
-        response = test_client.get(f"/api/v1/category/parent/{parent_id}")
-
-        # Assert
-        assert response.status_code == 200
-        data = response.json()
-        assert len(data["data"]) == 2
-        # Verify get_all was called with filters for parent_id == parent_id
-        mock_category_dao.get_all.assert_called_once()
-        call_kwargs = mock_category_dao.get_all.call_args.kwargs
-        assert call_kwargs["limit"] == 100
-        assert call_kwargs["offset"] == 0
-        assert call_kwargs["sort_by"] == "id"
-        assert call_kwargs["sort_order"] == "asc"
-        assert "filters" in call_kwargs
-
-    def test_get_category_list_by_parent_empty(self, test_client, mock_category_dao):
-        """Test retrieval of categories by parent with no children.
-
-        Args:
-            test_client: FastAPI test client fixture.
-            mock_category_dao: Mocked CategoryDAO fixture.
-
-        """
-        # Arrange
-        mock_category_dao.get_all.return_value = ([], 0)
-
-        # Act
-        response = test_client.get("/api/v1/category/parent/999")
-
-        # Assert
-        assert response.status_code == 200
-        data = response.json()
-        assert len(data["data"]) == 0
-        assert data["metadata"]["total"] == 0
 
 
 @pytest.mark.api

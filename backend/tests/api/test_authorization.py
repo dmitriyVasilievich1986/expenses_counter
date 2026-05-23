@@ -23,8 +23,6 @@ from expenses_counter.modules.middlewares.dependencies import get_db
 PROTECTED_ROUTES: list[tuple[str, str]] = [
     ("GET", "/api/v1/category"),
     ("GET", "/api/v1/category/1"),
-    ("GET", "/api/v1/category/parent"),
-    ("GET", "/api/v1/category/parent/1"),
     ("POST", "/api/v1/category"),
     ("PUT", "/api/v1/category/1"),
     ("PATCH", "/api/v1/category/1"),

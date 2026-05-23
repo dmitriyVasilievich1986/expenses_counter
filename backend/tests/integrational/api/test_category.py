@@ -251,29 +251,3 @@ class TestCategoryIntegration:
             },
         )
         assert child_response.status_code == 201
-
-    def test_get_root_categories_endpoint(self, client):
-        """Test the root categories endpoint.
-
-        Args:
-            client: FastAPI test client fixture.
-
-        """
-        response = client.get("/api/v1/category/parent")
-        assert response.status_code == 200
-
-    def test_get_categories_by_parent_endpoint(self, client):
-        """Test the get categories by parent endpoint.
-
-        Args:
-            client: FastAPI test client fixture.
-
-        """
-        # Create a parent first
-        parent_response = client.post("/api/v1/category", json={"name": "TestParent", "description": "Test"})
-        assert parent_response.status_code == 201
-        parent_id = parent_response.json()["id"]
-
-        # Query children
-        response = client.get(f"/api/v1/category/parent/{parent_id}")
-        assert response.status_code == 200
