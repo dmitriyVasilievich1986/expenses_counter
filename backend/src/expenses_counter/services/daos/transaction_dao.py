@@ -5,10 +5,11 @@ __all__ = ("TransactionDAO",)
 
 from typing import Sequence
 
-from sqlalchemy import func, select
+from sqlalchemy import func, Select, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql import ColumnElement
 
-from expenses_counter.services.daos.base import BaseDAO, FilterType
+from expenses_counter.services.daos.base import BaseDAO
 from expenses_counter.services.database.models.product import Product
 from expenses_counter.services.database.models.transaction import Transaction
 
@@ -23,7 +24,7 @@ class TransactionDAO(BaseDAO[Transaction]):
     async def _get_spendings_grouped_by_month_raw(
         self,
         session: AsyncSession,
-        filters: FilterType = None,
+        filters: list[ColumnElement[bool]] | None,
     ) -> Sequence[tuple[str, float]]:
         """Sum transaction prices grouped by calendar month.
 
@@ -32,7 +33,7 @@ class TransactionDAO(BaseDAO[Transaction]):
 
         Args:
             session (AsyncSession): Active async session.
-            filters (FilterType, optional): Extra WHERE
+            filters (list[ColumnElement[bool]] | None, optional): Extra WHERE
                 clauses merged with ``base_filters``. Defaults to None.
 
         Returns:
@@ -45,7 +46,7 @@ class TransactionDAO(BaseDAO[Transaction]):
         else:
             date_column = func.to_char(Transaction.date, "YYYY-MM-01")
 
-        filters_ = self.concat_filters(filters)
+        filters_ = self.concat_filters(self.base_filters, filters)
         stmt = (
             select(date_column, func.sum(Transaction.price))
             .group_by(date_column)
@@ -55,11 +56,13 @@ class TransactionDAO(BaseDAO[Transaction]):
         result = await session.execute(stmt)
         return result.tuples().all()
 
-    async def get_spendings_grouped_by_month(self, filters: FilterType = None) -> Sequence[tuple[str, float]]:
+    async def get_spendings_grouped_by_month(
+        self, filters: list[ColumnElement[bool]] | None = None
+    ) -> Sequence[tuple[str, float]]:
         """Return monthly spending totals using injected or factory-opened session.
 
         Args:
-            filters (FilterType, optional): Extra WHERE
+            filters (list[ColumnElement[bool]] | None, optional): Extra WHERE
                 clauses merged with ``base_filters``. Defaults to None.
 
         Returns:
@@ -73,40 +76,66 @@ class TransactionDAO(BaseDAO[Transaction]):
         async with self.database_client.session_factory() as session:  # type: ignore[union-attr]
             return await self._get_spendings_grouped_by_month_raw(session, filters)
 
+    async def _get_most_popular_products_raw(
+        self,
+        session: AsyncSession,
+        limit: int | None,
+        filters: list[ColumnElement[bool]] | None,
+    ) -> Sequence[Product]:
+        """Load products ranked by how often they appear in transactions.
+
+        Args:
+            session (AsyncSession): Active async session.
+            limit (int | None): Maximum number of product IDs to consider;
+                None returns all ranked products.
+            filters (list[ColumnElement[bool]] | None, optional): Extra WHERE
+                clauses merged with ``base_filters``. Defaults to None.
+
+        Returns:
+            Sequence[Product]: ``Product`` rows for the top-ranked IDs, in
+                descending transaction-count order.
+
+        """
+        amount = func.count(Transaction.product_id)
+        subquery: Select[tuple[int]] = (
+            select(Transaction.product_id)
+            .select_from(Transaction)
+            .group_by(Transaction.product_id)
+            .order_by(amount.desc())
+        )
+        if c_filters := self.concat_filters(self.base_filters, filters):
+            subquery = subquery.where(*c_filters)
+        if limit:
+            subquery = subquery.limit(limit)
+
+        stmt = select(Product).where(Product.id.in_(select(subquery.subquery().c.product_id)))
+
+        result = await session.execute(stmt)
+        return result.scalars().all()
+
     async def get_most_popular_products(
         self,
         limit: int = 10,
-        filters: FilterType = None,
+        filters: list[ColumnElement[bool]] | None = None,
     ) -> Sequence[Product]:
-        """Return products ranked by how often they appear in transactions.
+        """Return products most frequently referenced in transactions.
+
+        Uses an injected session when present; otherwise opens a
+        short-lived session from the bound database client.
 
         Args:
             limit (int, optional): Maximum number of products to return.
                 Defaults to 10.
-            filters (FilterType, optional): Extra WHERE
-                clauses applied to transactions before counting. Defaults to None.
+            filters (list[ColumnElement[bool]] | None, optional): Extra WHERE
+                clauses merged with ``base_filters``. Defaults to None.
 
         Returns:
-            Sequence[Product]: Product rows for the most frequently purchased
-                items, in descending order of transaction count.
+            Sequence[Product]: ``Product`` rows for the top-ranked IDs, in
+                descending transaction-count order.
 
         """
-        filters_ = self.concat_filters(filters)
-        amount = func.count(Transaction.product_id)
-        subquery = (
-            select(Transaction.product_id)
-            .where(*filters_)
-            .group_by(Transaction.product_id)
-            .order_by(amount.desc())
-            .limit(limit)
-            .subquery()
-        )
-        stmt = select(Product).where(Product.id.in_(select(subquery.c.product_id)))
-
         if self.session is not None:
-            result = await self.session.execute(stmt)
-            return result.scalars().all()
+            return await self._get_most_popular_products_raw(self.session, limit, filters)
 
         async with self.database_client.session_factory() as session:  # type: ignore[union-attr]
-            result = await session.execute(stmt)
-            return result.scalars().all()
+            return await self._get_most_popular_products_raw(session, limit, filters)
