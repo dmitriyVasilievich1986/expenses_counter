@@ -3,13 +3,12 @@
 __all__ = ("TransactionDAO",)
 
 
-from typing import Any, Sequence
+from typing import Sequence
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.sql import ColumnElement
 
-from expenses_counter.services.daos.base import BaseDAO
+from expenses_counter.services.daos.base import BaseDAO, FilterType
 from expenses_counter.services.database.models.product import Product
 from expenses_counter.services.database.models.transaction import Transaction
 
@@ -24,7 +23,7 @@ class TransactionDAO(BaseDAO[Transaction]):
     async def _get_spendings_grouped_by_month_raw(
         self,
         session: AsyncSession,
-        filters: list[ColumnElement[bool]] | list[dict[str, Any]] | None = None,
+        filters: FilterType = None,
     ) -> Sequence[tuple[str, float]]:
         """Sum transaction prices grouped by calendar month.
 
@@ -33,7 +32,7 @@ class TransactionDAO(BaseDAO[Transaction]):
 
         Args:
             session (AsyncSession): Active async session.
-            filters (list[ColumnElement[bool]] | list[dict[str, Any]] | None, optional): Extra WHERE
+            filters (FilterType, optional): Extra WHERE
                 clauses merged with ``base_filters``. Defaults to None.
 
         Returns:
@@ -56,13 +55,11 @@ class TransactionDAO(BaseDAO[Transaction]):
         result = await session.execute(stmt)
         return result.tuples().all()
 
-    async def get_spendings_grouped_by_month(
-        self, filters: list[ColumnElement[bool]] | list[dict[str, Any]] | None = None
-    ) -> Sequence[tuple[str, float]]:
+    async def get_spendings_grouped_by_month(self, filters: FilterType = None) -> Sequence[tuple[str, float]]:
         """Return monthly spending totals using injected or factory-opened session.
 
         Args:
-            filters (list[ColumnElement[bool]] | list[dict[str, Any]] | None, optional): Extra WHERE
+            filters (FilterType, optional): Extra WHERE
                 clauses merged with ``base_filters``. Defaults to None.
 
         Returns:
@@ -79,14 +76,14 @@ class TransactionDAO(BaseDAO[Transaction]):
     async def get_most_popular_products(
         self,
         limit: int = 10,
-        filters: list[ColumnElement[bool]] | list[dict[str, Any]] | None = None,
+        filters: FilterType = None,
     ) -> Sequence[Product]:
         """Return products ranked by how often they appear in transactions.
 
         Args:
             limit (int, optional): Maximum number of products to return.
                 Defaults to 10.
-            filters (list[ColumnElement[bool]] | list[dict[str, Any]] | None, optional): Extra WHERE
+            filters (FilterType, optional): Extra WHERE
                 clauses applied to transactions before counting. Defaults to None.
 
         Returns:
