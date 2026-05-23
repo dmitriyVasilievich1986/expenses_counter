@@ -39,7 +39,7 @@ class UserDAO(BaseDAO[User]):
         async with self.database_client.session_factory() as session:  # type: ignore[union-attr]
             return await self._get_by_pk_raw(session, username, "username", filters)
 
-    async def create(self, filters: list[ColumnElement[bool]] | None = None, **kwargs: Any) -> User:
+    async def create(self, **kwargs: Any) -> User:
         """Insert a user row with a bcrypt-hashed password.
 
         Expects a plaintext ``password`` in ``kwargs``; stores the hash on the
@@ -47,8 +47,6 @@ class UserDAO(BaseDAO[User]):
         short-lived session from the bound database client.
 
         Args:
-            filters (list[ColumnElement[bool]] | None, optional): Extra WHERE
-                clauses applied during insert. Defaults to None.
             **kwargs (Any): Column values for the new ``User``, including
                 ``password`` (plaintext).
 
@@ -59,7 +57,7 @@ class UserDAO(BaseDAO[User]):
         hashed_password = PasswordService.hash_password(kwargs["password"])
 
         if self.session is not None:
-            return await self._create_raw(self.session, **(kwargs | {"password": hashed_password}), filters=filters)
+            return await self._create_raw(self.session, **(kwargs | {"password": hashed_password}))
 
         async with self.database_client.session_factory() as session:  # type: ignore[union-attr]
-            return await self._create_raw(session, **(kwargs | {"password": hashed_password}), filters=filters)
+            return await self._create_raw(session, **(kwargs | {"password": hashed_password}))
