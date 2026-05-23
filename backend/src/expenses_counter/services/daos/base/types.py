@@ -6,4 +6,6 @@ from typing import Any
 
 from sqlalchemy.sql import ColumnElement
 
-FilterType = list[ColumnElement[bool]] | list[ColumnElement[bool] | dict[str, Any]] | None
+from expenses_counter.utils.filter import Filter
+
+AcceptableFiltersType = list[ColumnElement[bool]] | list[dict[str, Any]] | list[Filter[str]] | None
