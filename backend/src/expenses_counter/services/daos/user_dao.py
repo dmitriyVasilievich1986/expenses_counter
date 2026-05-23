@@ -5,6 +5,8 @@ __all__ = ("UserDAO",)
 
 from typing import Any
 
+from sqlalchemy.sql import ColumnElement
+
 from expenses_counter.services.auth import PasswordService
 from expenses_counter.services.daos.base import BaseDAO
 from expenses_counter.services.database.models.user import User
@@ -16,33 +18,48 @@ class UserDAO(BaseDAO[User]):
     database_model = User
     get_all_columns = (User.id, User.username, User.email)
 
-    async def get_by_username(self, username: str) -> User:
-        """Return the user with the given unique username.
+    async def get_by_username(self, username: str, filters: list[ColumnElement[bool]] | None = None) -> User:
+        """Load one user row by ``username``.
+
+        Uses an injected session when present; otherwise opens a
+        short-lived session from the bound database client.
 
         Args:
-            username (str): Login name to resolve.
+            username (str): Value of the ``username`` column to match.
+            filters (list[ColumnElement[bool]] | None, optional): Extra WHERE
+                clauses merged with ``base_filters``. Defaults to None.
 
         Returns:
-            User: Matching row from ``main_user``.
+            User: The matching ORM instance.
 
         """
-        return await self.get_by_pk(username, "username")
+        if self.session is not None:
+            return await self._get_by_pk_raw(self.session, username, "username", filters)
 
-    async def create(self, **kwargs: Any) -> User:
-        """Insert a user, replacing plaintext ``password`` with a keyed hash.
+        async with self.database_client.session_factory() as session:  # type: ignore[union-attr]
+            return await self._get_by_pk_raw(session, username, "username", filters)
+
+    async def create(self, filters: list[ColumnElement[bool]] | None = None, **kwargs: Any) -> User:
+        """Insert a user row with a bcrypt-hashed password.
+
+        Expects a plaintext ``password`` in ``kwargs``; stores the hash on the
+        new row. Uses an injected session when present; otherwise opens a
+        short-lived session from the bound database client.
 
         Args:
-            **kwargs: ``User`` column values. ``password`` must be plaintext; it
-                is hashed with ``PasswordService`` before persistence.
+            filters (list[ColumnElement[bool]] | None, optional): Extra WHERE
+                clauses applied during insert. Defaults to None.
+            **kwargs (Any): Column values for the new ``User``, including
+                ``password`` (plaintext).
 
         Returns:
-            User: Newly created row.
+            User: The persisted ORM instance.
 
         """
         hashed_password = PasswordService.hash_password(kwargs["password"])
 
         if self.session is not None:
-            return await self._create_raw(self.session, **(kwargs | {"password": hashed_password}))
+            return await self._create_raw(self.session, **(kwargs | {"password": hashed_password}), filters=filters)
 
         async with self.database_client.session_factory() as session:  # type: ignore[union-attr]
-            return await self._create_raw(session, **(kwargs | {"password": hashed_password}))
+            return await self._create_raw(session, **(kwargs | {"password": hashed_password}), filters=filters)
