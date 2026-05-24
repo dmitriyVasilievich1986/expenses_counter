@@ -87,7 +87,7 @@ export function LeftSide() {
         return previous;
       });
     }
-    if (transactions === null || !isValid) {
+    if (transactions === null) {
       handleMonthChange(date);
     }
   }, [currentDate, transactions]);
