@@ -48,7 +48,7 @@ export type TransactionStoreStateType = {
   currentTransaction: TransactionType | null;
   setCurrentDate: (date: Dayjs) => void;
   setCurrentTransaction: (transaction: TransactionType | null) => void;
-  setTransactions: (transactions: TransactionType[]) => void;
+  setTransactions: (transactions: TransactionType[] | null) => void;
   addTransactions: (transactions: TransactionType[]) => void;
   updateTransaction: (transaction: TransactionType) => void;
   deleteTransaction: (id: number) => void;
