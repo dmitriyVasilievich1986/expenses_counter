@@ -100,6 +100,12 @@ export function LeftSide() {
   }, [searchParams]);
 
   useEffect(() => {
+    if (transactions === null) {
+      handleMonthChange(currentDate);
+    }
+  }, [transactions]);
+
+  useEffect(() => {
     return () => {
       setTransactions(null);
     };
