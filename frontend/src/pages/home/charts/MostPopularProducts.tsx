@@ -48,7 +48,6 @@ export function MostPopularProducts() {
           ]);
           payload.push(...data);
           total = metadata.total;
-          console.log(payload.length, total);
           if (cancelled) break;
         }
       } catch (error) {

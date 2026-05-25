@@ -16,17 +16,21 @@ branch_labels = None
 depends_on = None
 
 
-def upgrade():
+def upgrade() -> None:
     """Remove the main_price table from the database.
 
     Since the previous migration changed transactions to store prices inline
     rather than as foreign key references, the main_price table is no longer
     needed and can be safely removed.
+
+    Returns:
+        None
+
     """
     op.drop_table("main_price")
 
 
-def downgrade():
+def downgrade() -> None:
     """Recreate the main_price table.
 
     Restores the main_price table with its original structure:
@@ -36,6 +40,10 @@ def downgrade():
     - date: Date field for when the price was recorded
 
     Note: This will create an empty table; historical price data cannot be restored.
+
+    Returns:
+        None
+
     """
     op.create_table(
         "main_price",

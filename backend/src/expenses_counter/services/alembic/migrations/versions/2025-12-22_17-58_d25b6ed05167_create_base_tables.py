@@ -16,7 +16,7 @@ branch_labels = None
 depends_on = None
 
 
-def upgrade():
+def upgrade() -> None:
     """Create the base database tables for the expenses counter application.
 
     Creates the following tables:
@@ -28,6 +28,10 @@ def upgrade():
 
     All tables use BigInteger for primary keys and include appropriate foreign key
     constraints with CASCADE delete behavior.
+
+    Returns:
+        None
+
     """
     # Create main_category table
     op.create_table(
@@ -89,7 +93,7 @@ def upgrade():
     )
 
 
-def downgrade():
+def downgrade() -> None:
     """Drop all base tables created in the upgrade.
 
     Tables are dropped in reverse order to respect foreign key dependencies:
@@ -98,6 +102,10 @@ def downgrade():
     3. main_shop
     4. main_price
     5. main_category
+
+    Returns:
+        None
+
     """
     # Drop tables in reverse order (respecting foreign key dependencies)
     op.drop_table("main_product")

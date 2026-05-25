@@ -22,6 +22,7 @@ import { useNavigate, useSearchParams } from 'react-router';
 import { SubmitButton } from '@components/submitButton';
 import { useAuthAPIClient } from '@services/apiClient/auth';
 import { useMainStore } from '@store/main/mainStore';
+import { useTransactionStore } from '@store/transaction';
 
 /**
  * Presents credential fields and submits login; shows API errors as helper text on both fields.
@@ -37,6 +38,7 @@ export function Login() {
   const navigate = useNavigate();
 
   const { user, setUser } = useMainStore();
+  const { transactions, setTransactions } = useTransactionStore();
 
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get('redirectTo') ?? '/';
@@ -47,6 +49,12 @@ export function Login() {
     if (user === null) return;
     setUser(null);
   }, [user, setUser]);
+
+  useEffect(() => {
+    if (transactions !== null) {
+      setTransactions(null);
+    }
+  }, [transactions, setTransactions]);
 
   /** Calls the login API, sets the `accessToken` cookie using the response expiry, then navigates to `redirectTo`. */
   const handleSubmit = async () => {

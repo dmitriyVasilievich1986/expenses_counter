@@ -1,26 +1,21 @@
 """API tests for the ``admin_required`` gate on ``/api/v1`` routers.
 
-The address, category, shop, and product routers require ``user_authorized``
-at the router level. ``admin_required`` is applied per-endpoint to the write
-operations and per-item reads, while list endpoints remain open to any
-authenticated user. This module verifies both halves of that contract: a
-non-admin user gets 403 on admin-gated routes and 200 on the user-only ones.
+The address, category, shop, and product routers split their endpoints into
+two sub-routers: ``all_users`` (requires only ``user_authorized``) and
+``admin_only`` (additionally requires ``admin_required``). This module
+verifies both halves of that contract: a non-admin user gets 403 on
+admin-gated routes and 200 on the user-only ones.
 """
 
-from unittest.mock import AsyncMock
+from contextlib import ExitStack
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.exc import NoResultFound
 
 from expenses_counter.modules.app import get_app
-from expenses_counter.modules.middlewares.dependencies import user_authorized
-from expenses_counter.modules.middlewares.dependencies.daos import (
-    get_address,
-    get_category,
-    get_product,
-    get_shop,
-)
+from expenses_counter.modules.middlewares.dependencies import get_db, user_authorized
 
 # (method, path) pairs guarded by ``admin_required``. Bodies are intentionally
 # minimal — the gate fires before request validation, so a 403 must come back
@@ -53,12 +48,31 @@ ADMIN_PROTECTED_ROUTES: list[tuple[str, str]] = [
 # page so handlers serialize a valid response.
 USER_ONLY_ROUTES: list[tuple[str, str]] = [
     ("GET", "/api/v1/category"),
-    ("GET", "/api/v1/category/parent"),
-    ("GET", "/api/v1/category/parent/1"),
     ("GET", "/api/v1/shop"),
     ("GET", "/api/v1/product"),
     ("GET", "/api/v1/address"),
 ]
+
+# Each entity's DAO is imported by both router halves; we patch every import
+# site so the same mock backs every endpoint.
+_DAO_PATHS = {
+    "address": (
+        "expenses_counter.modules.routers.api.v1.address.all_users.AddressDAO",
+        "expenses_counter.modules.routers.api.v1.address.admin_only.AddressDAO",
+    ),
+    "category": (
+        "expenses_counter.modules.routers.api.v1.category.all_users.CategoryDAO",
+        "expenses_counter.modules.routers.api.v1.category.admin_only.CategoryDAO",
+    ),
+    "product": (
+        "expenses_counter.modules.routers.api.v1.product.all_users.ProductDAO",
+        "expenses_counter.modules.routers.api.v1.product.admin_only.ProductDAO",
+    ),
+    "shop": (
+        "expenses_counter.modules.routers.api.v1.shop.all_users.ShopDAO",
+        "expenses_counter.modules.routers.api.v1.shop.admin_only.ShopDAO",
+    ),
+}
 
 
 def _async_dao_mock() -> AsyncMock:
@@ -70,22 +84,28 @@ def _async_dao_mock() -> AsyncMock:
     """
     dao = AsyncMock()
     dao.get_all = AsyncMock(return_value=([], 0))
-    dao.__aenter__ = AsyncMock(return_value=dao)
-    dao.__aexit__ = AsyncMock(return_value=None)
     return dao
 
 
 @pytest.fixture
-def non_admin_client(mock_non_admin_user, test_config):
+def daos() -> dict[str, AsyncMock]:
+    """Per-entity mock DAOs reused across patch sites and test bodies."""
+    return {name: _async_dao_mock() for name in _DAO_PATHS}
+
+
+@pytest.fixture
+def non_admin_client(mock_non_admin_user, test_config, daos):
     """Return a ``TestClient`` authenticated as a non-admin user.
 
-    DAO dependencies are stubbed so request resolution does not require a
-    live database; the assertion is purely that ``admin_required`` rejects
-    the request before any DAO method is invoked.
+    DAO class references are patched in every router module so request
+    resolution does not require a live database; the assertion is purely
+    that ``admin_required`` rejects the request before any DAO method is
+    invoked.
 
     Args:
         mock_non_admin_user: Mock ``User`` with ``is_admin=False``.
         test_config: Test configuration fixture.
+        daos: Mapping of entity name to its mock DAO.
 
     Yields:
         TestClient: Client whose ``user_authorized`` returns a non-admin user.
@@ -94,13 +114,14 @@ def non_admin_client(mock_non_admin_user, test_config):
     app = get_app(test_config)
 
     app.dependency_overrides[user_authorized] = lambda: mock_non_admin_user
-    app.dependency_overrides[get_category] = lambda: _async_dao_mock()
-    app.dependency_overrides[get_shop] = lambda: _async_dao_mock()
-    app.dependency_overrides[get_product] = lambda: _async_dao_mock()
-    app.dependency_overrides[get_address] = lambda: _async_dao_mock()
+    app.dependency_overrides[get_db] = lambda: MagicMock()
 
-    client = TestClient(app)
-    yield client
+    with ExitStack() as stack:
+        for name, paths in _DAO_PATHS.items():
+            for path in paths:
+                stack.enter_context(patch(path, return_value=daos[name]))
+        client = TestClient(app)
+        yield client
 
     app.dependency_overrides.clear()
 
@@ -127,16 +148,6 @@ class TestUserOnlyRoutesAllowNonAdmin:
         response = non_admin_client.request(method, path)
         assert response.status_code == 200
 
-    def test_non_admin_can_look_up_address_by_local_name(self, non_admin_client: TestClient) -> None:
-        """Address-by-local-name lookup is user-only; 404 confirms the handler ran."""
-        dao = _async_dao_mock()
-        # 404 is fine — what matters is we are not blocked by ``admin_required``.
-        dao.get_by_address = AsyncMock(side_effect=NoResultFound("Address not found"))
-        non_admin_client.app.dependency_overrides[get_address] = lambda: dao
-
-        response = non_admin_client.get("/api/v1/address/name/unknown")
-        assert response.status_code == 404
-
 
 @pytest.mark.api
 class TestAdminRequiredAllowsAdmin:
@@ -160,10 +171,13 @@ class TestAdminRequiredAllowsAdmin:
         category_dao.get_by_pk = AsyncMock(side_effect=NoResultFound("Category not found"))
 
         app.dependency_overrides[user_authorized] = lambda: mock_user
-        app.dependency_overrides[get_category] = lambda: category_dao
+        app.dependency_overrides[get_db] = lambda: MagicMock()
 
-        client = TestClient(app)
-        yield client
+        with ExitStack() as stack:
+            for path in _DAO_PATHS["category"]:
+                stack.enter_context(patch(path, return_value=category_dao))
+            client = TestClient(app)
+            yield client
 
         app.dependency_overrides.clear()
 

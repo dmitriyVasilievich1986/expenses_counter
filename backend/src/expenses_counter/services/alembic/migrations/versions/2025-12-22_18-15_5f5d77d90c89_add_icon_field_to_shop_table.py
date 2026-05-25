@@ -16,20 +16,28 @@ branch_labels = None
 depends_on = None
 
 
-def upgrade():
+def upgrade() -> None:
     """Add icon field to shop table.
 
     Adds a nullable icon column (String, max 150 characters) to main_shop table.
     This field likely stores a file path or identifier for the shop's icon/logo.
+
+    Returns:
+        None
+
     """
     with op.batch_alter_table("main_shop") as batch_op:
         batch_op.add_column(sa.Column("icon", sa.String(length=150), nullable=True))
 
 
-def downgrade():
+def downgrade() -> None:
     """Remove icon field from shop table.
 
     Drops the icon column from main_shop table.
+
+    Returns:
+        None
+
     """
     with op.batch_alter_table("main_shop") as batch_op:
         batch_op.drop_column("icon")

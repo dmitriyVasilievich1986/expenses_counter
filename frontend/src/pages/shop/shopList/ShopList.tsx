@@ -144,33 +144,35 @@ export function ShopList() {
       <TableContainer component={Paper}>
         <Table sx={{ width: '100%' }} aria-label="simple table">
           <TableHead>
-            {columnHeaders.map((header) => (
-              <TableCell
-                key={header.key}
-                onClick={() => {
-                  if (!header.isSortable) return;
-                  setSearchParams((previous) => {
-                    if (previous.get('sortBy') === header.key) {
-                      previous.set(
-                        'sortOrder',
-                        previous.get('sortOrder') === 'asc' ? 'desc' : 'asc'
-                      );
-                    } else {
-                      previous.set('sortBy', header.key);
-                      previous.set('sortOrder', 'asc');
-                    }
-                    return previous;
-                  });
-                }}
-              >
-                <TableSortLabel
-                  active={searchParams.get('sortBy') === header.key}
-                  direction={searchParams.get('sortOrder') === 'asc' ? 'asc' : 'desc'}
+            <TableRow>
+              {columnHeaders.map((header) => (
+                <TableCell
+                  key={header.key}
+                  onClick={() => {
+                    if (!header.isSortable) return;
+                    setSearchParams((previous) => {
+                      if (previous.get('sortBy') === header.key) {
+                        previous.set(
+                          'sortOrder',
+                          previous.get('sortOrder') === 'asc' ? 'desc' : 'asc'
+                        );
+                      } else {
+                        previous.set('sortBy', header.key);
+                        previous.set('sortOrder', 'asc');
+                      }
+                      return previous;
+                    });
+                  }}
                 >
-                  {header.label}
-                </TableSortLabel>
-              </TableCell>
-            ))}
+                  <TableSortLabel
+                    active={searchParams.get('sortBy') === header.key}
+                    direction={searchParams.get('sortOrder') === 'asc' ? 'asc' : 'desc'}
+                  >
+                    {header.label}
+                  </TableSortLabel>
+                </TableCell>
+              ))}
+            </TableRow>
           </TableHead>
           <TableBody>
             {(shops ?? []).map((shop) => (

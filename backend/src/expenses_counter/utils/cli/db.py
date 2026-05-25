@@ -11,7 +11,7 @@ from expenses_counter.config import AppConfig
 
 
 @click.group(help="Database commands")
-async def db():
+async def db() -> None:
     """Expose database maintenance commands as a nested CLI group.
 
     Returns:

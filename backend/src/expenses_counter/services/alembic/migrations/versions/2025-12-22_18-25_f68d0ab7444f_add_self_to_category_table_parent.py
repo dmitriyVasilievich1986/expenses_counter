@@ -16,7 +16,7 @@ branch_labels = None
 depends_on = None
 
 
-def upgrade():
+def upgrade() -> None:
     """Add self-referential parent relationship to category table.
 
     Adds a nullable parent_id foreign key column to main_category table that
@@ -28,6 +28,10 @@ def upgrade():
     - Multi-level category hierarchies
     - Parent-child category relationships
     - Category trees of arbitrary depth
+
+    Returns:
+        None
+
     """
     with op.batch_alter_table("main_category") as batch_op:
         batch_op.add_column(sa.Column("parent_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=True))
@@ -36,12 +40,16 @@ def upgrade():
         )
 
 
-def downgrade():
+def downgrade() -> None:
     """Remove self-referential parent relationship from category table.
 
     Drops the foreign key constraint and removes the parent_id column from
     main_category table, eliminating the hierarchical structure and flattening
     all categories to a single level.
+
+    Returns:
+        None
+
     """
     with op.batch_alter_table("main_category") as batch_op:
         batch_op.drop_constraint("main_category_parent_id_fkey", type_="foreignkey")

@@ -10,12 +10,16 @@ from expenses_counter.config.app_config import AppConfig
 from expenses_counter.modules.app import get_app
 
 
-def main():
+def main() -> None:
     """Initialize and run the FastAPI application.
 
     This function retrieves the application configuration, creates the FastAPI
     app instance, and starts the uvicorn server with the configured host, port,
     and log level.
+
+    Returns:
+        None
+
     """
     config = AppConfig.get_or_create()
 

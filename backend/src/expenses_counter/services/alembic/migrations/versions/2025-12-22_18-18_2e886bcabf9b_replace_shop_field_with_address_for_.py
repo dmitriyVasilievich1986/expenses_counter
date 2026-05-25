@@ -16,7 +16,7 @@ branch_labels = None
 depends_on = None
 
 
-def upgrade():
+def upgrade() -> None:
     """Change transaction to reference shop address instead of shop.
 
     This migration refactors the main_transaction table to reference a specific
@@ -26,6 +26,10 @@ def upgrade():
 
     This allows transactions to be associated with specific shop locations
     rather than just the shop brand/chain.
+
+    Returns:
+        None
+
     """
     with op.batch_alter_table("main_transaction") as batch_op:
         batch_op.drop_constraint("main_transaction_shop_id_fkey", type_="foreignkey")
@@ -38,7 +42,7 @@ def upgrade():
         )
 
 
-def downgrade():
+def downgrade() -> None:
     """Revert transaction to reference shop instead of shop address.
 
     This downgrade:
@@ -47,6 +51,10 @@ def downgrade():
 
     Note: This will result in data loss as address-specific information
     cannot be automatically converted back to shop references.
+
+    Returns:
+        None
+
     """
     with op.batch_alter_table("main_transaction") as batch_op:
         batch_op.drop_constraint("main_transaction_address_id_fkey", type_="foreignkey")

@@ -37,7 +37,7 @@ export type TransactionType = {
  * @property {(TransactionType | null)} currentTransaction - Transaction selected for detail/edit flows.
  * @property {(date: Dayjs) => void} setCurrentDate - Updates the calendar / filter date.
  * @property {(transaction: TransactionType | null) => void} setCurrentTransaction - Sets or clears the focused transaction.
- * @property {(transactions: TransactionType[]) => void} setTransactions - Replaces the entire cached list.
+ * @property {(transactions: TransactionType[] | null) => void} setTransactions - Replaces the entire cached list.
  * @property {(transactions: TransactionType[]) => void} addTransactions - Appends transactions to the cached list.
  * @property {(transaction: TransactionType) => void} updateTransaction - Replaces one transaction in the list by id.
  * @property {(id: number) => void} deleteTransaction - Removes a transaction from the list by id.
@@ -48,7 +48,7 @@ export type TransactionStoreStateType = {
   currentTransaction: TransactionType | null;
   setCurrentDate: (date: Dayjs) => void;
   setCurrentTransaction: (transaction: TransactionType | null) => void;
-  setTransactions: (transactions: TransactionType[]) => void;
+  setTransactions: (transactions: TransactionType[] | null) => void;
   addTransactions: (transactions: TransactionType[]) => void;
   updateTransaction: (transaction: TransactionType) => void;
   deleteTransaction: (id: number) => void;

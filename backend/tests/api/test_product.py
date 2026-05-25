@@ -4,15 +4,20 @@ This module tests all product API endpoints without making direct database calls
 It uses FastAPI's TestClient and mocks the ProductDAO dependency.
 """
 
-from unittest.mock import AsyncMock, MagicMock
+from contextlib import ExitStack
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.exc import DatabaseError, IntegrityError, NoResultFound
 
 from expenses_counter.modules.app import get_app
-from expenses_counter.modules.middlewares.dependencies import user_authorized
-from expenses_counter.modules.middlewares.dependencies.daos import get_product
+from expenses_counter.modules.middlewares.dependencies import get_db, user_authorized
+
+_PRODUCT_DAO_PATHS = (
+    "expenses_counter.modules.routers.api.v1.product.all_users.ProductDAO",
+    "expenses_counter.modules.routers.api.v1.product.admin_only.ProductDAO",
+)
 
 
 @pytest.fixture
@@ -20,7 +25,7 @@ def mock_product_dao():
     """Create a mock ProductDAO for testing.
 
     Returns:
-        AsyncMock: Mocked ProductDAO instance that works as a context manager.
+        AsyncMock: Mocked ProductDAO instance.
 
     """
     dao = AsyncMock()
@@ -30,16 +35,16 @@ def mock_product_dao():
     dao.update = AsyncMock()
     dao.delete = AsyncMock()
 
-    # Make it work as a context manager
-    dao.__aenter__ = AsyncMock(return_value=dao)
-    dao.__aexit__ = AsyncMock(return_value=None)
-
     return dao
 
 
 @pytest.fixture
 def test_client(mock_product_dao, mock_user, test_config):
     """Create a test client with mocked dependencies.
+
+    Product routes are split across ``all_users`` and ``admin_only``; each
+    module imports ``ProductDAO`` locally, so we patch both names to return
+    the same mock and override ``get_db`` with a stand-in client.
 
     Args:
         mock_product_dao: Mocked ProductDAO instance.
@@ -52,13 +57,15 @@ def test_client(mock_product_dao, mock_user, test_config):
     """
     app = get_app(test_config)
 
-    app.dependency_overrides[get_product] = lambda: mock_product_dao
     app.dependency_overrides[user_authorized] = lambda: mock_user
+    app.dependency_overrides[get_db] = lambda: MagicMock()
 
-    client = TestClient(app)
-    yield client
+    with ExitStack() as stack:
+        for path in _PRODUCT_DAO_PATHS:
+            stack.enter_context(patch(path, return_value=mock_product_dao))
+        client = TestClient(app)
+        yield client
 
-    # Clean up
     app.dependency_overrides.clear()
 
 

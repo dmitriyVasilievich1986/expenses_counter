@@ -12,7 +12,7 @@ from expenses_counter.services.database import AsyncDatabaseClient
 
 @click.group(help="User commands", name="user")
 @click.pass_context
-async def user(ctx: click.Context):
+async def user(ctx: click.Context) -> None:
     """Nest user-related commands and attach the DB client and UserDAO to context.
 
     Args:
@@ -33,7 +33,7 @@ async def user(ctx: click.Context):
 @click.option("--email", help="Email", required=True)
 @click.option("--password", help="Password", required=True, prompt=True, hide_input=True)
 @click.pass_context
-async def create_user(ctx: click.Context, username: str, email: str, password: str):
+async def create_user(ctx: click.Context, username: str, email: str, password: str) -> None:
     """Create a new user with hashed credentials and print the result.
 
     Args:
@@ -55,7 +55,7 @@ async def create_user(ctx: click.Context, username: str, email: str, password: s
 @click.option("--username", help="Username", required=True)
 @click.option("--password", help="Password", required=True, prompt=True, hide_input=True)
 @click.pass_context
-async def check_password(ctx: click.Context, username: str, password: str):
+async def check_password(ctx: click.Context, username: str, password: str) -> None:
     """Verify a plaintext password against the stored hash for a username.
 
     Args:
@@ -79,7 +79,7 @@ async def check_password(ctx: click.Context, username: str, password: str):
 @user.command(help="Generate JWT token")
 @click.option("--username", help="Username", required=True)
 @click.pass_context
-async def generate_jwt_token(ctx: click.Context, username: str):
+async def generate_jwt_token(ctx: click.Context, username: str) -> None:
     """Issue an access JWT for the user identified by username and print it.
 
     Args:
@@ -102,7 +102,7 @@ async def generate_jwt_token(ctx: click.Context, username: str):
 @click.option("--username", help="Username", required=True)
 @click.option("--password", help="Password", required=True, prompt=True, hide_input=True)
 @click.pass_context
-async def re_generate_password(ctx: click.Context, username: str, password: str):
+async def re_generate_password(ctx: click.Context, username: str, password: str) -> None:
     """Re-generate the password hash for a user.
 
     Args:

@@ -15,6 +15,7 @@ from logging.config import fileConfig
 
 from alembic import context
 from loguru import logger
+from sqlalchemy.engine import Connection
 
 from expenses_counter.config import AppConfig
 from expenses_counter.services.database import AsyncDatabaseClient, models
@@ -31,7 +32,7 @@ logger.info("Alembic migrations started")
 logger.info(f"Models: {models.__all__}")
 
 
-def do_run_migrations(connection):
+def do_run_migrations(connection: Connection) -> None:
     """Run Alembic migrations with a synchronous database connection.
 
     This function is called from within an async context via `connection.run_sync()`
@@ -40,9 +41,12 @@ def do_run_migrations(connection):
     a database transaction.
 
     Args:
-        connection: A synchronous SQLAlchemy Connection object passed from
+        connection (Connection): A synchronous SQLAlchemy Connection object passed from
             the async connection's `run_sync()` method. This connection is used
             by Alembic to execute migration scripts against the database.
+
+    Returns:
+        None
 
     Note:
         This function must be called from an async context using
@@ -60,7 +64,7 @@ def do_run_migrations(connection):
         context.run_migrations()
 
 
-async def run_async_migrations():
+async def run_async_migrations() -> None:
     """Run migrations in 'online' mode with async database connection.
 
     This function handles running Alembic migrations when a database connection
@@ -72,6 +76,9 @@ async def run_async_migrations():
     the current event loop reference, which is required for Google Cloud SQL
     connector compatibility. After migrations complete, it properly closes
     the database connection manager to clean up resources.
+
+    Returns:
+        None
 
     Raises:
         RuntimeError: If the database engine has not been initialized or if
@@ -90,7 +97,7 @@ async def run_async_migrations():
     await db_client.close()
 
 
-def run_migrations_online():
+def run_migrations_online() -> None:
     """Run migrations in 'online' mode.
 
     This is the main entry point for Alembic migrations. It creates a new
@@ -106,6 +113,9 @@ def run_migrations_online():
     Note:
         This function is called automatically by Alembic when running
         migrations. It should not be called directly in normal usage.
+
+    Returns:
+        None
 
     """
     asyncio.run(run_async_migrations())
