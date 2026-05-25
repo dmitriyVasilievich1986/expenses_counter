@@ -402,7 +402,7 @@ def main():
 
     # If only getting version, print and exit
     if args.get_version:
-        logger.info(f"{handler.name} version: {handler.version}")
+        print(f"{handler.name} version: {handler.version}")
         return
 
     # Validate branch argument is provided for bumping
