@@ -234,7 +234,7 @@ class FileHandler(ABC):
         logger.info(f"{self.name} version set: {self.file_path} -> {self.version}")
 
 
-class JSONFileHadnler(FileHandler):
+class JSONFileHandler(FileHandler):
     """Read and update a ``version`` field in a JSON file."""
 
     extension = ".json"
@@ -361,7 +361,7 @@ class PythonFileHandler(FileHandler):
 # Mapping of file types to their handlers
 FILE_TYPE_HANDLERS: Dict[FileType, Type[FileHandler]] = {
     FileType.backend: PythonFileHandler,
-    FileType.frontend: JSONFileHadnler,
+    FileType.frontend: JSONFileHandler,
 }
 
 
