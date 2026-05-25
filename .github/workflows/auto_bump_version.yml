@@ -89,6 +89,10 @@ jobs:
           git add backend/src/expenses_counter/__init__.py
           git commit -m "version(backend): bump version to $NEW_VERSION"
 
+      - name: Delay between backend and frontend commits
+        if: steps.gate.outputs.bump_backend == 'true' && steps.gate.outputs.bump_frontend == 'true'
+        run: sleep 10
+
       - name: Bump frontend version
         if: steps.gate.outputs.bump_frontend == 'true'
         run: |
@@ -104,6 +108,10 @@ jobs:
           git add frontend/package.json
           git add frontend/package-lock.json
           git commit -m "version(frontend): bump version to $NEW_VERSION"
+
+      - name: Delay before push
+        if: steps.gate.outputs.any == 'true'
+        run: sleep 10
 
       - name: Push changes
         if: steps.gate.outputs.any == 'true'
