@@ -6,6 +6,8 @@
  */
 
 import Box from '@mui/material/Box';
+import Skeleton from '@mui/material/Skeleton';
+import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
@@ -14,7 +16,7 @@ import { PickersDay } from '@mui/x-date-pickers/PickersDay';
 import dayjs from 'dayjs';
 import _ from 'lodash';
 import { useEffect, useMemo } from 'react';
-import { useNavigate, useSearchParams } from 'react-router';
+import { useSearchParams } from 'react-router';
 
 import type { TransactionType } from '@store/transaction';
 
@@ -30,20 +32,17 @@ import type { Dayjs } from 'dayjs';
  * @returns The localized date calendar and custom day slots.
  */
 export function LeftSide() {
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const { transactions, setTransactions } = useTransactionStore();
 
   const { getTransactions } = useTransactionAPIClient();
 
-  const currentDate = useMemo((): [Dayjs, boolean] => {
-    const dateParam = searchParams.get('date');
-    const payload = dateParam ? dayjs(dateParam) : dayjs();
-    if (!dateParam || !payload.isValid()) {
-      return [dayjs(), false];
-    }
-    return [payload, true];
+  const currentDate = useMemo<Dayjs>(() => {
+    const paramsDate = searchParams.get('date');
+    const dayjsDate = dayjs(paramsDate);
+    if (!paramsDate || !dayjsDate.isValid()) return dayjs();
+    return dayjsDate;
   }, [searchParams]);
 
   /** Fetches every page of transactions between the month's start and end (inclusive) and replaces the store list. */
@@ -79,26 +78,32 @@ export function LeftSide() {
     setTransactions(payload);
   };
 
-  useEffect(() => {
-    const [date, isValid] = currentDate;
-    if (!isValid) {
+  /** Updates the `date` search param and navigates to the same route with the new day selected. */
+  const handleDateChange = (date: Dayjs | null) => {
+    const paramsDate = searchParams.get('date');
+    const paramsDayjsDate = dayjs(paramsDate);
+    if (date) {
       setSearchParams((previous) => {
-        previous.set('date', dayjs().format('YYYY-MM-DD'));
+        previous.set('date', date.format('YYYY-MM-DD'));
         return previous;
       });
     }
-    if (transactions === null) {
+    if (!paramsDate || !paramsDayjsDate.isValid() || paramsDayjsDate.month() !== date?.month()) {
       handleMonthChange(date);
     }
-  }, [currentDate, transactions]);
-
-  /** Updates the `date` search param and navigates to the same route with the new day selected. */
-  const handleDateChange = (date: Dayjs | null) => {
-    if (date) {
-      setSearchParams({ date: date.format('YYYY-MM-DD') });
-      navigate(`/transaction?date=${date.format('YYYY-MM-DD')}`);
-    }
   };
+
+  useEffect(() => {
+    if (!searchParams.get('date')) {
+      handleDateChange(currentDate);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    return () => {
+      setTransactions(null);
+    };
+  }, []);
 
   /** Sums `price * count` for transactions matching the calendar day; returns a formatted euro string or null when zero. */
   const getTransactionsSumByDate = (date: Dayjs) => {
@@ -108,6 +113,24 @@ export function LeftSide() {
     );
     return sum > 0 ? `${sum.toFixed(2)}€` : null;
   };
+
+  if (transactions === null) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          mt: 1,
+        }}
+      >
+        <Stack direction="column" spacing={1}>
+          <Skeleton variant="rectangular" sx={{ width: '300px', height: '50px' }} />
+          <Skeleton variant="rectangular" sx={{ width: '300px', height: '290px' }} />
+        </Stack>
+      </Box>
+    );
+  }
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -119,9 +142,9 @@ export function LeftSide() {
             minHeight: '290px',
           },
         }}
-        value={currentDate[0]}
+        value={currentDate}
         onChange={handleDateChange}
-        onMonthChange={handleMonthChange}
+        onMonthChange={handleDateChange}
         slots={{
           day: (props) => (
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
