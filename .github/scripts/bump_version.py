@@ -4,14 +4,22 @@
 Handles version bumping for both Python (src/expenses_counter/__init__.py) and JSON (package.json) files.
 """
 
+# region Import libraries
+
 import argparse
 import json
 import logging
 import re
 import sys
+from abc import ABC, abstractmethod
+from argparse import Namespace
 from enum import StrEnum
 from pathlib import Path
-from typing import Tuple
+from typing import Any, Dict, Tuple, Type
+
+# endregion Import libraries
+
+# region Logging
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -19,143 +27,382 @@ handler = logging.StreamHandler()
 handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
 logger.addHandler(handler)
 
+# endregion Logging
+
+# region Enums
+
 
 class Branch(StrEnum):
+    """Git branch names that select the semantic bump level."""
+
     development = "development"
     master = "master"
 
 
 class FileType(StrEnum):
+    """Supported project file kinds for version read/write."""
+
     backend = "backend"
     frontend = "frontend"
 
 
-def parse_version(version_string: str) -> Tuple[int, int, int]:
-    """Parse semantic version string into major, minor, patch components.
+# endregion Enums
 
-    Args:
-        version_string: Version string in format "X.Y.Z"
-
-    Returns:
-        Tuple of (major, minor, patch) as integers
-
-    """
-    match = re.match(r"^(\d+)\.(\d+)\.(\d+)$", version_string)
-    if not match:
-        logger.error(f"Invalid version format: {version_string}")
-        raise ValueError(f"Invalid version format: {version_string}")
-
-    payload = int(match.group(1)), int(match.group(2)), int(match.group(3))
-    logger.info(f"Parsed version: {payload}")
-    return payload
+# region Main classes
 
 
-def format_version(major: int, minor: int, patch: int) -> str:
-    """Format version components into semantic version string."""
-    return f"{major}.{minor}.{patch}"
+class Version:
+    """Semantic version (major.minor.patch) with bump helpers."""
+
+    major: int
+    minor: int
+    patch: int
+
+    def __init__(self, line: str) -> None:
+        """Parse a dotted version string into major, minor, and patch.
+
+        Args:
+            line (str): Version string in ``major.minor.patch`` form.
+
+        Raises:
+            ValueError: If ``line`` does not match the expected format.
+
+        """
+        self.major, self.minor, self.patch = self._parse_version(str(line))
+        self.current_version = str(self)
+
+    def __str__(self) -> str:
+        """Format the version as ``major.minor.patch``.
+
+        Returns:
+            str: Dotted version string.
+
+        """
+        return f"{self.major}.{self.minor}.{self.patch}"
+
+    def _parse_version(self, line: str) -> Tuple[int, int, int]:
+        """Extract major, minor, and patch integers from a version string.
+
+        Args:
+            line (str): Version string to parse.
+
+        Returns:
+            Tuple[int, int, int]: Parsed ``(major, minor, patch)`` tuple.
+
+        Raises:
+            ValueError: If ``line`` is not three dot-separated integers.
+
+        """
+        matched_version = re.match(r"^(\d+)\.(\d+)\.(\d+)$", line)
+        if not matched_version:
+            logger.error(f"Invalid version format: {line}")
+            raise ValueError(f"Invalid version format: {line}")
+
+        payload = int(matched_version.group(1)), int(matched_version.group(2)), int(matched_version.group(3))
+        logger.info(f"Parsed version: {payload}")
+        return payload
+
+    def bump_patch(self) -> None:
+        """Increment the patch component by one.
+
+        Returns:
+            None
+
+        """
+        self.patch += 1
+
+    def bump_minor(self) -> None:
+        """Increment the minor component and reset patch to zero.
+
+        Returns:
+            None
+
+        """
+        self.minor += 1
+        self.patch = 0
+
+    def bump_major(self) -> None:
+        """Increment the major component and reset minor and patch to zero.
+
+        Returns:
+            None
+
+        """
+        self.major += 1
+        self.minor = 0
+        self.patch = 0
 
 
-def bump_version(version_string: str, branch: Branch) -> str:
-    """Bump version based on branch name.
+class FileHandler(ABC):
+    """Abstract handler for reading, bumping, and persisting a project version file."""
 
-    Args:
-        version_string: Current version string
-        branch: Git branch name (development or master)
+    extension: str
+    name: str
 
-    Returns:
-        New bumped version string
+    def __init__(self, file_path: Path) -> None:
+        """Load the current version from the target file.
 
-    """
-    major, minor, patch = parse_version(version_string)
+        Args:
+            file_path (Path): Path to the version-bearing file.
 
-    match branch:
-        case Branch.development:
-            # Bump PATCH version for development branch
-            patch += 1
-        case Branch.master:
-            # Bump MINOR version for master branch
-            minor += 1
-            patch = 0  # Reset patch when bumping minor
-        case _:
-            logger.error(f"Unsupported branch: {branch}")
-            raise ValueError(f"Unsupported branch: {branch}")
+        Raises:
+            FileNotFoundError: If ``file_path`` does not exist.
+            ValueError: If the file suffix does not match the handler extension.
 
-    new_version = format_version(major, minor, patch)
-    logger.info(f"Bumped version: {version_string} -> {new_version}")
-    return new_version
+        """
+        self.file_path = file_path
+        if not self.file_path.exists():
+            logger.error(f"File {self.file_path} does not exist")
+            raise FileNotFoundError(f"File {self.file_path} does not exist")
+
+        if self.file_path.suffix != self.extension:
+            logger.error(f"File {self.file_path} is not a {self.extension} file")
+            raise ValueError(f"File {self.file_path} is not a {self.extension} file")
+
+        logger.info(f"Getting {self.name} version from {self.file_path}")
+        self.version = Version(self._get_version())
+
+    @abstractmethod
+    def _read_file(self) -> Any:
+        """Read and return the raw file contents in the handler-specific format.
+
+        Returns:
+            Any: Parsed or raw file data.
+
+        """
+        pass
+
+    @abstractmethod
+    def _write_file(self, data: Any) -> None:
+        """Persist handler-specific data to ``self.file_path``.
+
+        Args:
+            data (Any): Data produced by ``_read_file`` with an updated version.
+
+        Returns:
+            None
+
+        """
+        pass
+
+    @abstractmethod
+    def _get_version(self) -> str:
+        """Extract the current version string from the file.
+
+        Returns:
+            str: Current semantic version.
+
+        Raises:
+            ValueError: If the version cannot be found in the file.
+
+        """
+        pass
+
+    @abstractmethod
+    def save(self) -> None:
+        """Write the bumped version back to ``self.file_path``.
+
+        Returns:
+            None
+
+        """
+        pass
+
+    def bump_version(self, branch: Branch) -> None:
+        """Apply branch-specific bump rules to ``self.version``.
+
+        On ``development``, bumps patch; on ``master``, bumps minor and resets patch.
+
+        Args:
+            branch (Branch): Active git branch name.
+
+        Returns:
+            None
+
+        Raises:
+            ValueError: If ``branch`` is not a supported value.
+
+        """
+        if branch == Branch.development:
+            self.version.bump_patch()
+        elif branch == Branch.master:
+            self.version.bump_minor()
+        else:
+            logger.error(f"Invalid branch: {branch}")
+            raise ValueError(f"Invalid branch: {branch}")
+        logger.info(f"Bumped version: {self.version.current_version} -> {self.version}")
+        logger.info(f"{self.name} version set: {self.file_path} -> {self.version}")
 
 
-def get_python_version(file_path: Path) -> str:
-    """Extract version from Python __init__.py file.
+class JSONFileHandler(FileHandler):
+    """Read and update a ``version`` field in a JSON file."""
 
-    Expected format: __version__ = "X.Y.Z"
-    """
-    content = file_path.read_text()
-    match = re.search(r'__version__\s*=\s*["\']([^"\']+)["\']', content)
-    if not match:
-        logger.error(f"Could not find __version__ in {file_path}")
-        raise ValueError(f"Could not find __version__ in {file_path}")
+    extension = ".json"
+    name = "JSON"
 
-    payload = match.group(1)
-    logger.info(f"Found version: {payload} in {file_path}")
-    return payload
+    def _read_file(self) -> Dict[str, Any]:
+        """Load JSON object from ``self.file_path``.
+
+        Returns:
+            Dict[str, Any]: Parsed JSON root object.
+
+        """
+        with self.file_path.open("r") as f:
+            return json.load(f)
+
+    def _write_file(self, data: Dict[str, Any]) -> None:
+        """Serialize and write a JSON object to ``self.file_path``.
+
+        Args:
+            data (Dict[str, Any]): JSON root object to persist.
+
+        Returns:
+            None
+
+        """
+        with self.file_path.open("w") as f:
+            json.dump(data, f, indent=2)
+            f.write("\n")
+
+    def _get_version(self) -> str:
+        """Return the ``version`` key from the JSON root object.
+
+        Returns:
+            str: Current version string.
+
+        Raises:
+            ValueError: If the JSON object has no ``version`` field.
+
+        """
+        data = self._read_file()
+        if not (version := data.get("version")):
+            logger.error(f"Could not find version field in {self.file_path}")
+            raise ValueError(f"Could not find version field in {self.file_path}")
+
+        return version
+
+    def save(self) -> None:
+        """Update the ``version`` key and write the JSON file.
+
+        Returns:
+            None
+
+        """
+        data = self._read_file()
+        data["version"] = str(self.version)
+        self._write_file(data)
+        logger.info(f"File updated: {self.file_path}")
 
 
-def set_python_version(file_path: Path, new_version: str) -> None:
-    """Update version in Python __init__.py file."""
-    content = file_path.read_text()
-    new_content = re.sub(r'(__version__\s*=\s*["\'])[^"\']+(["\'])', rf"\g<1>{new_version}\g<2>", content)
-    file_path.write_text(new_content)
+class PythonFileHandler(FileHandler):
+    """Read and update ``__version__`` in a Python module file."""
+
+    extension = ".py"
+    name = "Python"
+
+    def _read_file(self) -> str:
+        """Read the full text of ``self.file_path``.
+
+        Returns:
+            str: File contents.
+
+        """
+        with self.file_path.open("r") as f:
+            return f.read()
+
+    def _write_file(self, data: str) -> None:
+        """Overwrite ``self.file_path`` with the given text.
+
+        Args:
+            data (str): Full file contents to write.
+
+        Returns:
+            None
+
+        """
+        with self.file_path.open("w") as f:
+            f.write(data)
+
+    def _get_version(self) -> str:
+        """Extract ``__version__`` from the module source.
+
+        Returns:
+            str: Quoted version string assigned to ``__version__``.
+
+        Raises:
+            ValueError: If no ``__version__`` assignment is found.
+
+        """
+        content = self._read_file()
+        match = re.search(r'__version__\s*=\s*["\']([^"\']+)["\']', content)
+        if not match:
+            logger.error(f"Could not find __version__ in {self.file_path}")
+            raise ValueError(f"Could not find __version__ in {self.file_path}")
+
+        return match.group(1)
+
+    def save(self) -> None:
+        """Replace ``__version__`` in the module and write the file.
+
+        Returns:
+            None
+
+        """
+        content = self._read_file()
+        content = re.sub(r'(__version__\s*=\s*["\'])[^"\']+(["\'])', rf"\g<1>{self.version}\g<2>", content)
+        self._write_file(content)
+        logger.info(f"File updated: {self.file_path}")
 
 
-def get_json_version(file_path: Path) -> str:
-    """Extract version from JSON file (package.json)."""
-    data = json.loads(file_path.read_text())
-    if "version" not in data:
-        logger.error(f"Could not find version field in {file_path}")
-        raise ValueError(f"Could not find version field in {file_path}")
+# endregion Main classes
 
-    payload = data["version"]
-    logger.info(f"Found version: {payload} in {file_path}")
-    return payload
-
-
-def set_json_version(file_path: Path, new_version: str) -> None:
-    """Update version in JSON file (package.json)."""
-    data = json.loads(file_path.read_text())
-    data["version"] = new_version
-    file_path.write_text(json.dumps(data, indent=2) + "\n")
-
+# region Main functions
 
 # Mapping of file types to their handlers
-FILE_TYPE_HANDLERS = {
-    FileType.backend: ("python", get_python_version, set_python_version),
-    FileType.frontend: ("json", get_json_version, set_json_version),
+FILE_TYPE_HANDLERS: Dict[FileType, Type[FileHandler]] = {
+    FileType.backend: PythonFileHandler,
+    FileType.frontend: JSONFileHandler,
 }
 
 
-def main():
-    """Main entry point for version bumping script."""
+def _get_namespace() -> Namespace:
+    """Parse CLI arguments for version get or bump operations.
+
+    Returns:
+        Namespace: Parsed arguments with ``file``, ``type``, ``branch``, and
+            ``get_version`` attributes.
+
+    """
     parser = argparse.ArgumentParser(description="Bump version in project files")
     parser.add_argument("--file", required=True, type=Path, help="Path to file to update")
     parser.add_argument("--type", required=True, choices=FileType, help="Type of file to update")
     parser.add_argument("--branch", required=False, choices=Branch, help="Branch name (development or master)")
     parser.add_argument("--get-version", action="store_true", help="Only get current version without bumping")
+    return parser.parse_args()
 
-    args = parser.parse_args()
 
+def main():
+    """Run version read or bump for the requested file type and branch.
+
+    Exits with status 1 on unsupported file type, missing ``--branch`` when
+    bumping, or bump validation errors.
+
+    Returns:
+        None
+
+    """
+    args = _get_namespace()
     # Get current version based on file type
     if args.type not in FILE_TYPE_HANDLERS:
         logger.error(f"Unsupported file type: {args.type}")
         sys.exit(1)
 
-    handler_name, get_version_func, _ = FILE_TYPE_HANDLERS[args.type]
-    logger.info(f"Getting {handler_name} version from {args.file}")
-    current_version = get_version_func(args.file)
+    handler_class = FILE_TYPE_HANDLERS[args.type]
+    handler = handler_class(args.file)
 
     # If only getting version, print and exit
     if args.get_version:
-        print(current_version)
+        print(f"{handler.name} version: {handler.version}")
         return
 
     # Validate branch argument is provided for bumping
@@ -165,20 +412,16 @@ def main():
 
     # Bump version
     try:
-        new_version = bump_version(current_version, args.branch)
-        logger.info(f"Bumped version: {current_version} -> {new_version}")
+        handler.bump_version(args.branch)
     except ValueError as e:
         logger.error(f"Error: {e}")
         sys.exit(1)
 
     # Update file with new version
-    handler_name, _, set_version_func = FILE_TYPE_HANDLERS[args.type]
-    set_version_func(args.file, new_version)
-    logger.info(f"{handler_name.capitalize()} version set: {args.file} -> {new_version}")
-
-    logger.info(f"Version bumped: {current_version} -> {new_version}")
-    logger.info(f"File updated: {args.file}")
+    handler.save()
 
 
 if __name__ == "__main__":
     main()
+
+# endregion Main functions
