@@ -93,11 +93,16 @@ jobs:
         if: steps.gate.outputs.bump_frontend == 'true'
         run: |
           python .github/scripts/bump_version.py \
-            --file frontend/application-version.json \
+            --file frontend/package.json \
             --type frontend \
             --branch development
-          NEW_VERSION=$(jq -r '.version' frontend/application-version.json)
-          git add frontend/application-version.json
+          python .github/scripts/bump_version.py \
+            --file frontend/package-lock.json \
+            --type frontend \
+            --branch development
+          NEW_VERSION=$(jq -r '.version' frontend/package.json)
+          git add frontend/package.json
+          git add frontend/package-lock.json
           git commit -m "version(frontend): bump version to $NEW_VERSION"
 
       - name: Push changes
