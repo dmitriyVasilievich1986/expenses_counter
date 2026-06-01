@@ -15,6 +15,7 @@ from expenses_counter import __version__ as app_version
 from expenses_counter.config.app_config import AppConfig
 from expenses_counter.modules.middlewares.app_lifespan import lifespan
 from expenses_counter.utils import mount_static_files
+from expenses_counter.utils.open_telemetry_setup import setup_open_telemetry
 
 from .routers import api_router, system_router
 
@@ -65,6 +66,9 @@ def get_app(config: AppConfig | None = None) -> FastAPI:
 
     logger.debug("Adding system router...")
     app.include_router(system_router)
+
+    logger.debug("Setting up OpenTelemetry...")
+    setup_open_telemetry(app, app_config)
 
     logger.info("App created successfully.")
     return app
