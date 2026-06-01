@@ -5,6 +5,7 @@ __all__ = ("setup_open_telemetry",)
 from typing import TYPE_CHECKING
 
 from fastapi import FastAPI
+from loguru import logger
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
@@ -31,6 +32,11 @@ def setup_open_telemetry(app: FastAPI, app_config: "AppConfig") -> None:
         None
 
     """
+    if not any([app_config.services.open_telemetry.enable_console, app_config.services.open_telemetry.endpoint]):
+        logger.warning("OpenTelemetry is not configured")
+        return
+
+    logger.debug("Setting up OpenTelemetry...")
     resource = Resource.create({"service.name": app_config.info.name})
 
     tracer_provider = TracerProvider(resource=resource)
