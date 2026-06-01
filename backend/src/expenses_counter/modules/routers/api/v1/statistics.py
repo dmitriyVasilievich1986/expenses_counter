@@ -15,6 +15,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from loguru import logger
+from opentelemetry import trace
 from sqlalchemy.exc import SQLAlchemyError
 
 from expenses_counter.modules.middlewares.dependencies import get_db, user_authorized
@@ -29,6 +30,8 @@ from expenses_counter.services.database.models.transaction import Transaction
 from expenses_counter.services.database.models.user import User
 
 router = APIRouter(prefix="/statistics", tags=["Statistics"])
+
+tracer = trace.get_tracer("statistics_api")
 
 
 @router.get(
@@ -56,8 +59,10 @@ async def get_spendings_grouped_by_month(
     filters = [Transaction.user_id == user.id]
 
     try:
-        data = await transaction_dao.get_spendings_grouped_by_month(filters=filters)
-        logger.info(f"Spendings grouped by month: {data}")
+        with tracer.start_as_current_span("get_spendings_grouped_by_month") as span:
+            span.set_attribute("user_id", user.id)
+            data = await transaction_dao.get_spendings_grouped_by_month(filters=filters)
+            logger.info(f"Spendings grouped by month: {data}")
     except SQLAlchemyError as e:
         logger.exception("Something went wrong while retrieving the spendings grouped by month", exc_info=e)
         raise HTTPException(
@@ -96,7 +101,9 @@ async def get_most_popular_products(
     filters = [Transaction.user_id == user.id]
 
     try:
-        payload = await transaction_dao.get_most_popular_products(limit=query.limit, filters=filters)
+        with tracer.start_as_current_span("get_most_popular_products") as span:
+            span.set_attribute("user_id", user.id)
+            payload = await transaction_dao.get_most_popular_products(limit=query.limit, filters=filters)
     except SQLAlchemyError as e:
         logger.exception("Something went wrong while retrieving the most popular products", exc_info=e)
         raise HTTPException(

@@ -18,6 +18,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, status
 from loguru import logger
+from opentelemetry import trace
 from sqlalchemy.exc import IntegrityError, NoResultFound, SQLAlchemyError
 
 from expenses_counter.modules.middlewares.dependencies import get_db, user_authorized
@@ -38,6 +39,8 @@ from expenses_counter.services.database.models.transaction import Transaction
 from expenses_counter.services.database.models.user import User
 
 router = APIRouter(prefix="/transaction", tags=["Transaction"])
+
+tracer = trace.get_tracer("transaction_api")
 
 
 @router.get("", response_model=GetAllTransactionsResponse, status_code=status.HTTP_200_OK)
@@ -64,7 +67,9 @@ async def get_transaction_list(
     filters = transaction_dao.concat_filters(query.filters_dict, [Transaction.user_id == user.id])
 
     try:
-        data, total = await transaction_dao.get_all(**query.model_dump(exclude={"filters"}), filters=filters)
+        with tracer.start_as_current_span("get_transaction_list") as span:
+            span.set_attribute("user_id", user.id)
+            data, total = await transaction_dao.get_all(**query.model_dump(exclude={"filters"}), filters=filters)
     except SQLAlchemyError as e:
         logger.exception("Something went wrong while retrieving the transaction list", exc_info=e)
         raise HTTPException(
@@ -105,7 +110,9 @@ async def get_transaction_by_id(
     filters = None if user.is_admin else [Transaction.user_id == user.id]
 
     try:
-        payload = await transaction_dao.get_by_pk(transaction_id, filters=filters)
+        with tracer.start_as_current_span("get_transaction_by_id") as span:
+            span.set_attribute("user_id", user.id)
+            payload = await transaction_dao.get_by_pk(transaction_id, filters=filters)
     except NoResultFound as e:
         logger.warning("Transaction not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Transaction not found") from e
@@ -143,7 +150,9 @@ async def create_transaction(
     transaction_dao = TransactionDAO(database_client=db)
 
     try:
-        payload = await transaction_dao.create(**body.model_dump(), user_id=user.id)
+        with tracer.start_as_current_span("create_transaction") as span:
+            span.set_attribute("user_id", user.id)
+            payload = await transaction_dao.create(**body.model_dump(), user_id=user.id)
     except IntegrityError as e:
         logger.exception("Related object not found", exc_info=e)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Related object not found") from e
@@ -187,7 +196,9 @@ async def update_transaction(
     filters = None if user.is_admin else [Transaction.user_id == user.id]
 
     try:
-        payload = await transaction_dao.update(transaction_id, **body.model_dump(), filters=filters)
+        with tracer.start_as_current_span("update_transaction") as span:
+            span.set_attribute("user_id", user.id)
+            payload = await transaction_dao.update(transaction_id, **body.model_dump(), filters=filters)
     except IntegrityError as e:
         logger.exception("Related object not found", exc_info=e)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Related object not found") from e
@@ -231,7 +242,9 @@ async def delete_transaction(
     filters = None if user.is_admin else [Transaction.user_id == user.id]
 
     try:
-        await transaction_dao.delete(transaction_id, filters=filters)
+        with tracer.start_as_current_span("delete_transaction") as span:
+            span.set_attribute("user_id", user.id)
+            await transaction_dao.delete(transaction_id, filters=filters)
     except NoResultFound as e:
         logger.warning("Transaction not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Transaction not found") from e
