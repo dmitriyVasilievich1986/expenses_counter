@@ -2,6 +2,8 @@
 
 __all__ = ("setup_open_telemetry",)
 
+from typing import TYPE_CHECKING
+
 from fastapi import FastAPI
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
@@ -10,10 +12,11 @@ from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
 
-from expenses_counter.config import AppConfig
+if TYPE_CHECKING:
+    from expenses_counter.config import AppConfig
 
 
-def setup_open_telemetry(app: FastAPI, app_config: AppConfig | None = None) -> None:
+def setup_open_telemetry(app: FastAPI, app_config: "AppConfig") -> None:
     """Set up OpenTelemetry tracing for a FastAPI application.
 
     This function configures the tracer provider with resource attributes,
@@ -22,25 +25,22 @@ def setup_open_telemetry(app: FastAPI, app_config: AppConfig | None = None) -> N
 
     Args:
         app (FastAPI): The FastAPI application instance to be instrumented.
-        app_config (AppConfig | None): Optional application settings to configure OpenTelemetry.
-            If not provided, the settings will be fetched using AppConfig.get_or_create().
+        app_config (AppConfig): Application settings to configure OpenTelemetry.
 
     Returns:
         None
 
     """
-    config = app_config or AppConfig.get_or_create()
-
-    resource = Resource.create({"service.name": config.info.name})
+    resource = Resource.create({"service.name": app_config.info.name})
 
     tracer_provider = TracerProvider(resource=resource)
 
-    if config.services.open_telemetry.enable_console:
+    if app_config.services.open_telemetry.enable_console:
         console_exporter = ConsoleSpanExporter()
         tracer_provider.add_span_processor(BatchSpanProcessor(console_exporter))
 
-    if config.services.open_telemetry.endpoint:
-        otlp_exporter = OTLPSpanExporter(endpoint=config.services.open_telemetry.endpoint, insecure=True)
+    if app_config.services.open_telemetry.endpoint:
+        otlp_exporter = OTLPSpanExporter(endpoint=app_config.services.open_telemetry.endpoint, insecure=True)
         tracer_provider.add_span_processor(BatchSpanProcessor(otlp_exporter))
 
     trace.set_tracer_provider(tracer_provider)
