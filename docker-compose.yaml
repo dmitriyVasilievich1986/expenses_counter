@@ -21,8 +21,6 @@ services:
     env_file:
       - path: ./backend/db.env
         required: true
-    ports:
-      - 5432:5432
     volumes:
       - ./db/data:/var/lib/postgresql
     networks:
@@ -53,8 +51,6 @@ services:
       - SERVICES__OPEN_TELEMETRY__ENDPOINT=http://jaeger:4317
     command: uvicorn src.expenses_counter.modules.app:get_app --host 0.0.0.0
       --reload --port 8000
-    ports:
-      - 8000:8000
     volumes:
       - ./backend/configurations:/opt/backend/configurations
       - ./backend/src:/opt/backend/src
