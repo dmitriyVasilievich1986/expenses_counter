@@ -28,6 +28,14 @@ services:
     networks:
       - expenses-network
 
+  jaeger:
+    image: cr.jaegertracing.io/jaegertracing/jaeger:2.18.0
+    container_name: expenses-jaeger
+    ports:
+      - 16686:16686
+    networks:
+      - expenses-network
+
   backend:
     build:
       context: .
@@ -42,6 +50,7 @@ services:
         required: false
     environment:
       - CONFIG_FILE_PATH=/opt/backend/configurations/local.yaml
+      - SERVICES__OPEN_TELEMETRY__ENDPOINT=http://jaeger:4317
     command: uvicorn src.expenses_counter.modules.app:get_app --host 0.0.0.0
       --reload --port 8000
     ports:
