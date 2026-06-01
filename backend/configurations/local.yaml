@@ -20,3 +20,5 @@ services:
     database:
         provider: "sqlite+aiosqlite"
         host: expenses.sqlite3
+    open_telemetry:
+        enable_console: true
