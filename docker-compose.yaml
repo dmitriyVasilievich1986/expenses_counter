@@ -1,6 +1,6 @@
 services:
   nginx:
-    image: nginx:latest
+    image: nginx:1.29.5
     container_name: expenses-nginx
     ports:
       - 80:80
@@ -21,10 +21,16 @@ services:
     env_file:
       - path: ./backend/db.env
         required: true
-    ports:
-      - 5432:5432
     volumes:
       - ./db/data:/var/lib/postgresql
+    networks:
+      - expenses-network
+
+  jaeger:
+    image: cr.jaegertracing.io/jaegertracing/jaeger:2.18.0
+    container_name: expenses-jaeger
+    ports:
+      - 16686:16686
     networks:
       - expenses-network
 
@@ -42,10 +48,9 @@ services:
         required: false
     environment:
       - CONFIG_FILE_PATH=/opt/backend/configurations/local.yaml
+      - SERVICES__OPEN_TELEMETRY__ENDPOINT=http://jaeger:4317
     command: uvicorn src.expenses_counter.modules.app:get_app --host 0.0.0.0
       --reload --port 8000
-    ports:
-      - 8000:8000
     volumes:
       - ./backend/configurations:/opt/backend/configurations
       - ./backend/src:/opt/backend/src
