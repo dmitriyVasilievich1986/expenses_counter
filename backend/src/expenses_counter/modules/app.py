@@ -14,8 +14,7 @@ from loguru import logger
 from expenses_counter import __version__ as app_version
 from expenses_counter.config.app_config import AppConfig
 from expenses_counter.modules.middlewares.app_lifespan import lifespan
-from expenses_counter.utils import mount_static_files
-from expenses_counter.utils.open_telemetry_setup import setup_open_telemetry
+from expenses_counter.utils import mount_static_files, setup_open_telemetry
 
 from .routers import api_router, system_router
 
