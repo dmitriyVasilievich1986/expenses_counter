@@ -5,7 +5,10 @@ __all__ = ("AcceptableFiltersType",)
 from typing import Any
 
 from sqlalchemy.sql import ColumnElement
+from sqlalchemy.sql.elements import BinaryExpression
 
 from expenses_counter.utils.filter import Filter
 
-AcceptableFiltersType = list[ColumnElement[bool]] | list[dict[str, Any]] | list[Filter[str]] | None
+AcceptableFiltersType = (
+    list[ColumnElement[bool]] | list[BinaryExpression[bool]] | list[dict[str, Any]] | list[Filter[str]] | None
+)
