@@ -26,11 +26,11 @@ import { Link, useNavigate, useSearchParams } from 'react-router';
 
 import { ProductPriceChart } from '@components/productPriceChart';
 import { Search } from '@components/search';
-import { useCategoryAPIClient, useTransactionAPIClient } from '@services/apiClient';
+import { useCategoryAPIClient } from '@services/apiClient';
 import { useProductAPIClient } from '@services/apiClient/product/client';
+import { type ProductPriceResponse, useStatisticsAPIClient } from '@services/apiClient/statistics';
 import { useCategoryStore } from '@store/category';
 import type { ProductSimpleType } from '@store/product';
-import type { TransactionType } from '@store/transaction';
 
 /**
  * Renders the product catalog in a table with skeleton loading while the list request is in flight.
@@ -67,12 +67,12 @@ export function ProductList() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [productsTable, setProductsTable] = useState<ProductSimpleType[] | null>(null);
-  const [transactions, setTransactions] = useState<TransactionType[] | null>(null);
+  const [transactions, setTransactions] = useState<ProductPriceResponse[] | null>(null);
   const [totalProductsTable, setTotalProductsTable] = useState<number>(0);
 
   const categories = useCategoryStore((state) => state.categories);
 
-  const { getTransactions } = useTransactionAPIClient();
+  const { getProductPrice } = useStatisticsAPIClient();
   const { getCategories } = useCategoryAPIClient();
   const { getProducts } = useProductAPIClient();
 
@@ -131,34 +131,10 @@ export function ProductList() {
   useEffect(() => {
     if (productsTable === null || transactions !== null) return;
 
-    let cancelled = false;
-
-    const fetchData = async (ids: number[]) => {
-      const payload: TransactionType[] = [];
-      let total = 1000;
-      try {
-        while (payload.length < total) {
-          const { data, metadata } = await getTransactions(100, payload.length, 'date', 'asc', [
-            { column: 'product_id', operator: 'in', value: ids },
-          ]);
-          payload.push(...data);
-          total = metadata.total;
-          if (cancelled) break;
-        }
-      } catch (error) {
-        console.error(error);
-        setTransactions(payload);
-        return;
-      }
-      setTransactions(payload);
-    };
-
     const productIds = productsTable!.map((product) => product.id);
-    void fetchData(productIds);
-
-    return () => {
-      cancelled = true;
-    };
+    getProductPrice(productIds).then((response) => {
+      setTransactions(response);
+    });
   }, [productsTable, transactions]);
 
   /** Map from category id to display name for table cells. */
