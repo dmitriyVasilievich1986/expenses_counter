@@ -128,7 +128,7 @@ async def get_product_price(
     try:
         with tracer.start_as_current_span("get_product_price") as span:
             span.set_attribute("user_id", user.id)
-            data, _ = await transaction_dao.get_all(filters=filters, limit=None)
+            data, _ = await transaction_dao.get_all(filters=filters, limit=None, sort_by="date", sort_order="asc")
     except SQLAlchemyError as e:
         logger.exception("Something went wrong while retrieving the product price", exc_info=e)
         raise HTTPException(
