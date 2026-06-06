@@ -7,13 +7,13 @@ import { Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { LineChart } from '@mui/x-charts/LineChart';
 
-import type { TransactionType } from '@store/transaction/types';
+import type { ProductPriceResponse } from '@services/apiClient/statistics';
 
 /**
  * Renders transaction prices over time for `productId`, or a “No data available” message when there are zero or one points.
  *
  * @param {object} props - Component props.
- * @param {number} props.productId - Product whose transactions are loaded and charted.
+ * @param {ProductPriceResponse[]} props.data - Product prices to chart.
  * @param {boolean | undefined} props.removeLabels - When true, hides axes, legend, highlights, and tooltips for a compact sparkline-style chart.
  * @returns {JSX.Element} Line chart or empty-state typography.
  */
@@ -21,7 +21,7 @@ export function ProductPriceChart({
   data,
   removeLabels,
 }: {
-  data: TransactionType[] | null;
+  data: ProductPriceResponse[] | null;
   removeLabels?: boolean;
 }) {
   const theme = useTheme();

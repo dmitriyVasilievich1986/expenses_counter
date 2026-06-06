@@ -13,15 +13,16 @@ __all__ = ("router",)
 from datetime import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
 from loguru import logger
 from opentelemetry import trace
 from sqlalchemy.exc import SQLAlchemyError
 
 from expenses_counter.modules.middlewares.dependencies import get_db, user_authorized
-from expenses_counter.modules.routers.schemas.requests.statistics import GetPopularProductsQuery
+from expenses_counter.modules.routers.schemas.requests.statistics import GetPopularProductsQuery, ProductPriceBody
 from expenses_counter.modules.routers.schemas.responses.product import SimpleProductGet
 from expenses_counter.modules.routers.schemas.responses.statistics import (
+    ProductPriceResponse,
     SpendingsGroupedByMonthResponse,
 )
 from expenses_counter.services.daos import TransactionDAO
@@ -112,3 +113,27 @@ async def get_most_popular_products(
         ) from e
 
     return [SimpleProductGet.model_validate(product) for product in payload]
+
+
+@router.post("/product-price", response_model=list[ProductPriceResponse], status_code=status.HTTP_200_OK)
+async def get_product_price(
+    body: Annotated[ProductPriceBody, Body(description="The request body")],
+    db: Annotated[AsyncDatabaseClient, Depends(get_db)],
+    user: Annotated[User, Depends(user_authorized)],
+) -> list[ProductPriceResponse]:
+    """Return the price of the products for the authenticated user."""
+    transaction_dao = TransactionDAO(database_client=db)
+    filters = transaction_dao.parse_filters([Transaction.product_id.in_(body.product_ids)])
+
+    try:
+        with tracer.start_as_current_span("get_product_price") as span:
+            span.set_attribute("user_id", user.id)
+            data, _ = await transaction_dao.get_all(filters=filters, limit=None, sort_by="date", sort_order="asc")
+    except SQLAlchemyError as e:
+        logger.exception("Something went wrong while retrieving the product price", exc_info=e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Something went wrong while retrieving the product price",
+        ) from e
+
+    return [ProductPriceResponse.model_validate(transaction) for transaction in data]
