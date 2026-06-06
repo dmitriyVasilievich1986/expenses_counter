@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 
 from .auth import Auth
 from .database import Database
+from .open_telemetry import OpenTelemetry
 
 
 class Services(BaseModel):
@@ -28,3 +29,7 @@ class Services(BaseModel):
 
     database: Database = Field(..., description="The database service")
     auth: Auth = Field(..., description="The auth service")
+    open_telemetry: OpenTelemetry = Field(
+        default_factory=lambda: OpenTelemetry(enable_console=False, endpoint=None),
+        description="The open telemetry service",
+    )

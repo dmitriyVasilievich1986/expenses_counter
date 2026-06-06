@@ -12,9 +12,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 
 import { ProductPriceChart } from '@components/productPriceChart';
-import { useStatisticsAPIClient, useTransactionAPIClient } from '@services/apiClient';
+import { type ProductPriceResponse, useStatisticsAPIClient } from '@services/apiClient/statistics';
 import type { ProductSimpleType } from '@store/product/types';
-import type { TransactionType } from '@store/transaction/types';
 
 import * as defaultStyle from './style.scss';
 
@@ -30,46 +29,27 @@ export function MostPopularProducts() {
   const navigate = useNavigate();
 
   const [data, setData] = useState<ProductSimpleType[] | null>(null);
-  const [transactions, setTransactions] = useState<TransactionType[] | null>(null);
+  const [transactions, setTransactions] = useState<ProductPriceResponse[] | null>(null);
 
   const { getMostPopularProducts } = useStatisticsAPIClient();
-  const { getTransactions } = useTransactionAPIClient();
+  const { getProductPrice } = useStatisticsAPIClient();
 
   useEffect(() => {
-    let cancelled = false;
-
-    const fetchData = async (ids: number[]) => {
-      const payload: TransactionType[] = [];
-      let total = 1000;
-      try {
-        while (payload.length < total) {
-          const { data, metadata } = await getTransactions(100, payload.length, 'date', 'asc', [
-            { column: 'product_id', operator: 'in', value: ids },
-          ]);
-          payload.push(...data);
-          total = metadata.total;
-          if (cancelled) break;
-        }
-      } catch (error) {
-        console.error(error);
-        setTransactions(payload);
-        return;
-      }
-      setTransactions(payload);
-    };
-
     if (data === null) {
       getMostPopularProducts(5).then((response) => {
         setData(response);
       });
     } else if (transactions === null) {
       const productIds = data.map((item) => item.id);
-      void fetchData(productIds);
+      getProductPrice(productIds)
+        .then((response) => {
+          setTransactions(response);
+        })
+        .catch((error) => {
+          console.error('Error fetching product price:', error);
+          setTransactions([]);
+        });
     }
-
-    return () => {
-      cancelled = true;
-    };
   }, [data]);
 
   return (
