@@ -132,9 +132,14 @@ export function ProductList() {
     if (productsTable === null || transactions !== null) return;
 
     const productIds = productsTable!.map((product) => product.id);
-    getProductPrice(productIds).then((response) => {
-      setTransactions(response);
-    });
+    getProductPrice(productIds)
+      .then((response) => {
+        setTransactions(response);
+      })
+      .catch((error) => {
+        console.error('Error fetching product price:', error);
+        setTransactions([]);
+      });
   }, [productsTable, transactions]);
 
   /** Map from category id to display name for table cells. */

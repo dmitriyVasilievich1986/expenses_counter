@@ -41,9 +41,14 @@ export function MostPopularProducts() {
       });
     } else if (transactions === null) {
       const productIds = data.map((item) => item.id);
-      getProductPrice(productIds).then((response) => {
-        setTransactions(response);
-      });
+      getProductPrice(productIds)
+        .then((response) => {
+          setTransactions(response);
+        })
+        .catch((error) => {
+          console.error('Error fetching product price:', error);
+          setTransactions([]);
+        });
     }
   }, [data]);
 
